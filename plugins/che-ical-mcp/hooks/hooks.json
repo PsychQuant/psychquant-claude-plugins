@@ -1,9 +1,10 @@
 {
-  "hooks": [
-    {
-      "event": "SessionStart",
-      "type": "command",
-      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-mcp.sh"
-    }
-  ]
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-mcp.sh"
+      }
+    ]
+  }
 }
