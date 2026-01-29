@@ -53,10 +53,16 @@ list_reminders          → See tasks by list or completion status
 | Task | Tool | Key Parameters |
 |------|------|----------------|
 | View schedule | `list_events` | start_date, end_date, calendar_name |
-| Quick view | `list_events_quick` | range: "today", "tomorrow", "this_week" |
+| Quick view | `list_events_quick` | range: "today", "tomorrow", "this_week", week_starts_on |
 | Create event | `create_event` | title, start_time, end_time, calendar_name (required) |
 | Search | `search_events` | keyword/keywords, match_mode ("any"/"all") |
 | Check availability | `check_conflicts` | start_time, end_time |
+
+**Week Start Day (v0.8.2+)**: For `this_week`/`next_week` ranges, use `week_starts_on`:
+- `system` (default): Use system locale
+- `monday`: ISO 8601 (Europe, Asia)
+- `sunday`: US, Japan
+- `saturday`: Middle East
 
 ### 3. Reminders (Tasks)
 | Task | Tool | Key Parameters |
@@ -116,3 +122,4 @@ Available sources: "iCloud", "Google", "Exchange", "CalDAV", "Local"
 3. **Check conflicts** before scheduling important events
 4. **Use search** instead of listing all events when looking for specific items
 5. **Prefer list_events_quick** over list_events for common ranges
+6. **Specify week_starts_on** when user's locale differs from expected (v0.8.2+)

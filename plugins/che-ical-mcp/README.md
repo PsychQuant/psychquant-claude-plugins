@@ -9,6 +9,7 @@ Claude Code plugin for macOS Calendar & Reminders management using native EventK
 - **Commands**: Quick shortcuts for common operations
 - **Auto-detection**: Automatically finds installed MCP binary
 - **Setup check**: Warns if MCP is not installed on session start
+- **i18n Week Support**: Configurable week start day (Monday/Sunday/Saturday/System)
 
 ## Installation
 
@@ -128,7 +129,18 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 0.8.0 (matches MCP server version)
+Plugin version: 0.8.2 (matches MCP server version)
+
+### Changelog
+
+**0.8.2** (2026-01-30)
+- Fixed week boundary calculation (no longer depends on system locale)
+- Added `week_starts_on` parameter for international week definitions
+- Supports: `system`, `monday` (ISO 8601), `sunday` (US/Japan), `saturday` (Middle East)
+
+**0.8.1** (2026-01-25)
+- Fixed `update_event` time validation bug
+- Added `all_day` parameter to `update_event`
 
 ## Author
 
