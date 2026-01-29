@@ -199,16 +199,28 @@ chmod +x mcpb/server/run.sh
 
 ### Step 4: 更新 README.md 版本歷史
 
-在 README.md 的 Version History 表格中加入新版本：
+**重要**：更新所有語言版本的 README（如 `README.md`、`README_zh-TW.md` 等）
+
+需要更新的內容：
+1. **Technical Details / 技術細節** 區塊的版本號
+   - `Current Version: v{version}`
+   - Framework 版本（如 MCP Swift SDK 版本）
+
+2. **Version History / 版本歷史** 表格加入新版本：
 
 ```markdown
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| v{version} | {date} | {change-summary} |
-| ... | ... | ... |
+| Version | Changes |
+|---------|---------|
+| v{version} | {change-summary} |
+| ... | ... |
 ```
+
+**檢查清單**：
+- [ ] README.md 已更新
+- [ ] README_zh-TW.md 已更新（如存在）
+- [ ] 其他語言版本已更新（如存在）
 
 如果 README.md 沒有 Version History 區塊，在 `## Installation` 之前加入。
 

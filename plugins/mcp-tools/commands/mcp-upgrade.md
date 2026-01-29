@@ -136,7 +136,8 @@ npm view @modelcontextprotocol/sdk version
 | docs/ | 加入文檔目錄 | 低 |
 | .gitattributes | 設定 Git LFS | 高（如有 binary） |
 | mcpb/icon.png | 加入圖示 | 低 |
-| README Version History | 加入版本歷史表格 | 中 |
+| README Version History | 加入版本歷史表格（所有語言版本） | 中 |
+| README Technical Details | 更新 Current Version 和 SDK 版本 | 中 |
 | CHANGELOG.md | 加入變更日誌 | 中 |
 | LICENSE | 加入授權檔案 | 高 |
 
@@ -334,6 +335,23 @@ npm update
 #### 修復問題
 使用 Edit 工具修復程式碼問題
 
+#### 更新版本相關檔案（如有變更）
+如果執行了任何升級項目，需要更新以下檔案：
+
+1. **CHANGELOG.md** - 加入新版本的變更記錄
+2. **README.md（所有語言版本）**：
+   - Technical Details 區塊的版本號
+   - Framework/SDK 版本號
+   - Version History 表格加入新版本
+3. **Version.swift / package.json** - 更新版本常數
+4. **mcpb/manifest.json** - 更新版本號
+
+**檢查清單**：
+```bash
+# 檢查需要更新的檔案
+grep -l "version" README*.md CHANGELOG.md mcpb/manifest.json Sources/*/Version.swift 2>/dev/null
+```
+
 ### Step 3: 驗證修改
 
 ```bash
@@ -377,7 +395,7 @@ Args: {suggested-version}
 | MCP SDK | 比對 GitHub releases | 更新 Package.swift |
 | 缺少測試 | 檢查 Tests/ 目錄 | 建立測試檔案 |
 | 缺少 LFS | 檢查 .gitattributes | 建立並設定 |
-| 缺少版本歷史 | 檢查 README Version History | 在 README 加入表格 |
+| README 版本過期 | `grep "Current Version" README*.md` | 更新所有 README 的版本號和歷史 |
 | 缺少 CHANGELOG | 檢查 CHANGELOG.md | 建立變更日誌 |
 | 缺少 LICENSE | 檢查根目錄 | 建立授權檔案 |
 | 程式碼品質 | grep TODO/FIXME/try! | 逐一修復 |
