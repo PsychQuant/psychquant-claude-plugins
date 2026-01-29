@@ -328,6 +328,8 @@ git push origin main
 1. Release 標題（預設：`v{version}`）
 2. Release 說明（可從 CHANGELOG.md 複製）
 
+#### 方法 A: 使用 gh release（推薦）
+
 ```bash
 # 取得專案名稱和 binary 名稱
 PROJECT_NAME=$(cat mcpb/manifest.json | grep '"name"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/' | tr -d ' ')
@@ -336,9 +338,37 @@ BINARY_NAME=$(ls mcpb/server/ | grep -v '.sh' | head -1)
 gh release create v{version} \
   --title "v{version} - {title}" \
   --notes "{release-notes}" \
-  mcpb/server/$BINARY_NAME \
-  mcpb/${PROJECT_NAME}.mcpb
+  mcpb/server/$BINARY_NAME
 ```
+
+#### 方法 B: 使用 gh api（Fallback）
+
+如果 `gh release create` 失敗（常見錯誤：`workflow scope may be required`），改用 API：
+
+```bash
+# Step 1: 建立 Release
+gh api repos/{owner}/{repo}/releases --method POST \
+  -f tag_name="v{version}" \
+  -f name="v{version} - {title}" \
+  -f body="{release-notes}" \
+  -F draft=false \
+  -F prerelease=false
+
+# Step 2: 取得 Release ID（從上一步的回應中取得，或用以下命令）
+RELEASE_ID=$(gh api repos/{owner}/{repo}/releases/tags/v{version} --jq '.id')
+
+# Step 3: 上傳 Binary（使用 curl）
+TOKEN=$(gh auth token)
+curl -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  "https://uploads.github.com/repos/{owner}/{repo}/releases/$RELEASE_ID/assets?name=$BINARY_NAME" \
+  --data-binary "@mcpb/server/$BINARY_NAME"
+```
+
+**注意**：`gh api` 不支援大型檔案上傳，必須用 `curl` 配合 `--data-binary`。
 
 ### Step 5: 複製 binary 到 ~/bin（本地安裝）
 
@@ -533,8 +563,10 @@ git push origin main
 |------|----------|
 | Dropbox 衝突導致 build 失敗 | `rm -rf .build` 後重新編譯 |
 | lipo 失敗 | 確認兩種架構都編譯成功 |
-| gh release 失敗 | 確認 `gh auth login` 已登入 |
+| gh release 失敗（workflow scope） | 改用 `gh api` 方法（見 Step 4 方法 B） |
+| gh release 失敗（其他） | 確認 `gh auth login` 已登入 |
 | LFS 上傳失敗 | 確認 `.gitattributes` 設定正確 |
+| curl 上傳 binary 失敗 | 確認 `gh auth token` 有效，檔案路徑正確 |
 
 ### MCP Server 對應表
 
