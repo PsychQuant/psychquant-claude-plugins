@@ -313,6 +313,41 @@ codesign --force --sign - <binary-path>
 - `mcpb-sync`：所有同步選項
 - `debug`：Phase 3 rebuild 後同步
 
+### Plugin .mcp.json server key 命名限制
+
+**問題**：Claude API 限制 tool name 最長 **64 字元**。Plugin 透過 `.mcp.json` 掛載 MCP server 時，tool name 格式為：
+
+```
+mcp__plugin_{plugin-name}_{server-key}__{tool-name}
+```
+
+當 server key 與 plugin 同名（例如 `che-apple-mail-mcp`），前綴就佔 49 字元，留給 tool name 只剩 15 字元。
+
+```
+# ✗ server key = plugin name → 前綴 49 字元，最長 tool 76 字元
+mcp__plugin_che-apple-mail-mcp_che-apple-mail-mcp__extract_name_from_address (76)
+
+# ✓ 短 server key → 前綴 35 字元，最長 tool 62 字元
+mcp__plugin_che-apple-mail-mcp_mail__extract_name_from_address (62)
+```
+
+**API 錯誤訊息**：
+```
+400 invalid_request_error: tool_reference.tool_name: String should have at most 64 characters
+```
+
+**規則**：`.mcp.json` 的 server key 使用短名稱：
+
+| Plugin | Server Key | 前綴長度 | 最長 tool 全名 |
+|--------|-----------|---------|--------------|
+| che-apple-mail-mcp | `mail` | 35 | 62 |
+| che-things-mcp | `things` | 37 | 57 |
+| che-word-mcp | `word` | 33 | 57 |
+| che-ical-mcp | `ical` | 33 | 55 |
+| che-duckdb-mcp | `duckdb` | 37 | 54 |
+
+**注意**：這只影響 plugin 掛載的 MCP（`mcp__plugin_*` namespace）。直接在 `~/.claude.json` 或 `.mcp.json`（非 plugin）掛載的 MCP server 使用 `mcp__{server-key}__` 格式，前綴短很多，通常不會超限。
+
 ### 參考實作
 
 參考 che-ical-mcp 的 Server.swift 作為標準模式。
