@@ -552,11 +552,49 @@ cp "$PLUGIN_DIR/.claude-plugin/plugin.json" "$INSTALLED_DIR/.claude-plugin/plugi
 cp "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" "$INSTALLED_DIR/bin/"
 ```
 
-### Step 7: 提交 Plugin 變更
+### Step 7: 更新 marketplace.json（必要！）
+
+**這一步經常被遺忘，會導致 `/plugin` 顯示舊版本號。**
+
+讀取並更新 `che-claude-plugins/.claude-plugin/marketplace.json` 中對應 plugin 的 `version` 和 `description`：
+
+```bash
+MARKETPLACE="/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins/.claude-plugin/marketplace.json"
+# 用 Edit 工具更新 marketplace.json 中 {project-name} 的 version 和 description
+```
+
+**必須更新的欄位**：
+- `"version": "{version}"` — 新版本號
+- `"description": "..."` — 如果 tool 數量或功能描述有變
+
+### Step 8: 更新 installed_plugins.json
+
+更新 `~/.claude/plugins/installed_plugins.json` 中對應 plugin 的記錄：
+
+```bash
+# 用 Edit 工具更新以下欄位：
+# - "installPath": 指向新版本的 cache 目錄
+# - "version": 新版本號
+# - "lastUpdated": 當前時間 (ISO 8601)
+# - "gitCommitSha": che-claude-plugins 的最新 commit SHA
+```
+
+同時同步 cache 目錄：
+
+```bash
+CACHE_DIR="$HOME/.claude/plugins/cache/che-claude-plugins/{project-name}/{version}"
+mkdir -p "$CACHE_DIR/.claude-plugin" "$CACHE_DIR/bin"
+cp "$PLUGIN_DIR/.claude-plugin/plugin.json" "$CACHE_DIR/.claude-plugin/"
+cp "$PLUGIN_DIR/.mcp.json" "$CACHE_DIR/"
+cp "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" "$CACHE_DIR/bin/"
+cp "$PLUGIN_DIR/README.md" "$CACHE_DIR/" 2>/dev/null || true
+```
+
+### Step 9: 提交 Plugin 變更
 
 ```bash
 cd /Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins
-git add plugins/{project-name}
+git add plugins/{project-name} .claude-plugin/marketplace.json
 git commit -m "Update {project-name} plugin to v{version}
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
