@@ -1,7 +1,7 @@
 ---
 description: 歸檔指定聯絡人的 Apple Mail 郵件到 Markdown 檔案
 argument-hint: <email-filter> [output-dir]
-allowed-tools: mcp__apple-mail__*, Bash(mkdir:*), Read, Write, Glob
+allowed-tools: mcp__apple-mail__*, mcp__che-apple-mail-mcp__*, mcp__plugin_che-apple-mail-mcp_che-apple-mail-mcp__*, Bash(mkdir:*), Read, Write, Glob
 ---
 
 # Archive Mail
