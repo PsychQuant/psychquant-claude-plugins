@@ -1,7 +1,7 @@
 ---
 description: 部署 MCP Server 專案（編譯、打包 mcpb、建立 GitHub Release）
 argument-hint: [version]
-allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(lipo:*), Bash(file:*), Bash(git:*), Bash(gh:*), Bash(zip:*), Bash(rm:*), Bash(cp:*), Bash(mkdir:*), Bash(ls:*), Bash(npm:*), Bash(python:*), Bash(pip:*), Grep, Glob, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(lipo:*), Bash(file:*), Bash(shasum:*), Bash(git:*), Bash(gh:*), Bash(zip:*), Bash(rm:*), Bash(cp:*), Bash(mkdir:*), Bash(ls:*), Bash(chmod:*), Bash(npm:*), Bash(python:*), Bash(pip:*), Bash(codesign:*), Grep, Glob, AskUserQuestion
 ---
 
 # MCP Deploy - 部署 MCP 專案
@@ -88,6 +88,9 @@ lipo -create \
     .build/arm64-apple-macosx/release/$BINARY_NAME \
     .build/x86_64-apple-macosx/release/$BINARY_NAME \
     -output mcpb/server/$BINARY_NAME
+
+# 重新簽名（lipo 會破壞原始 code signature，未簽名會被 macOS SIGKILL）
+codesign --force --sign - mcpb/server/$BINARY_NAME
 ```
 
 #### A4: 驗證 Universal Binary
@@ -375,7 +378,65 @@ curl -L \
 ```bash
 cp mcpb/server/$BINARY_NAME ~/bin/
 chmod +x ~/bin/$BINARY_NAME
+codesign --force --sign - ~/bin/$BINARY_NAME
 ```
+
+**驗證**：確認 `~/bin` 拿到的是 universal binary 且已簽名：
+```bash
+file ~/bin/$BINARY_NAME
+lipo -info ~/bin/$BINARY_NAME
+codesign -dv ~/bin/$BINARY_NAME
+```
+
+---
+
+## Phase 3.5: Binary 一致性驗證（Swift 專案限定）
+
+**注意**：此 Phase 只適用於 Swift 專案。Python/TypeScript 使用 wrapper script，跳過此步驟。
+
+### Step 1: Hash 比對
+
+```bash
+echo "=== Binary Consistency Check ==="
+shasum -a 256 mcpb/server/$BINARY_NAME ~/bin/$BINARY_NAME
+```
+
+**預期**：兩個 hash 完全一致（因為剛從 mcpb/server 複製到 ~/bin）。
+
+### Step 2: 架構確認
+
+```bash
+echo "=== mcpb/server ==="
+lipo -info mcpb/server/$BINARY_NAME
+
+echo "=== ~/bin ==="
+lipo -info ~/bin/$BINARY_NAME
+```
+
+**預期**：兩者都顯示 `x86_64 arm64`（universal binary）。
+
+### Step 3: arm64 slice 比對（額外驗證）
+
+提取 arm64 slice 確認 binary 內容一致：
+
+```bash
+TMPFILE_1="/tmp/_mcpb_deploy_verify_mcpb_$$"
+TMPFILE_2="/tmp/_mcpb_deploy_verify_bin_$$"
+
+lipo -thin arm64 mcpb/server/$BINARY_NAME -output "$TMPFILE_1"
+lipo -thin arm64 ~/bin/$BINARY_NAME -output "$TMPFILE_2"
+
+shasum -a 256 "$TMPFILE_1" "$TMPFILE_2"
+
+rm -f "$TMPFILE_1" "$TMPFILE_2"
+```
+
+### Step 4: 驗證結果
+
+如果任何步驟不一致，**停止並報錯**：
+
+> ❌ Binary 一致性驗證失敗！mcpb/server 和 ~/bin 的 binary 不一致。
+> 請使用 `/mcp-tools:mcpb-sync` 修復。
 
 ---
 
@@ -523,6 +584,12 @@ git push origin main
 
 ## 本地安裝
 - Binary 已複製到: `~/bin/{BinaryName}`
+
+## Binary Consistency（Swift 專案）
+| 位置 | 架構 | Hash (前 12 碼) | 狀態 |
+|------|------|-----------------|------|
+| mcpb/server/{BinaryName} | universal (arm64 + x86_64) | {hash}... | ✅ |
+| ~/bin/{BinaryName} | universal (arm64 + x86_64) | {hash}... | ✅ |
 
 ## Claude Code Plugin（如有發布）
 - Plugin 目錄: `che-claude-plugins/plugins/{project-name}`

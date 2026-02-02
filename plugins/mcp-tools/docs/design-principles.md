@@ -281,6 +281,38 @@ func run() async throws {
 }
 ```
 
+### lipo 合併後必須重新簽名
+
+**問題**：`lipo -create` 合併的 universal binary 執行時被 macOS 以 SIGKILL (exit 137) 終止。
+
+```bash
+# ✗ binary 啟動即被殺掉
+lipo -create .build/arm64/.../Binary .build/x86_64/.../Binary -output ~/bin/Binary
+~/bin/Binary  # exit 137 (SIGKILL)
+
+# ✓ 正確 - lipo 後必須 codesign
+lipo -create .build/arm64/.../Binary .build/x86_64/.../Binary -output ~/bin/Binary
+codesign --force --sign - ~/bin/Binary
+~/bin/Binary  # 正常啟動
+```
+
+**原因**：
+- `swift build` 產出的 binary 帶有 adhoc linker-signed signature
+- `lipo -create` 合併兩個架構時，會**破壞**原始 code signature
+- macOS runtime enforcement 偵測到 signature 無效，直接 SIGKILL
+- `cp` 複製 binary 也可能導致 signature 失效（視檔案系統而定）
+
+**規則**：任何 `lipo` 或 `cp` binary 操作後，都必須執行：
+
+```bash
+codesign --force --sign - <binary-path>
+```
+
+**影響的命令**：
+- `mcp-deploy`：Phase 1 A3 (lipo) + Phase 3 Step 5 (cp to ~/bin)
+- `mcpb-sync`：所有同步選項
+- `debug`：Phase 3 rebuild 後同步
+
 ### 參考實作
 
 參考 che-ical-mcp 的 Server.swift 作為標準模式。

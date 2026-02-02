@@ -10,6 +10,7 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
 | `/mcp-tools:mcp-deploy` | 部署發布 | 專案完成，要發布到 GitHub Release |
 | `/mcp-tools:mcp-install` | 安裝 MCP | 從 GitHub Release 下載安裝到 ~/bin |
 | `/mcp-tools:mcp-upgrade` | 升級建議 | 檢查依賴更新、結構優化 |
+| `/mcp-tools:mcpb-sync` | Binary 同步 | 確保 .build/mcpb/~/bin 一致（Swift） |
 | `/mcp-tools:diagnose` | 連線診斷 | Server 無法連線時 |
 | `/mcp-tools:debug` | 功能除錯 | 有 bug、錯誤時 |
 | `/mcp-tools:test` | 完整測試 | 開發完成後、CI |
@@ -30,11 +31,14 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
   Swift/Python/TS     GitHub Release         安裝到 ~/bin        升級建議報告
                       + Plugin（可選）
                          │
-                         ▼
-                  ┌──────────────┐
-                  │ che-claude-  │
-                  │   plugins    │
-                  └──────────────┘
+                    ┌────┴────┐
+                    ▼         ▼
+             ┌───────────┐  ┌──────────────┐
+             │ mcpb-sync │  │ che-claude-  │
+             └───────────┘  │   plugins    │
+                  │         └──────────────┘
+          .build → mcpb/server → ~/bin
+          Binary 一致性同步
 ```
 
 ---
@@ -141,6 +145,27 @@ mcpb/
 - **新功能建議** - 批次操作、搜尋功能等
 
 完成升級後會詢問是否要直接串接 `mcp-deploy` 進行部署。
+
+### `/mcp-tools:mcpb-sync [--check-only]`
+
+**Binary 同步**：確保 Swift MCP 專案的三個 binary 副本一致。
+
+```bash
+/mcp-tools:mcpb-sync              # 檢查並同步
+/mcp-tools:mcpb-sync --check-only # 只檢查不同步
+```
+
+同步方向：
+```
+.build/arm64 + .build/x86_64 → mcpb/server/{Binary} → ~/bin/{Binary}
+```
+
+**只適用 Swift 專案**。Python/TypeScript 使用 wrapper script，不需要。
+
+功能：
+- **一致性檢查** — hash + architecture-aware 比對
+- **同步選項** — 從 .build 重建 / mcpb→bin / 完整重編譯
+- **Post-sync 驗證** — 確認三者 hash 一致
 
 ---
 
@@ -265,6 +290,7 @@ open "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders"
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.7.0 | 2026-02-01 | 新增 mcpb-sync 命令；mcp-deploy 加入 Phase 3.5 Binary 一致性驗證；mcp-upgrade 加入 Binary 檢查；debug 重建後自動同步 |
 | v1.6.0 | 2026-01-27 | mcp-deploy 新增 Plugin 發布；mcp-upgrade 可串接 deploy |
 | v1.5.0 | 2026-01-16 | 新增 mcp-install 命令：從 GitHub Release 下載安裝 MCP Server |
 | v1.3.0 | 2026-01-16 | 修正 MCPB 套件結構說明，.mcpb 放置於 mcpb/ 目錄內；更新 README 文件 |

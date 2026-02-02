@@ -1,7 +1,7 @@
 ---
 description: MCP Server 功能除錯（框架分析、權限問題、錯誤診斷）
 argument-hint: <mcp-server-name> [error-message]
-allowed-tools: Bash(sdef:*), Bash(osascript:*), Bash(claude mcp:*), Bash(pkill:*), Bash(swift:*), Bash(tccutil:*), Bash(open:*), Read, Write, Grep, Glob
+allowed-tools: Bash(sdef:*), Bash(osascript:*), Bash(claude mcp:*), Bash(pkill:*), Bash(swift:*), Bash(tccutil:*), Bash(open:*), Bash(lipo:*), Bash(file:*), Bash(shasum:*), Bash(cp:*), Bash(chmod:*), Bash(rm:*), Bash(ls:*), Bash(grep:*), Bash(codesign:*), Read, Write, Grep, Glob
 ---
 
 # MCP Debug - 功能除錯
@@ -258,14 +258,59 @@ Generated: <timestamp>
 
 ## Phase 3: 修復後驗證
 
-### 重新建置
+### Step 1: 重新建置
 
 ```bash
 cd $1
 swift build -c release
 ```
 
-### 重啟 Server
+### Step 2: 同步 Binary 到 mcpb/server 和 ~/bin
+
+取得 Binary 名稱：
+
+```bash
+BINARY_NAME=$(grep -A5 'executableTarget' Package.swift | grep 'name:' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+```
+
+#### 情況 A: 兩種架構的 build 都存在 → 用 lipo 合併
+
+```bash
+if [ -f ".build/arm64-apple-macosx/release/$BINARY_NAME" ] && [ -f ".build/x86_64-apple-macosx/release/$BINARY_NAME" ]; then
+    echo "Building universal binary..."
+    lipo -create \
+        .build/arm64-apple-macosx/release/$BINARY_NAME \
+        .build/x86_64-apple-macosx/release/$BINARY_NAME \
+        -output mcpb/server/$BINARY_NAME
+    codesign --force --sign - mcpb/server/$BINARY_NAME
+else
+    echo "Single-arch build detected, copying directly..."
+    # 找到可用的 release binary
+    BUILD_BIN=$(ls .build/arm64-apple-macosx/release/$BINARY_NAME .build/x86_64-apple-macosx/release/$BINARY_NAME .build/release/$BINARY_NAME 2>/dev/null | head -1)
+    if [ -n "$BUILD_BIN" ]; then
+        cp "$BUILD_BIN" mcpb/server/$BINARY_NAME
+    fi
+fi
+```
+
+#### 複製到 ~/bin
+
+```bash
+cp mcpb/server/$BINARY_NAME ~/bin/$BINARY_NAME
+chmod +x ~/bin/$BINARY_NAME
+codesign --force --sign - ~/bin/$BINARY_NAME
+```
+
+#### 驗證同步
+
+```bash
+echo "=== Post-rebuild Sync Verification ==="
+shasum -a 256 mcpb/server/$BINARY_NAME ~/bin/$BINARY_NAME
+file mcpb/server/$BINARY_NAME
+file ~/bin/$BINARY_NAME
+```
+
+### Step 3: 重啟 Server
 
 ```bash
 pkill -f <BinaryName>

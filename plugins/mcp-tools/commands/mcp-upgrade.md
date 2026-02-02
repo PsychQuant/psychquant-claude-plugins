@@ -1,7 +1,7 @@
 ---
 description: 分析並提議 MCP Server 專案升級（依賴更新、結構優化、新功能建議）
 argument-hint: [focus-area]
-allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(git:*), Bash(npm:*), Bash(pip:*), Bash(cat:*), Bash(grep:*), Grep, Glob, WebFetch, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(git:*), Bash(npm:*), Bash(pip:*), Bash(cat:*), Bash(grep:*), Bash(file:*), Bash(lipo:*), Bash(shasum:*), Bash(ls:*), Bash(rm:*), Grep, Glob, WebFetch, AskUserQuestion
 ---
 
 # MCP Upgrade - 專案升級建議
@@ -162,6 +162,66 @@ grep -rn "try!" Sources/  # 不安全的 try
 | 硬編碼字串 | 提取為常數 |
 | 缺少註解 | 為 public API 加入文檔註解 |
 
+### Step 3: Binary 一致性檢查（Swift 專案限定）
+
+**注意**：此步驟只適用於 Swift 專案。Python/TypeScript 使用 wrapper script，跳過。
+
+#### 3A: 取得 Binary 名稱
+
+```bash
+BINARY_NAME=$(grep -A5 'executableTarget' Package.swift | grep 'name:' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+```
+
+#### 3B: 比對 mcpb/server 和 ~/bin
+
+```bash
+echo "=== Binary Consistency Check ==="
+
+# Hash 比對
+shasum -a 256 mcpb/server/$BINARY_NAME 2>/dev/null
+shasum -a 256 ~/bin/$BINARY_NAME 2>/dev/null
+
+# 架構比對
+echo "--- mcpb/server ---"
+file mcpb/server/$BINARY_NAME 2>/dev/null
+lipo -info mcpb/server/$BINARY_NAME 2>/dev/null
+
+echo "--- ~/bin ---"
+file ~/bin/$BINARY_NAME 2>/dev/null
+lipo -info ~/bin/$BINARY_NAME 2>/dev/null
+```
+
+#### 3C: Architecture-aware 比對
+
+如果 hash 不同，可能是因為一個是 universal、一個是 single-arch：
+
+```bash
+# 如果 mcpb/server 是 universal，~/bin 是 arm64-only
+TMPFILE="/tmp/_mcpb_upgrade_check_$$"
+lipo -thin arm64 mcpb/server/$BINARY_NAME -output "$TMPFILE" 2>/dev/null
+if [ -f "$TMPFILE" ]; then
+    echo "--- arm64 slice comparison ---"
+    shasum -a 256 "$TMPFILE" ~/bin/$BINARY_NAME 2>/dev/null
+    rm -f "$TMPFILE"
+fi
+```
+
+#### 3D: 檢查 mcpb/server 是否為 universal binary
+
+```bash
+lipo -info mcpb/server/$BINARY_NAME 2>/dev/null
+```
+
+**預期**：應為 universal binary（`x86_64 arm64`）。
+**問題**：如果只有 `arm64`，建議在下次 deploy 時重新用 `lipo -create` 建立 universal binary。
+
+#### 3E: 記錄一致性狀態
+
+在報告中記錄以下資訊：
+- mcpb/server 和 ~/bin 的 hash 是否一致
+- 兩者的架構是否相同
+- 是否需要同步（建議使用 `/mcp-tools:mcpb-sync`）
+
 ---
 
 ## Phase 3: 功能分析（Feature Analysis）
@@ -279,6 +339,18 @@ swift package update
 |------|------|------|
 | 不安全的 try! | Server.swift:45 | 改用 do-catch |
 | 硬編碼路徑 | Manager.swift:23 | 使用環境變數 |
+
+---
+
+## 🔗 Binary 一致性（Swift 專案）
+
+| 位置 | 存在 | 架構 | Hash (前 12 碼) | 狀態 |
+|------|------|------|-----------------|------|
+| mcpb/server/{Binary} | ✅/❌ | universal/arm64 | abc123... | - |
+| ~/bin/{Binary} | ✅/❌ | universal/arm64 | abc123... | - |
+
+- mcpb/server ↔ ~/bin: ✅ 一致 / ❌ 不一致
+- 建議: {如需同步，使用 `/mcp-tools:mcpb-sync`}
 
 ---
 
