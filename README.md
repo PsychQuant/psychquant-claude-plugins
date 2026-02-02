@@ -20,10 +20,13 @@
 |--------|------|-----------|
 | **che-things-mcp** | Things 3 任務管理 | 47 |
 | **che-ical-mcp** | macOS 行事曆 & 提醒事項 | 20 |
+| **che-apple-mail-mcp** | Apple Mail 郵件管理 + 歸檔 | 60+ |
+| **che-word-mcp** | Word 文件處理 | 104 |
+| **che-duckdb-mcp** | DuckDB 資料庫操作 | 14 |
 | **mcp-tools** | MCP Server 開發工具集 | - |
-| **archive-mail** | 歸檔 Apple Mail 郵件到 Markdown | - |
 | **r-shiny-debugger** | R Shiny App 功能測試 | - |
 | **claude-config-guide** | Claude Code 設定查詢助手 | - |
+| **postgresql-guide** | PostgreSQL 文檔查詢助手 | - |
 
 ---
 
@@ -79,6 +82,28 @@ macOS 原生行事曆與提醒事項整合，使用 EventKit 框架。
 
 ---
 
+### che-apple-mail-mcp
+
+Apple Mail 郵件管理，透過 AppleScript 原生整合。
+
+**需求**: [CheAppleMailMCP](https://github.com/kiki830621/che-apple-mail-mcp/releases) binary
+
+```bash
+# 郵件歸檔
+/che-apple-mail-mcp:archive-mail d06227105@ntu.edu.tw
+/che-apple-mail-mcp:archive-mail d06227105@ntu.edu.tw communication/emails
+```
+
+| 功能分類 | 說明 |
+|----------|------|
+| Mailboxes | 列出帳號、信箱 |
+| Emails | 搜尋、讀取、回覆、轉寄 |
+| Drafts | 草稿管理 |
+| Archive | 歸檔郵件到 Markdown |
+| Rules | 郵件規則管理 |
+
+---
+
 ## Skill Plugins
 
 ### mcp-tools
@@ -101,17 +126,8 @@ MCP Server 開發必備工具，提供完整的除錯與測試流程。
 | `new-mcp-app` | 互動式建立新 MCP 專案 |
 | `mcp-deploy` | 編譯、打包、發布 GitHub Release |
 | `mcp-upgrade` | 分析專案並提供升級建議 |
-
----
-
-### archive-mail
-
-歸檔特定聯絡人的 Apple Mail 郵件到 Markdown 檔案。
-
-```bash
-/archive-mail d06227105@ntu.edu.tw
-/archive-mail d06227105@ntu.edu.tw communication/emails
-```
+| `mcp-install` | 從 GitHub Release 下載安裝 |
+| `mcpb-sync` | Binary 一致性同步（Swift） |
 
 ---
 

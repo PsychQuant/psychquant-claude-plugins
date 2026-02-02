@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "mcp-tools",
-      "version": "1.6.0",
-      "description": "MCP Server 開發工具集：new-mcp-app、mcp-deploy（含 Plugin 發布）、mcp-install、mcp-upgrade、diagnose、debug、test",
+      "version": "1.7.0",
+      "description": "MCP Server 開發工具集：new-mcp-app、mcp-deploy、mcp-install、mcp-upgrade、mcpb-sync、diagnose、debug、test",
       "author": {
         "name": "Che Cheng"
       },
@@ -19,13 +19,13 @@
       "category": "development"
     },
     {
-      "name": "archive-mail",
-      "version": "2.0.0",
-      "description": "歸檔 Apple Mail 郵件到 Markdown 檔案，使用 apple-mail MCP",
+      "name": "che-apple-mail-mcp",
+      "version": "0.8.0",
+      "description": "Apple Mail MCP Server + 郵件工作流（歸檔、搜尋、管理）",
       "author": {
         "name": "Che Cheng"
       },
-      "source": "./plugins/archive-mail",
+      "source": "./plugins/che-apple-mail-mcp",
       "category": "productivity"
     },
     {
