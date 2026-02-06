@@ -1,7 +1,7 @@
 {
   "name": "che-ical-mcp",
-  "version": "0.9.0",
-  "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，24 個工具，支援搜尋提醒事項與批次操作",
+  "version": "1.0.0",
+  "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，24 個工具，彈性日期解析、模糊匹配、篩選/排序/限制、批次刪除預覽",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "calendar", "reminders", "eventkit", "macos", "productivity", "i18n"]
