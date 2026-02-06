@@ -227,6 +227,30 @@ chmod +x mcpb/server/run.sh
 
 如果 README.md 沒有 Version History 區塊，在 `## Installation` 之前加入。
 
+### Step 4.5: 更新功能文檔（如有重要功能變更）
+
+如果此版本新增了重要功能或 breaking change，除了 Version History 表格外，還需更新 README 中的功能說明。
+
+使用 AskUserQuestion 確認：
+> 這個版本有需要更新 README 功能文檔的重大變更嗎？
+> - 是（新增工具參數 / response format 變更 / 新功能）
+> - 否（只是 bug fix 或小改動，Version History 就夠了）
+
+如果選「是」，根據 CHANGELOG 的變更內容，更新 README 中對應的段落：
+
+| 變更類型 | Version History | Tool 描述 | 使用範例 | 新功能區塊 |
+|---------|:-:|:-:|:-:|:-:|
+| Bug fix (PATCH) | ✅ | ❌ | ❌ | ❌ |
+| 小功能 (MINOR) | ✅ | ✅ | 可選 | ❌ |
+| 大功能/Breaking (MAJOR) | ✅ | ✅ | ✅ | ✅ |
+
+**具體更新項目**：
+1. **Tool 描述表格**：更新受影響工具的描述（在「All Tools」區塊）
+2. **使用範例**：新增展示新功能的範例
+3. **新功能說明**：如有重大功能（如新的日期格式、新的參數），考慮新增獨立區塊說明
+
+**提醒**：所有語言版本的 README 都要同步更新。
+
 ### Step 5: 清理舊的 mcpb 檔案
 
 ```bash
