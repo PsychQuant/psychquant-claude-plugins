@@ -355,17 +355,44 @@ git push origin main
 1. Release 標題（預設：`v{version}`）
 2. Release 說明（可從 CHANGELOG.md 複製）
 
+**Release Notes 模板**：
+
+在 CHANGELOG 內容之前加入安裝指引（用 `---` 分隔）：
+
+```markdown
+## Install
+
+### Claude Desktop (One-Click)
+Download `{project-name}.mcpb` below and double-click to install.
+
+### Claude Code (CLI)
+\```bash
+curl -L https://github.com/{owner}/{repo}/releases/download/v{version}/{BinaryName} -o ~/bin/{BinaryName}
+chmod +x ~/bin/{BinaryName}
+claude mcp add --scope user --transport stdio {project-name} -- ~/bin/{BinaryName}
+\```
+
+### MCP Registry
+Published as `io.github.{owner}/{project-name}` on the [Official MCP Registry](https://registry.modelcontextprotocol.io).
+
+---
+
+{CHANGELOG 內容}
+```
+
 #### 方法 A: 使用 gh release（推薦）
 
 ```bash
 # 取得專案名稱和 binary 名稱
 PROJECT_NAME=$(cat mcpb/manifest.json | grep '"name"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/' | tr -d ' ')
 BINARY_NAME=$(ls mcpb/server/ | grep -v '.sh' | head -1)
+MCPB_FILE=$(ls mcpb/*.mcpb | head -1)
 
 gh release create v{version} \
   --title "v{version} - {title}" \
   --notes "{release-notes}" \
-  mcpb/server/$BINARY_NAME
+  mcpb/server/$BINARY_NAME \
+  $MCPB_FILE
 ```
 
 #### 方法 B: 使用 gh api（Fallback）
@@ -384,8 +411,10 @@ gh api repos/{owner}/{repo}/releases --method POST \
 # Step 2: 取得 Release ID（從上一步的回應中取得，或用以下命令）
 RELEASE_ID=$(gh api repos/{owner}/{repo}/releases/tags/v{version} --jq '.id')
 
-# Step 3: 上傳 Binary（使用 curl）
+# Step 3: 上傳 Binary 和 MCPB（使用 curl）
 TOKEN=$(gh auth token)
+
+# 上傳 Binary
 curl -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
@@ -393,6 +422,16 @@ curl -L \
   -H "Content-Type: application/octet-stream" \
   "https://uploads.github.com/repos/{owner}/{repo}/releases/$RELEASE_ID/assets?name=$BINARY_NAME" \
   --data-binary "@mcpb/server/$BINARY_NAME"
+
+# 上傳 MCPB
+MCPB_FILENAME=$(basename $MCPB_FILE)
+curl -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  "https://uploads.github.com/repos/{owner}/{repo}/releases/$RELEASE_ID/assets?name=$MCPB_FILENAME" \
+  --data-binary "@$MCPB_FILE"
 ```
 
 **注意**：`gh api` 不支援大型檔案上傳，必須用 `curl` 配合 `--data-binary`。
