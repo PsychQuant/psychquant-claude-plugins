@@ -397,6 +397,21 @@ curl -L \
 
 **注意**：`gh api` 不支援大型檔案上傳，必須用 `curl` 配合 `--data-binary`。
 
+### Step 4.5: 更新 GitHub Repo About 描述
+
+如果工具數量、主要功能、或支援範圍有變更，更新 repo 的 About 描述：
+
+```bash
+gh repo edit {owner}/{repo} --description "{updated-description}"
+```
+
+**常見需更新的情況**：
+- 工具數量變更（如 20 → 24）
+- 新增重要功能關鍵字
+- 支援平台變更
+
+用 `gh repo view --json description` 先確認現有描述，再決定是否需要更新。
+
 ### Step 5: 複製 binary 到 ~/bin（本地安裝）
 
 ```bash
