@@ -1,0 +1,8 @@
+{
+  "name": "che-bot-toolkit",
+  "version": "0.1.0",
+  "description": "Telegram 群組訊息監控 → GitHub Issue 自動化 pipeline。支援多專案、多人消歧義、衝突解決、launchd 定時背景檢查。",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["telegram", "bot", "inbox", "github", "issue", "automation", "launchd", "daemon", "disambiguation", "conflict-resolution"]
+}
