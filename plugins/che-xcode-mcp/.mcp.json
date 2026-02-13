@@ -1,0 +1,12 @@
+{
+  "xcode": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-xcode-mcp-wrapper.sh",
+    "env": {
+      "ASC_KEY_ID": "HQURM2CVH4",
+      "ASC_ISSUER_ID": "4f1ac85b-3896-4a4d-a97d-4ea0aa361999",
+      "ASC_PRIVATE_KEY_PATH": "~/.appstoreconnect/private_keys/AuthKey_HQURM2CVH4.p8"
+    },
+    "description": "App Store Connect MCP server — 99 tools for TestFlight, apps, reviews, provisioning, and more"
+  }
+}

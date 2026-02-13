@@ -1,0 +1,8 @@
+{
+  "name": "che-xcode-mcp",
+  "version": "1.0.0",
+  "description": "App Store Connect MCP Server — 99 tools across 15 domain managers covering the full ASC API",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["mcp", "app-store-connect", "testflight", "xcode", "ios", "apple", "provisioning"]
+}
