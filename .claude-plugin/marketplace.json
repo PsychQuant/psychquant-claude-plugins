@@ -107,6 +107,26 @@
       },
       "source": "./plugins/postgresql-guide",
       "category": "development"
+    },
+    {
+      "name": "claude-switch",
+      "version": "1.0.0",
+      "description": "Claude Code 多帳號管理：切換帳號、列出帳號、自動設定 IDE symlink 解決 VS Code 偵測問題",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/claude-switch",
+      "category": "productivity"
+    },
+    {
+      "name": "che-xcode-mcp",
+      "version": "1.0.0",
+      "description": "App Store Connect MCP Server — 99 tools across 15 domain managers covering the full ASC API",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-xcode-mcp",
+      "category": "development"
     }
   ]
 }
