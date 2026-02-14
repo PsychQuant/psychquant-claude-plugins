@@ -313,6 +313,95 @@ codesign --force --sign - <binary-path>
 - `mcpb-sync`：所有同步選項
 - `debug`：Phase 3 rebuild 後同步
 
+### AppleScript MCP 啟動時 TCC 權限 Timeout
+
+**問題**：AppleScript-based MCP Server（che-apple-mail-mcp、che-things-mcp 等）首次啟動時，macOS TCC (Transparency, Consent, and Control) 會在第一次 AppleScript 呼叫時彈出權限對話框。但此時 MCP client 已經連線並發送 tool call，等不到回應就 timeout，返回 `-1743: Not authorized` 錯誤。
+
+```
+時序問題：
+MCP Client         MCP Server              macOS TCC
+    │                   │                      │
+    ├── connect ──────→ │                      │
+    ├── tool call ────→ │                      │
+    │                   ├── AppleScript ─────→ │
+    │                   │                      ├── 彈出權限對話框
+    │   timeout! ←──────┤                      │  （使用者還沒來得及點）
+    │                   │                      │
+```
+
+**解決方案**：在 MCP server 啟動前（`server.start(transport:)` 之前）加入輕量級的 AppleScript warm-up，提前觸發權限對話框。
+
+```swift
+// MailController.swift — 新增 checkAccess() 方法
+actor MailController {
+    // ...
+
+    /// Trigger a minimal AppleScript to prompt macOS permission dialog early.
+    @discardableResult
+    func checkAccess() -> Bool {
+        let script = """
+        tell application "Mail"
+            return application version
+        end tell
+        """
+        do {
+            let _ = try runScript(script)
+            FileHandle.standardError.write(
+                Data("[server-name] AppleScript access: granted\n".utf8)
+            )
+            return true
+        } catch {
+            FileHandle.standardError.write(
+                Data("[server-name] AppleScript access: denied - \(error.localizedDescription)\n".utf8)
+            )
+            return false
+        }
+    }
+}
+
+// main.swift — 在 server 啟動前呼叫
+await MailController.shared.checkAccess()
+
+let server = try await MyCoolMCPServer()
+try await server.run()
+```
+
+**設計要點**：
+
+| 決策 | 原因 |
+|------|------|
+| 用 `application version` | 最輕量的唯讀 AppleScript，不修改任何狀態 |
+| 不 throw | 失敗不阻擋 server 啟動（graceful degradation） |
+| 日誌寫 stderr | stdout 保留給 MCP stdio transport 的 JSON-RPC |
+| `@discardableResult` | 呼叫端可選擇忽略回傳值 |
+| 在 `server.start()` 前 | 此時 MCP client 尚未連線，不會有 timeout |
+
+```
+修正後時序：
+MCP Client         MCP Server              macOS TCC
+    │                   │                      │
+    │                   ├── warm-up ──────────→ │
+    │                   │                      ├── 彈出權限對話框
+    │                   │                      ├── 使用者點允許 ✓
+    │                   │ ←── granted ─────────┤
+    ├── connect ──────→ │                      │
+    ├── tool call ────→ │                      │
+    │                   ├── AppleScript ─────→ │  （已有權限，立即執行）
+    │   success ←───────┤                      │
+```
+
+**適用 MCP**：所有使用 AppleScript 的 MCP Server（che-apple-mail-mcp、che-things-mcp 等）。
+
+**驗證方式**：
+```bash
+# 模擬首次執行（重置 TCC 權限）
+tccutil reset AppleEvents ~/bin/BinaryName
+
+# 直接執行 binary，確認 stderr 輸出
+~/bin/BinaryName 2>&1 | head -1
+# 預期：[server-name] AppleScript access: granted 或 denied
+```
+
 ### Plugin .mcp.json server key 命名限制
 
 **問題**：Claude API 限制 tool name 最長 **64 字元**。Plugin 透過 `.mcp.json` 掛載 MCP server 時，tool name 格式為：
