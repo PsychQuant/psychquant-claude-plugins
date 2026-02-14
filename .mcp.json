@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "che-duckdb-mcp": {
+      "type": "stdio",
+      "command": "/Users/che/bin/CheDuckDBMCP",
+      "args": [],
+      "env": {}
+    }
+  }
+}
