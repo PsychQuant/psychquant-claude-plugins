@@ -1,0 +1,8 @@
+{
+  "name": "che-dropbox-ignore",
+  "version": "2.1.0",
+  "description": "Auto-detect and exclude build artifacts from Dropbox sync (node_modules, .build, *.xcodeproj, *.profraw, etc.) using com.dropbox.ignored xattr — Swift CLI with zero fork overhead",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["dropbox", "sync", "ignore", "xattr", "build", "node_modules", "hooks"]
+}
