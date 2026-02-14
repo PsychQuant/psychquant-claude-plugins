@@ -1,0 +1,8 @@
+{
+  "name": "claude-switch",
+  "version": "1.0.0",
+  "description": "Claude Code 多帳號管理：switch（切換帳號）、list（列出帳號）、current（目前帳號）、setup（設定新帳號）",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["claude", "account", "switch", "profile", "config", "multi-account"]
+}
