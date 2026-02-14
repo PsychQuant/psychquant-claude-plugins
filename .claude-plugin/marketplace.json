@@ -49,9 +49,19 @@
       "category": "productivity"
     },
     {
+      "name": "ai-docs-guide",
+      "version": "1.0.0",
+      "description": "Auto-triggered Skills for querying Claude Code and OpenAI official documentation via WebFetch",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/ai-docs-guide",
+      "category": "productivity"
+    },
+    {
       "name": "claude-config-guide",
       "version": "1.0.0",
-      "description": "Auto-triggered Skill that forces Claude to WebFetch official docs before answering Claude Code config questions",
+      "description": "[Deprecated — replaced by ai-docs-guide] Claude Code 設定查詢助手",
       "author": {
         "name": "Che Cheng"
       },
@@ -126,6 +136,26 @@
         "name": "Che Cheng"
       },
       "source": "./plugins/che-xcode-mcp",
+      "category": "development"
+    },
+    {
+      "name": "che-dropbox-ignore",
+      "version": "0.1.0",
+      "description": "Dropbox 同步排除管理 — 自動對 .git、build artifacts 等設定 com.dropbox.ignored xattr",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-dropbox-ignore",
+      "category": "productivity"
+    },
+    {
+      "name": "che-bot-toolkit",
+      "version": "0.1.0",
+      "description": "Bot 開發工具集",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-bot-toolkit",
       "category": "development"
     }
   ]

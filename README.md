@@ -25,8 +25,13 @@
 | **che-duckdb-mcp** | DuckDB 資料庫操作 | 14 |
 | **mcp-tools** | MCP Server 開發工具集 | - |
 | **r-shiny-debugger** | R Shiny App 功能測試 | - |
-| **claude-config-guide** | Claude Code 設定查詢助手 | - |
+| **ai-docs-guide** | Claude Code + OpenAI 文檔查詢助手 | - |
+| **claude-config-guide** | ~~Claude Code 設定查詢~~ (已被 ai-docs-guide 取代) | - |
 | **postgresql-guide** | PostgreSQL 文檔查詢助手 | - |
+| **che-dropbox-ignore** | Dropbox 同步排除管理 | - |
+| **claude-switch** | Claude Code 模型切換 | - |
+| **che-bot-toolkit** | Bot 開發工具集 | - |
+| **che-xcode-mcp** | Xcode / App Store Connect | 80+ |
 
 ---
 
@@ -142,13 +147,21 @@ MCP Server 開發必備工具，提供完整的除錯與測試流程。
 
 ---
 
-### claude-config-guide
+### ai-docs-guide
 
-Claude Code 設定查詢助手，協助查找 MCP、settings、hooks 等設定。
+Claude Code + OpenAI 文檔查詢助手。整合兩個 Auto-triggered Skills，自動根據問題類型 WebFetch 對應官方文檔。
 
-```bash
-/claude-config-guide MCP 設定在哪裡
-```
+**包含 Skills**:
+- `claude-docs-guide` — Claude Code CLI / API / SDK 文檔
+- `openai-docs-guide` — OpenAI API / SDK / Models 文檔
+
+**特點**: 繞過 OpenAI Docs MCP 壞掉的 `fetch_openai_doc` tool，直接 WebFetch 官方文檔 URL。
+
+---
+
+### claude-config-guide (deprecated)
+
+> **已被 `ai-docs-guide` 取代**。功能完全包含在 `ai-docs-guide` 的 `claude-docs-guide` skill 中。
 
 ## License
 

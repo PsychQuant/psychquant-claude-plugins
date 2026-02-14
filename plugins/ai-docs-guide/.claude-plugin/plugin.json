@@ -1,0 +1,8 @@
+{
+  "name": "ai-docs-guide",
+  "version": "1.0.0",
+  "description": "Auto-triggered Skills for querying Claude Code and OpenAI official documentation via WebFetch",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["claude-code", "openai", "docs", "documentation", "api", "mcp", "settings"]
+}

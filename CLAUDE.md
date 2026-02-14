@@ -11,20 +11,23 @@ This file provides guidance to Claude Code when working with this plugin marketp
 ```
 che-claude-plugins/
 ├── .claude-plugin/
-│   └── marketplace.json      # Marketplace 元數據
+│   └── marketplace.json         # Marketplace 元數據
 ├── plugins/
-│   ├── archive-mail/         # Apple Mail 歸檔工具
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── commands/
-│   │   │   └── archive-mail.md
-│   │   └── README.md
-│   └── r-shiny-debugger/     # R Shiny Debug 工具
-│       ├── .claude-plugin/
-│       │   └── plugin.json
-│       ├── commands/
-│       │   └── shiny-debug.md
-│       └── README.md
+│   ├── che-apple-mail-mcp/      # Apple Mail MCP + 歸檔
+│   ├── che-archive-lines/       # LINE 聊天記錄歸檔
+│   ├── che-bot-toolkit/         # Bot 開發工具集
+│   ├── che-dropbox-ignore/      # Dropbox 同步排除管理
+│   ├── che-duckdb-mcp/          # DuckDB 資料庫操作
+│   ├── che-ical-mcp/            # macOS 行事曆 & 提醒事項
+│   ├── che-things-mcp/          # Things 3 任務管理
+│   ├── che-word-mcp/            # Word 文件處理
+│   ├── che-xcode-mcp/           # Xcode / App Store Connect
+│   ├── ai-docs-guide/           # Claude Code + OpenAI 文檔查詢
+│   ├── claude-config-guide/     # [deprecated] → ai-docs-guide
+│   ├── claude-switch/           # Claude Code 模型切換
+│   ├── mcp-tools/               # MCP Server 開發工具集
+│   ├── postgresql-guide/        # PostgreSQL 文檔查詢
+│   └── r-shiny-debugger/        # R Shiny Debug 工具
 └── README.md
 ```
 
@@ -96,6 +99,37 @@ che-claude-plugins/
 **技術說明**:
 - LINE 使用 Qt 框架，不支援 macOS Accessibility API
 - 使用 cliclick 進行座標點擊自動化
+
+### ai-docs-guide (v1.0.0)
+
+**用途**: Auto-triggered Skills，自動 WebFetch Claude Code 和 OpenAI 官方文檔
+
+**Skills**:
+- `claude-docs-guide` — Claude Code CLI 設定（MCP、settings、hooks、skills）、Claude API/SDK
+- `openai-docs-guide` — OpenAI API（Responses API、Chat Completions、models）、Agents SDK、Realtime API
+
+**背景**:
+- OpenAI Docs MCP 的 `fetch_openai_doc` tool 壞掉（server-side bug），所有 URL 回 404
+- 此 plugin 繞過壞掉的 MCP fetch，直接 WebFetch `https://developers.openai.com/docs/...`
+- 取代了舊的 `claude-config-guide` plugin
+
+### che-dropbox-ignore (scaffold)
+
+**用途**: 管理 Dropbox 同步排除，自動對指定路徑設定 `com.dropbox.ignored` xattr 標記
+
+**背景**:
+- Dropbox CloudStorage 路徑下的檔案會經過 macOS File Provider
+- `.git` 目錄、`.xcodeproj` 內部狀態檔等不需要同步
+- `xattr -w com.dropbox.ignored 1 <path>` 可排除同步，但需要手動管理
+
+**預計功能**:
+- 掃描專案目錄，自動找出應排除同步的路徑（`.git`、build artifacts 等）
+- 對目標設定 `com.dropbox.ignored` xattr
+- 提供 hook 在工具操作後自動維護排除設定
+
+**狀態**: 目錄已建立，功能待開發
+
+---
 
 ## MCP 依賴說明
 
@@ -181,5 +215,5 @@ allowed-tools: Tool1, Tool2, mcp__server__*
 
 ---
 
-最後更新: 2026-01-13
+最後更新: 2026-02-14
 維護者: Che Cheng
