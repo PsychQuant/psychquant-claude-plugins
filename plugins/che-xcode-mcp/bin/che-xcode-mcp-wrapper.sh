@@ -44,6 +44,9 @@ LOCATIONS=(
 
 for loc in "${LOCATIONS[@]}"; do
     if [[ -x "$loc" ]]; then
+        # Fix Dropbox xattr causing macOS to block execution
+        xattr -cr "$loc" 2>/dev/null
+        codesign -s - -f "$loc" 2>/dev/null
         exec "$loc" "$@"
     fi
 done
