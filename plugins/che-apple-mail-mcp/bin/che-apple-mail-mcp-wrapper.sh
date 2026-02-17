@@ -1,24 +1,28 @@
 #!/bin/bash
-# Wrapper script to find and execute che-apple-mail-mcp binary
-# This allows the plugin to work regardless of where the binary is installed
+# Auto-download wrapper for CheAppleMailMCP
+REPO="kiki830621/che-apple-mail-mcp"
+BINARY_NAME="CheAppleMailMCP"
+INSTALL_DIR="$HOME/bin"
 
-# Possible installation locations (in priority order)
-LOCATIONS=(
-    "$HOME/bin/CheAppleMailMCP"
-    "/usr/local/bin/che-apple-mail-mcp"
-    "/usr/local/bin/CheAppleMailMCP"
-    "$HOME/.local/bin/CheAppleMailMCP"
-    # MCPB installation location (Claude Desktop)
-    "$HOME/Library/Application Support/Claude/mcp-servers/che-apple-mail-mcp/server/CheAppleMailMCP"
-)
-
-for loc in "${LOCATIONS[@]}"; do
-    if [[ -x "$loc" ]]; then
-        exec "$loc" "$@"
-    fi
+BINARY=""
+for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME"; do
+    [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
-# Not found - output error to stderr (MCP protocol requirement)
-echo "ERROR: CheAppleMailMCP binary not found!" >&2
-echo "Please install from: https://github.com/kiki830621/che-apple-mail-mcp/releases" >&2
-exit 1
+if [[ -z "$BINARY" ]]; then
+    echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
+    mkdir -p "$INSTALL_DIR"
+    URL=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
+        | grep '"browser_download_url"' | grep "$BINARY_NAME" | head -1 \
+        | sed 's/.*"\(https[^"]*\)".*/\1/')
+    if [[ -z "$URL" ]]; then
+        echo "ERROR: No download URL found. Install manually: https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
+    curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
+        || { echo "ERROR: Download failed." >&2; exit 1; }
+    BINARY="$INSTALL_DIR/$BINARY_NAME"
+    echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+fi
+
+exec "$BINARY" "$@"

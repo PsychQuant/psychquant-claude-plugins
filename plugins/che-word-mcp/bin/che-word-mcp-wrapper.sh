@@ -1,24 +1,28 @@
 #!/bin/bash
-# Wrapper script to find and execute che-word-mcp binary
-# This allows the plugin to work regardless of where the binary is installed
+# Auto-download wrapper for CheWordMCP
+REPO="kiki830621/che-word-mcp"
+BINARY_NAME="CheWordMCP"
+INSTALL_DIR="$HOME/bin"
 
-# Possible installation locations (in priority order)
-LOCATIONS=(
-    "$HOME/bin/CheWordMCP"
-    "/usr/local/bin/che-word-mcp"
-    "/usr/local/bin/CheWordMCP"
-    "$HOME/.local/bin/CheWordMCP"
-)
-
-for loc in "${LOCATIONS[@]}"; do
-    if [[ -x "$loc" ]]; then
-        exec "$loc" "$@"
-    fi
+BINARY=""
+for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME"; do
+    [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
-# Not found - output error to stderr (MCP protocol requirement)
-echo "ERROR: CheWordMCP binary not found!" >&2
-echo "Please build and install from: /path/to/che-word-mcp" >&2
-echo "  swift build -c release" >&2
-echo "  cp .build/release/CheWordMCP ~/bin/" >&2
-exit 1
+if [[ -z "$BINARY" ]]; then
+    echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
+    mkdir -p "$INSTALL_DIR"
+    URL=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
+        | grep '"browser_download_url"' | grep "$BINARY_NAME" | head -1 \
+        | sed 's/.*"\(https[^"]*\)".*/\1/')
+    if [[ -z "$URL" ]]; then
+        echo "ERROR: No download URL found. Install manually: https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
+    curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
+        || { echo "ERROR: Download failed." >&2; exit 1; }
+    BINARY="$INSTALL_DIR/$BINARY_NAME"
+    echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+fi
+
+exec "$BINARY" "$@"

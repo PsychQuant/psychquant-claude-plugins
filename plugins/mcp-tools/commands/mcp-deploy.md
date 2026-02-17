@@ -89,6 +89,9 @@ lipo -create \
     .build/x86_64-apple-macosx/release/$BINARY_NAME \
     -output mcpb/server/$BINARY_NAME
 
+# 清除 Dropbox xattr 汙染（從 Dropbox 目錄 build 的 binary 帶 com.dropbox.attrs，macOS 會靜默 hang）
+xattr -cr mcpb/server/$BINARY_NAME
+
 # 重新簽名（lipo 會破壞原始 code signature，未簽名會被 macOS SIGKILL）
 codesign --force --sign - mcpb/server/$BINARY_NAME
 ```
@@ -456,6 +459,7 @@ gh repo edit {owner}/{repo} --description "{updated-description}"
 ```bash
 cp mcpb/server/$BINARY_NAME ~/bin/
 chmod +x ~/bin/$BINARY_NAME
+xattr -cr ~/bin/$BINARY_NAME
 codesign --force --sign - ~/bin/$BINARY_NAME
 ```
 
@@ -564,27 +568,39 @@ EOF
 
 ### Step 4: 建立 wrapper script
 
+Wrapper script 會自動從 GitHub Release 下載 binary（如果本機沒有）。
+
 ```bash
-cat > "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" << 'EOF'
+cat > "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" << 'WRAPPER'
 #!/bin/bash
-# Wrapper script to find and execute {BinaryName} binary
+# Auto-download wrapper for {BinaryName}
+REPO="kiki830621/{project-name}"
+BINARY_NAME="{BinaryName}"
+INSTALL_DIR="$HOME/bin"
 
-LOCATIONS=(
-    "$HOME/bin/{BinaryName}"
-    "/usr/local/bin/{BinaryName}"
-    "$HOME/.local/bin/{BinaryName}"
-)
-
-for loc in "${LOCATIONS[@]}"; do
-    if [[ -x "$loc" ]]; then
-        exec "$loc" "$@"
-    fi
+BINARY=""
+for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME"; do
+    [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
-echo "ERROR: {BinaryName} binary not found!" >&2
-echo "Please install from: https://github.com/kiki830621/{project-name}/releases" >&2
-exit 1
-EOF
+if [[ -z "$BINARY" ]]; then
+    echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
+    mkdir -p "$INSTALL_DIR"
+    URL=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
+        | grep '"browser_download_url"' | grep "$BINARY_NAME" | head -1 \
+        | sed 's/.*"\(https[^"]*\)".*/\1/')
+    if [[ -z "$URL" ]]; then
+        echo "ERROR: No download URL found. Install manually: https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
+    curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
+        || { echo "ERROR: Download failed." >&2; exit 1; }
+    BINARY="$INSTALL_DIR/$BINARY_NAME"
+    echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+fi
+
+exec "$BINARY" "$@"
+WRAPPER
 chmod +x "$PLUGIN_DIR/bin/{project-name}-wrapper.sh"
 ```
 
