@@ -1,18 +1,22 @@
 #!/bin/bash
-# Wrapper script to find and execute CheXcodeMCP binary
-# Loads ASC credentials from ~/.appstoreconnect/config if env vars are empty
+# Wrapper script for CheXcodeMCP MCP Server
+# - Auto-downloads binary from GitHub Release if not found
+# - Loads ASC credentials from ~/.appstoreconnect/config
+
+REPO="kiki830621/che-xcode-mcp"
+BINARY_NAME="CheXcodeMCP"
+INSTALL_DIR="$HOME/bin"
 
 # --- Load credentials ---
 CONFIG="$HOME/.appstoreconnect/config"
 if [[ -f "$CONFIG" ]]; then
-    # Only set vars that are empty (allow .mcp.json env to override)
     while IFS='=' read -r key value; do
         [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
-        value="${value#\"}" && value="${value%\"}"  # strip quotes
+        value="${value#\"}" && value="${value%\"}"
         case "$key" in
-            ASC_KEY_ID)         [[ -z "$ASC_KEY_ID" ]]         && export ASC_KEY_ID="$value" ;;
-            ASC_ISSUER_ID)      [[ -z "$ASC_ISSUER_ID" ]]      && export ASC_ISSUER_ID="$value" ;;
-            ASC_PRIVATE_KEY_PATH) [[ -z "$ASC_PRIVATE_KEY_PATH" ]] && export ASC_PRIVATE_KEY_PATH="$value" ;;
+            ASC_KEY_ID)           [[ -z "$ASC_KEY_ID" ]]           && export ASC_KEY_ID="$value" ;;
+            ASC_ISSUER_ID)        [[ -z "$ASC_ISSUER_ID" ]]        && export ASC_ISSUER_ID="$value" ;;
+            ASC_PRIVATE_KEY_PATH) [[ -z "$ASC_PRIVATE_KEY_PATH" ]]  && export ASC_PRIVATE_KEY_PATH="$value" ;;
         esac
     done < "$CONFIG"
 fi
@@ -30,27 +34,54 @@ if [[ -z "$ASC_KEY_ID" || -z "$ASC_ISSUER_ID" || -z "$ASC_PRIVATE_KEY_PATH" ]]; 
     exit 1
 fi
 
-# Expand ~ in path
 ASC_PRIVATE_KEY_PATH="${ASC_PRIVATE_KEY_PATH/#\~/$HOME}"
 export ASC_PRIVATE_KEY_PATH
 
-# --- Find and execute binary ---
+# --- Find binary ---
+BINARY=""
 LOCATIONS=(
-    "$HOME/bin/CheXcodeMCP"
-    "/usr/local/bin/CheXcodeMCP"
-    "$HOME/.local/bin/CheXcodeMCP"
-    "$HOME/Library/Application Support/Claude/mcp-servers/che-xcode-mcp/server/CheXcodeMCP"
+    "$INSTALL_DIR/$BINARY_NAME"
+    "/usr/local/bin/$BINARY_NAME"
+    "$HOME/.local/bin/$BINARY_NAME"
 )
 
 for loc in "${LOCATIONS[@]}"; do
     if [[ -x "$loc" ]]; then
-        # Fix Dropbox xattr causing macOS to block execution
-        xattr -cr "$loc" 2>/dev/null
-        codesign -s - -f "$loc" 2>/dev/null
-        exec "$loc" "$@"
+        BINARY="$loc"
+        break
     fi
 done
 
-echo "ERROR: CheXcodeMCP binary not found!" >&2
-echo "Please install from: https://github.com/kiki830621/che-xcode-mcp/releases" >&2
-exit 1
+# --- Auto-download if not found ---
+if [[ -z "$BINARY" ]]; then
+    echo "CheXcodeMCP not found. Downloading from GitHub..." >&2
+    mkdir -p "$INSTALL_DIR"
+
+    DOWNLOAD_URL=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
+        | grep '"browser_download_url"' \
+        | grep "$BINARY_NAME" \
+        | head -1 \
+        | sed 's/.*"browser_download_url": *"\(.*\)".*/\1/')
+
+    if [[ -z "$DOWNLOAD_URL" ]]; then
+        echo "ERROR: Could not find download URL from GitHub Release." >&2
+        echo "Install manually: https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
+
+    curl -sL "$DOWNLOAD_URL" -o "$INSTALL_DIR/$BINARY_NAME" 2>&1 >&2
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Download failed." >&2
+        exit 1
+    fi
+
+    chmod +x "$INSTALL_DIR/$BINARY_NAME"
+    BINARY="$INSTALL_DIR/$BINARY_NAME"
+    echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+fi
+
+# --- Fix Dropbox xattr + ad-hoc sign ---
+xattr -cr "$BINARY" 2>/dev/null
+codesign -s - -f "$BINARY" 2>/dev/null
+
+exec "$BINARY" "$@"
