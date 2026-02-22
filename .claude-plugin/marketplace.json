@@ -80,8 +80,8 @@
     },
     {
       "name": "che-ical-mcp",
-      "version": "0.8.0",
-      "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，20 個工具",
+      "version": "1.2.1",
+      "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，24 個工具，冪等寫入、重複事件、地點觸發、結構化位置、彈性日期解析、模糊匹配、篩選/排序/限制、事件提醒更新",
       "author": {
         "name": "Che Cheng"
       },
