@@ -161,12 +161,14 @@ allowed-tools: mcp__apple-mail__*, Bash(mkdir:*), Read, Write, Glob
 
 ## 開發指南
 
-### 新增 Plugin
+### 新增 / 更新 Plugin
 
 1. 在 `plugins/` 下建立目錄
 2. 建立 `.claude-plugin/plugin.json`
 3. 建立 `commands/` 目錄和命令檔案
-4. 更新 `marketplace.json` 註冊 plugin
+4. **必須** 同步更新 `.claude-plugin/marketplace.json`（版本號 + 描述）
+
+> **重要**：每次修改任何 plugin 的版本、描述、或新增/移除 command 時，**都必須同步更新 `.claude-plugin/marketplace.json`** 中對應的 entry。marketplace.json 是 Marketplace 的索引，不同步會導致使用者看到過時的資訊。
 
 ### Plugin 結構範本
 
