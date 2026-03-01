@@ -13,6 +13,8 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
 | `/mcp-tools:mcpb-sync` | Binary 同步 | 確保 .build/mcpb/~/bin 一致（Swift） |
 | `/mcp-tools:diagnose` | 連線診斷 | Server 無法連線時 |
 | `/mcp-tools:debug` | 功能除錯 | 有 bug、錯誤時 |
+| `/mcp-tools:clone` | Clone 參考 repo | 給 URL，clone + 自動分析可升級功能 |
+| `/mcp-tools:mcp-clone-references` | 搜尋競品 | 用關鍵字搜尋並批次 clone |
 | `/mcp-tools:test` | 完整測試 | 開發完成後、CI |
 
 ---
@@ -29,15 +31,15 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
       │                   │                       │                   │
   建立完整結構         編譯+打包+發布         從 GitHub 下載       依賴+結構分析
   Swift/Python/TS     GitHub Release         安裝到 ~/bin        升級建議報告
-                      + Plugin（可選）
-                         │
-                    ┌────┴────┐
-                    ▼         ▼
-             ┌───────────┐  ┌──────────────┐
-             │ mcpb-sync │  │ che-claude-  │
-             └───────────┘  │   plugins    │
-                  │         └──────────────┘
-          .build → mcpb/server → ~/bin
+                      + Plugin（可選）                                ▲
+                         │                                           │
+                    ┌────┴────┐                              ┌──────────────┐
+                    ▼         ▼                              │    clone     │
+             ┌───────────┐  ┌──────────────┐                └──────────────┘
+             │ mcpb-sync │  │ che-claude-  │                      │
+             └───────────┘  │   plugins    │              給 URL，clone 到
+                  │         └──────────────┘              references/ 並分析
+          .build → mcpb/server → ~/bin                    可借鏡的功能
           Binary 一致性同步
 ```
 
@@ -126,6 +128,33 @@ mcpb/
 |------|------|-----------------|
 | `mcp-deploy` | 編譯+發布（開發用） | 可能是未 release 的版本 |
 | `mcp-install` | 下載+安裝（使用用） | 確保是已發布的 release 版本 |
+
+### `/mcp-tools:clone <github-url> [target-mcp-project]`
+
+**Clone 參考 repo**：直接 clone 指定 GitHub repo 到 MCP 專案的 `references/`，自動分析可借鏡功能。
+
+```bash
+/mcp-tools:clone https://github.com/user/apple-mail-mcp
+/mcp-tools:clone https://github.com/user/repo che-apple-mail-mcp
+/mcp-tools:clone --list
+```
+
+流程：
+1. **Clone** - `--depth 1` 到 `references/{repo-name}/`
+2. **README** - 在 `references/README.md` 記錄來源 URL
+3. **分析** - 平行分析參考 repo 和自己的專案
+4. **比較** - 產生功能矩陣和升級建議（存到 `docs/`）
+5. **串接**（可選）- 直接執行 `/mcp-tools:mcp-upgrade features`
+
+### `/mcp-tools:mcp-clone-references [search-query]`
+
+**搜尋競品**：用關鍵字在 GitHub 搜尋相關 MCP servers，批次 clone 並可選競品分析。
+
+```bash
+/mcp-tools:mcp-clone-references calendar
+/mcp-tools:mcp-clone-references apple reminders
+/mcp-tools:mcp-clone-references --list
+```
 
 ### `/mcp-tools:mcp-upgrade [focus-area]`
 
@@ -290,6 +319,7 @@ open "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders"
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.8.0 | 2026-02-20 | 新增 clone 命令（給 URL 直接 clone + 自動分析可升級功能）；新增 mcp-clone-references 命令（搜尋競品批次 clone）|
 | v1.7.0 | 2026-02-01 | 新增 mcpb-sync 命令；mcp-deploy 加入 Phase 3.5 Binary 一致性驗證；mcp-upgrade 加入 Binary 檢查；debug 重建後自動同步 |
 | v1.6.0 | 2026-01-27 | mcp-deploy 新增 Plugin 發布；mcp-upgrade 可串接 deploy |
 | v1.5.0 | 2026-01-16 | 新增 mcp-install 命令：從 GitHub Release 下載安裝 MCP Server |
