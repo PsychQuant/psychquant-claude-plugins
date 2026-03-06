@@ -6,16 +6,16 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
 
 | Command | 用途 | 使用時機 |
 |---------|------|----------|
-| `/mcp-tools:new-mcp-app` | 建立新專案 | 開始開發新 MCP Server |
+| `/mcp-tools:mcp-new-app` | 建立新專案 | 開始開發新 MCP Server |
 | `/mcp-tools:mcp-deploy` | 部署發布 | 專案完成，要發布到 GitHub Release |
 | `/mcp-tools:mcp-install` | 安裝 MCP | 從 GitHub Release 下載安裝到 ~/bin |
 | `/mcp-tools:mcp-upgrade` | 升級建議 | 檢查依賴更新、結構優化 |
-| `/mcp-tools:mcpb-sync` | Binary 同步 | 確保 .build/mcpb/~/bin 一致（Swift） |
-| `/mcp-tools:diagnose` | 連線診斷 | Server 無法連線時 |
-| `/mcp-tools:debug` | 功能除錯 | 有 bug、錯誤時 |
-| `/mcp-tools:clone` | Clone 參考 repo | 給 URL，clone + 自動分析可升級功能 |
+| `/mcp-tools:mcp-sync` | Binary 同步 | 確保 .build/mcpb/~/bin 一致（Swift） |
+| `/mcp-tools:mcp-diagnose` | 連線診斷 | Server 無法連線時 |
+| `/mcp-tools:mcp-debug` | 功能除錯 | 有 bug、錯誤時 |
+| `/mcp-tools:mcp-clone` | Clone 參考 repo | 給 URL，clone + 自動分析可升級功能 |
 | `/mcp-tools:mcp-clone-references` | 搜尋競品 | 用關鍵字搜尋並批次 clone |
-| `/mcp-tools:test` | 完整測試 | 開發完成後、CI |
+| `/mcp-tools:mcp-test` | 完整測試 | 開發完成後、CI |
 
 ---
 
@@ -26,7 +26,7 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
     │                     │                       │                     │
     ▼                     ▼                       ▼                     ▼
 ┌──────────────┐   ┌──────────────┐       ┌──────────────┐   ┌──────────────┐
-│ new-mcp-app  │ → │  mcp-deploy  │ ────→ │  mcp-install │   │  mcp-upgrade │
+│ mcp-new-app  │ → │  mcp-deploy  │ ────→ │  mcp-install │   │  mcp-upgrade │
 └──────────────┘   └──────────────┘       └──────────────┘   └──────────────┘
       │                   │                       │                   │
   建立完整結構         編譯+打包+發布         從 GitHub 下載       依賴+結構分析
@@ -34,9 +34,9 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
                       + Plugin（可選）                                ▲
                          │                                           │
                     ┌────┴────┐                              ┌──────────────┐
-                    ▼         ▼                              │    clone     │
+                    ▼         ▼                              │  mcp-clone   │
              ┌───────────┐  ┌──────────────┐                └──────────────┘
-             │ mcpb-sync │  │ che-claude-  │                      │
+             │  mcp-sync │  │ che-claude-  │                      │
              └───────────┘  │   plugins    │              給 URL，clone 到
                   │         └──────────────┘              references/ 並分析
           .build → mcpb/server → ~/bin                    可借鏡的功能
@@ -47,13 +47,13 @@ MCP Server 開發工具集，提供完整的專案建立、部署發布、升級
 
 ## 開發流程 Commands
 
-### `/mcp-tools:new-mcp-app [project-name]`
+### `/mcp-tools:mcp-new-app [project-name]`
 
 **建立新專案**：互動式建立完整的 MCP Server 專案結構。
 
 ```bash
-/mcp-tools:new-mcp-app
-/mcp-tools:new-mcp-app che-notes-mcp
+/mcp-tools:mcp-new-app
+/mcp-tools:mcp-new-app che-notes-mcp
 ```
 
 支援語言：
@@ -129,14 +129,14 @@ mcpb/
 | `mcp-deploy` | 編譯+發布（開發用） | 可能是未 release 的版本 |
 | `mcp-install` | 下載+安裝（使用用） | 確保是已發布的 release 版本 |
 
-### `/mcp-tools:clone <github-url> [target-mcp-project]`
+### `/mcp-tools:mcp-clone <github-url> [target-mcp-project]`
 
 **Clone 參考 repo**：直接 clone 指定 GitHub repo 到 MCP 專案的 `references/`，自動分析可借鏡功能。
 
 ```bash
-/mcp-tools:clone https://github.com/user/apple-mail-mcp
-/mcp-tools:clone https://github.com/user/repo che-apple-mail-mcp
-/mcp-tools:clone --list
+/mcp-tools:mcp-clone https://github.com/user/apple-mail-mcp
+/mcp-tools:mcp-clone https://github.com/user/repo che-apple-mail-mcp
+/mcp-tools:mcp-clone --list
 ```
 
 流程：
@@ -175,13 +175,13 @@ mcpb/
 
 完成升級後會詢問是否要直接串接 `mcp-deploy` 進行部署。
 
-### `/mcp-tools:mcpb-sync [--check-only]`
+### `/mcp-tools:mcp-sync [--check-only]`
 
 **Binary 同步**：確保 Swift MCP 專案的三個 binary 副本一致。
 
 ```bash
-/mcp-tools:mcpb-sync              # 檢查並同步
-/mcp-tools:mcpb-sync --check-only # 只檢查不同步
+/mcp-tools:mcp-sync              # 檢查並同步
+/mcp-tools:mcp-sync --check-only # 只檢查不同步
 ```
 
 同步方向：
@@ -205,7 +205,7 @@ MCP Server 有問題？
         │
         ▼
 ┌───────────────────┐
-│ /mcp-tools:diagnose │  ← 先確認連線正常
+│ /mcp-tools:mcp-diagnose │  ← 先確認連線正常
 └─────────┬─────────┘
           │
     連線正常？
@@ -214,7 +214,7 @@ MCP Server 有問題？
     │
     ▼
 ┌───────────────────┐
-│ /mcp-tools:debug  │  ← 診斷功能問題
+│ /mcp-tools:mcp-debug  │  ← 診斷功能問題
 └─────────┬─────────┘
           │
     問題解決？
@@ -223,16 +223,16 @@ MCP Server 有問題？
     │
     ▼
 ┌───────────────────┐
-│ /mcp-tools:test   │  ← 驗證所有功能
+│ /mcp-tools:mcp-test   │  ← 驗證所有功能
 └───────────────────┘
 ```
 
-### `/mcp-tools:diagnose <server-name>`
+### `/mcp-tools:mcp-diagnose <server-name>`
 
 **連線診斷**：確認 MCP Server 基本連線正常。
 
 ```bash
-/mcp-tools:diagnose che-ical-mcp
+/mcp-tools:mcp-diagnose che-ical-mcp
 ```
 
 功能：
@@ -240,13 +240,13 @@ MCP Server 有問題？
 - 測試基本 tool 呼叫
 - 輸出連線診斷報告
 
-### `/mcp-tools:debug <server-name> [error-message]`
+### `/mcp-tools:mcp-debug <server-name> [error-message]`
 
 **功能除錯**：深入診斷功能問題。
 
 ```bash
-/mcp-tools:debug che-ical-mcp
-/mcp-tools:debug che-things-mcp "access denied"
+/mcp-tools:mcp-debug che-ical-mcp
+/mcp-tools:mcp-debug che-things-mcp "access denied"
 ```
 
 功能：
@@ -255,12 +255,12 @@ MCP Server 有問題？
 - 框架特定除錯（AppleScript / EventKit）
 - 權限問題修復指引
 
-### `/mcp-tools:test <server-name>`
+### `/mcp-tools:mcp-test <server-name>`
 
 **完整測試**：驗證所有 tools 正常運作。
 
 ```bash
-/mcp-tools:test che-ical-mcp
+/mcp-tools:mcp-test che-ical-mcp
 ```
 
 功能：

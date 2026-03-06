@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(git:*), Bash(npm:*), Bash(
 
 分析現有 MCP 專案，提出升級和改進建議，等待核可後執行。
 
-**建立新專案請用 `/mcp-tools:new-mcp-app`**
+**建立新專案請用 `/mcp-tools:mcp-new-app`**
 **部署專案請用 `/mcp-tools:mcp-deploy`**
 
 ## 參數
@@ -220,7 +220,7 @@ lipo -info mcpb/server/$BINARY_NAME 2>/dev/null
 在報告中記錄以下資訊：
 - mcpb/server 和 ~/bin 的 hash 是否一致
 - 兩者的架構是否相同
-- 是否需要同步（建議使用 `/mcp-tools:mcpb-sync`）
+- 是否需要同步（建議使用 `/mcp-tools:mcp-sync`）
 
 ---
 
@@ -350,7 +350,7 @@ swift package update
 | ~/bin/{Binary} | ✅/❌ | universal/arm64 | abc123... | - |
 
 - mcpb/server ↔ ~/bin: ✅ 一致 / ❌ 不一致
-- 建議: {如需同步，使用 `/mcp-tools:mcpb-sync`}
+- 建議: {如需同步，使用 `/mcp-tools:mcp-sync`}
 
 ---
 

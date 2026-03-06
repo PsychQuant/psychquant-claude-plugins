@@ -8,7 +8,7 @@ allowed-tools: Bash(claude mcp:*), Bash(grep:*), Read, Grep, Glob
 
 開發完成後，使用此流程驗證 MCP Server 所有功能。
 
-**問題診斷請用 `/mcp-tools:debug`**
+**問題診斷請用 `/mcp-tools:mcp-debug`**
 
 ## 參數
 
@@ -24,7 +24,7 @@ allowed-tools: Bash(claude mcp:*), Bash(grep:*), Read, Grep, Glob
 claude mcp list 2>&1 | grep -A1 "$1"
 ```
 
-如果連線失敗，請先使用 `/mcp-tools:diagnose` 診斷問題。
+如果連線失敗，請先使用 `/mcp-tools:mcp-diagnose` 診斷問題。
 
 ### Step 2: 識別框架（簡化）
 

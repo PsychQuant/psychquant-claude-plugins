@@ -284,19 +284,19 @@ done
 
 ```bash
 # Clone 指定 repo 到當前 MCP 專案
-/mcp-tools:clone https://github.com/s-morgan-jeffries/apple-mail-mcp
+/mcp-tools:mcp-clone https://github.com/s-morgan-jeffries/apple-mail-mcp
 
 # Clone 到指定 MCP 專案
-/mcp-tools:clone https://github.com/user/repo che-apple-mail-mcp
+/mcp-tools:mcp-clone https://github.com/user/repo che-apple-mail-mcp
 
 # 列出所有 references
-/mcp-tools:clone --list
+/mcp-tools:mcp-clone --list
 ```
 
 ### 與其他命令的關係
 
 ```
-/mcp-tools:clone <url>           直接 clone + 分析
+/mcp-tools:mcp-clone <url>           直接 clone + 分析
         │
         ├── 自動產生功能比較和升級建議
         │
@@ -309,6 +309,6 @@ done
 
 | 命令 | 用途 | 輸入 |
 |------|------|------|
-| `/mcp-tools:clone` | 給 URL，clone + 分析 | GitHub URL |
+| `/mcp-tools:mcp-clone` | 給 URL，clone + 分析 | GitHub URL |
 | `/mcp-tools:mcp-clone-references` | 搜尋競品，批次 clone | 關鍵字 |
 | `/mcp-tools:mcp-upgrade` | 正式升級流程 | focus area |

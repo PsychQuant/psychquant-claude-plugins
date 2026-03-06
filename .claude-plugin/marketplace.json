@@ -11,7 +11,7 @@
     {
       "name": "mcp-tools",
       "version": "1.8.0",
-      "description": "MCP Server 開發工具集：new-mcp-app、mcp-deploy、mcp-install、mcp-upgrade、clone、mcp-publish、mcpb-sync、diagnose、debug、test",
+      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test",
       "author": {
         "name": "Che Cheng"
       },

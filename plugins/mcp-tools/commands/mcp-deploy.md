@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(lipo:*), Bash(file:*), Bas
 
 完整的 MCP 專案部署流程：編譯 → 打包 → 發布。
 
-**建立新專案請用 `/mcp-tools:new-mcp-app`**
+**建立新專案請用 `/mcp-tools:mcp-new-app`**
 
 ## 參數
 
@@ -32,7 +32,7 @@ ls -la
 - `mcpb/manifest.json`
 
 如果不存在，提示使用者：
-> 請先 `cd` 到 MCP 專案目錄，或使用 `/mcp-tools:new-mcp-app` 建立新專案
+> 請先 `cd` 到 MCP 專案目錄，或使用 `/mcp-tools:mcp-new-app` 建立新專案
 
 ### Step 2: 識別語言類型
 
@@ -518,7 +518,7 @@ rm -f "$TMPFILE_1" "$TMPFILE_2"
 如果任何步驟不一致，**停止並報錯**：
 
 > ❌ Binary 一致性驗證失敗！mcpb/server 和 ~/bin 的 binary 不一致。
-> 請使用 `/mcp-tools:mcpb-sync` 修復。
+> 請使用 `/mcp-tools:mcp-sync` 修復。
 
 ---
 

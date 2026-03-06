@@ -6,7 +6,7 @@ allowed-tools: Bash(ls:*, file:*, claude:mcp*), Read, Grep, mcp__*
 
 # MCP Diagnose - 連線診斷
 
-診斷 MCP Server 連線問題。**功能除錯請用 `/mcp-tools:debug`**。
+診斷 MCP Server 連線問題。**功能除錯請用 `/mcp-tools:mcp-debug`**。
 
 ## 參數
 
@@ -48,7 +48,7 @@ claude mcp list 2>&1 | grep -A1 "$1"
 ```
 
 成功 → MCP Server 運作正常
-失敗 → 進入 `/mcp-tools:debug` 進行功能除錯
+失敗 → 進入 `/mcp-tools:mcp-debug` 進行功能除錯
 
 ### Step 3: 輸出診斷報告
 
@@ -117,11 +117,11 @@ claude mcp add <name> /path/to/binary
 |------|----------|----------|
 | Server disconnected | Binary crash | 檢查 binary 是否有 `waitUntilCompleted()` |
 | Tool 呼叫卡住 | Event Loop 阻塞 | 使用背景執行緒處理同步操作 |
-| Permission denied | 權限問題 | → `/mcp-tools:debug` |
+| Permission denied | 權限問題 | → `/mcp-tools:mcp-debug` |
 
 ---
 
 ## 相關工具
 
-- `/mcp-tools:debug` - 功能除錯（權限、框架特定問題）
-- `/mcp-tools:test` - 完整功能測試
+- `/mcp-tools:mcp-debug` - 功能除錯（權限、框架特定問題）
+- `/mcp-tools:mcp-test` - 完整功能測試

@@ -8,8 +8,8 @@ allowed-tools: Bash(sdef:*), Bash(osascript:*), Bash(claude mcp:*), Bash(pkill:*
 
 當 MCP Server 功能有問題時，使用此流程診斷。
 
-**連線問題請用 `/mcp-tools:diagnose`**
-**完整測試請用 `/mcp-tools:test`**
+**連線問題請用 `/mcp-tools:mcp-diagnose`**
+**完整測試請用 `/mcp-tools:mcp-test`**
 
 ## 參數
 
@@ -46,7 +46,7 @@ claude mcp list 2>&1 | grep -A1 "$1"
 
 **結果判讀**：
 - `✓ Connected` → 連線正常，進入 Phase 1
-- `✗ Failed` 或找不到 → 先用 `/mcp-tools:diagnose`
+- `✗ Failed` 或找不到 → 先用 `/mcp-tools:mcp-diagnose`
 
 ### Step 2: 快速測試（3 個讀取類 tools）
 
