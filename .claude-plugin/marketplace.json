@@ -159,6 +159,16 @@
       "category": "development"
     },
     {
+      "name": "archive-first",
+      "version": "1.0.0",
+      "description": "Protect files from AI-assisted deletion — auto-lock archived/ directories, block destructive commands on archived paths (macOS)",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/archive-first",
+      "category": "productivity"
+    },
+    {
       "name": "codex-batch",
       "version": "1.0.0",
       "description": "Batch content generation using Codex CLI (GPT-5.4) — parallel codex exec with large reference docs as context",

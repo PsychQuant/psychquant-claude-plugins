@@ -1,0 +1,19 @@
+{
+  "name": "archive-first",
+  "version": "1.0.0",
+  "description": "Protect files from AI-assisted deletion with the Archive-First strategy: auto-lock archived/ directories, block destructive commands on archived paths",
+  "author": {
+    "name": "Che Cheng"
+  },
+  "license": "MIT",
+  "homepage": "https://che-cheng.vercel.app/blog/vibe-coding-data-loss",
+  "keywords": [
+    "backup",
+    "protection",
+    "archive",
+    "vibe-coding",
+    "safety",
+    "file-lock",
+    "chflags"
+  ]
+}
