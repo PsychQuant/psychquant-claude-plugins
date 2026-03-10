@@ -9,13 +9,14 @@ This file provides guidance to Claude Code when working with this plugin marketp
 ## 目錄結構
 
 ```
-che-claude-plugins/
+psychquant-claude-plugins/
 ├── .claude-plugin/
 │   └── marketplace.json         # Marketplace 元數據
 ├── plugins/
 │   ├── che-apple-mail-mcp/      # Apple Mail MCP + 歸檔
 │   ├── che-archive-lines/       # LINE 聊天記錄歸檔
 │   ├── che-bot-toolkit/         # Bot 開發工具集
+│   ├── codex-batch/             # Codex CLI 批次生成
 │   ├── che-dropbox-ignore/      # Dropbox 同步排除管理
 │   ├── che-duckdb-mcp/          # DuckDB 資料庫操作
 │   ├── che-ical-mcp/            # macOS 行事曆 & 提醒事項
@@ -208,11 +209,11 @@ allowed-tools: Tool1, Tool2, mcp__server__*
 
 ```bash
 # 添加 Marketplace
-/plugin marketplace add kiki830621/che-claude-plugins
+/plugin marketplace add PsychQuant/psychquant-claude-plugins
 
 # 安裝 Plugin
-/plugin install archive-mail@kiki830621/che-claude-plugins
-/plugin install r-shiny-debugger@kiki830621/che-claude-plugins
+/plugin install archive-mail@PsychQuant/psychquant-claude-plugins
+/plugin install r-shiny-debugger@PsychQuant/psychquant-claude-plugins
 ```
 
 ---

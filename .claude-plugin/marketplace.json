@@ -1,12 +1,12 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "che-claude-plugins",
+  "name": "psychquant-claude-plugins",
   "description": "Che Cheng's Claude Code Plugin Marketplace - 學術研究與生產力工具",
   "owner": {
     "name": "Che Cheng",
     "email": "che@example.com"
   },
-  "homepage": "https://github.com/kiki830621/che-claude-plugins",
+  "homepage": "https://github.com/PsychQuant/psychquant-claude-plugins",
   "plugins": [
     {
       "name": "mcp-tools",
@@ -50,8 +50,8 @@
     },
     {
       "name": "ai-docs-guide",
-      "version": "1.0.0",
-      "description": "Auto-triggered Skills for querying Claude Code and OpenAI official documentation via WebFetch",
+      "version": "1.1.0",
+      "description": "Auto-triggered Skills for querying Claude Code, OpenAI, and Gemini official documentation via WebFetch. /ai-docs-guide:all for cross-platform comparison.",
       "author": {
         "name": "Che Cheng"
       },
@@ -157,6 +157,16 @@
       },
       "source": "./plugins/che-bot-toolkit",
       "category": "development"
+    },
+    {
+      "name": "codex-batch",
+      "version": "1.0.0",
+      "description": "Batch content generation using Codex CLI (GPT-5.4) — parallel codex exec with large reference docs as context",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/codex-batch",
+      "category": "productivity"
     }
   ]
 }

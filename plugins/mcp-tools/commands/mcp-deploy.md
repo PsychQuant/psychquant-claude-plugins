@@ -529,10 +529,30 @@ rm -f "$TMPFILE_1" "$TMPFILE_2"
 
 如果選擇「否」，跳到 Phase 5。
 
+### Step 0: 動態解析環境變數
+
+在開始之前，動態取得所有需要的路徑和名稱（避免硬編碼）：
+
+```bash
+# 1. 當前 MCP 專案的 GitHub owner/repo
+MCP_REPO_FULL=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+MCP_OWNER="${MCP_REPO_FULL%%/*}"
+
+# 2. 找到 plugins marketplace repo 的本地路徑
+#    搜尋包含此 project 的 marketplace.json
+PLUGINS_REPO=$(find ~/Developer ~/Library/CloudStorage -maxdepth 5 -name "marketplace.json" -path "*/.claude-plugin/*" -exec grep -l "{project-name}" {} \; 2>/dev/null | head -1 | sed 's|/.claude-plugin/marketplace.json||')
+
+# 3. 衍生變數
+MARKETPLACE_NAME=$(basename "$PLUGINS_REPO")
+PLUGIN_DIR="$PLUGINS_REPO/plugins/{project-name}"
+MARKETPLACE_JSON="$PLUGINS_REPO/.claude-plugin/marketplace.json"
+```
+
+**如果 `PLUGINS_REPO` 找不到**，使用 AskUserQuestion 詢問 plugins marketplace repo 的本地路徑。
+
 ### Step 1: 確認 Plugin 目錄存在
 
 ```bash
-PLUGIN_DIR="/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins/plugins/{project-name}"
 mkdir -p "$PLUGIN_DIR/.claude-plugin"
 mkdir -p "$PLUGIN_DIR/bin"
 ```
@@ -574,7 +594,7 @@ Wrapper script 會自動從 GitHub Release 下載 binary（如果本機沒有）
 cat > "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" << 'WRAPPER'
 #!/bin/bash
 # Auto-download wrapper for {BinaryName}
-REPO="kiki830621/{project-name}"
+REPO="$MCP_REPO_FULL"
 BINARY_NAME="{BinaryName}"
 INSTALL_DIR="$HOME/bin"
 
@@ -632,13 +652,13 @@ claude /plugin {project-name}
 ## 版本
 
 - **當前版本**: {version}
-- **GitHub**: https://github.com/kiki830621/{project-name}
+- **GitHub**: https://github.com/$MCP_REPO_FULL
 ```
 
 ### Step 6: 同步到已安裝的 plugins 目錄
 
 ```bash
-INSTALLED_DIR="$HOME/.claude/plugins/marketplaces/che-claude-plugins/plugins/{project-name}"
+INSTALLED_DIR="$HOME/.claude/plugins/marketplaces/$MARKETPLACE_NAME/plugins/{project-name}"
 mkdir -p "$INSTALLED_DIR/.claude-plugin"
 mkdir -p "$INSTALLED_DIR/bin"
 cp "$PLUGIN_DIR/.mcp.json" "$INSTALLED_DIR/.mcp.json"
@@ -650,10 +670,10 @@ cp "$PLUGIN_DIR/bin/{project-name}-wrapper.sh" "$INSTALLED_DIR/bin/"
 
 **這一步經常被遺忘，會導致 `/plugin` 顯示舊版本號。**
 
-讀取並更新 `che-claude-plugins/.claude-plugin/marketplace.json` 中對應 plugin 的 `version` 和 `description`：
+讀取並更新 marketplace.json 中對應 plugin 的 `version` 和 `description`：
 
 ```bash
-MARKETPLACE="/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins/.claude-plugin/marketplace.json"
+MARKETPLACE="$MARKETPLACE_JSON"
 # 用 Edit 工具更新 marketplace.json 中 {project-name} 的 version 和 description
 ```
 
@@ -670,13 +690,13 @@ MARKETPLACE="/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-
 # - "installPath": 指向新版本的 cache 目錄
 # - "version": 新版本號
 # - "lastUpdated": 當前時間 (ISO 8601)
-# - "gitCommitSha": che-claude-plugins 的最新 commit SHA
+# - "gitCommitSha": plugins marketplace repo 的最新 commit SHA
 ```
 
 同時同步 cache 目錄：
 
 ```bash
-CACHE_DIR="$HOME/.claude/plugins/cache/che-claude-plugins/{project-name}/{version}"
+CACHE_DIR="$HOME/.claude/plugins/cache/$MARKETPLACE_NAME/{project-name}/{version}"
 mkdir -p "$CACHE_DIR/.claude-plugin" "$CACHE_DIR/bin"
 cp "$PLUGIN_DIR/.claude-plugin/plugin.json" "$CACHE_DIR/.claude-plugin/"
 cp "$PLUGIN_DIR/.mcp.json" "$CACHE_DIR/"
@@ -687,7 +707,7 @@ cp "$PLUGIN_DIR/README.md" "$CACHE_DIR/" 2>/dev/null || true
 ### Step 9: 提交 Plugin 變更
 
 ```bash
-cd /Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins
+cd "$PLUGINS_REPO"
 git add plugins/{project-name} .claude-plugin/marketplace.json
 git commit -m "Update {project-name} plugin to v{version}
 
@@ -712,7 +732,7 @@ git push origin main
 - MCPB: `{project-name}.mcpb`
 
 ## GitHub Release
-- URL: https://github.com/kiki830621/{project-name}/releases/tag/v{version}
+- URL: https://github.com/$MCP_REPO_FULL/releases/tag/v{version}
 
 ## 本地安裝
 - Binary 已複製到: `~/bin/{BinaryName}`
@@ -724,8 +744,8 @@ git push origin main
 | ~/bin/{BinaryName} | universal (arm64 + x86_64) | {hash}... | ✅ |
 
 ## Claude Code Plugin（如有發布）
-- Plugin 目錄: `che-claude-plugins/plugins/{project-name}`
-- 已同步到: `~/.claude/plugins/marketplaces/che-claude-plugins/plugins/{project-name}`
+- Plugin 目錄: `$MARKETPLACE_NAME/plugins/{project-name}`
+- 已同步到: `~/.claude/plugins/marketplaces/$MARKETPLACE_NAME/plugins/{project-name}`
 
 ## 下一步
 - 測試: `claude mcp list` 確認 MCP 已連線

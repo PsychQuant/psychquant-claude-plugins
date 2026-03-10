@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "1.15.2",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，105 個工具支援完整 Word 文件處理，Practical Mode (Heading Heuristic + EMF→PNG)",
+  "version": "1.16.0",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，146 個工具，支援 Dual-Mode（Direct + Session）",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]

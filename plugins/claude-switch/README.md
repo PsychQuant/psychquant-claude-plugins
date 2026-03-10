@@ -125,7 +125,7 @@ claude-switch default       # 切換回預設帳號
 ## 安裝
 
 ```bash
-/plugin install claude-switch@kiki830621/che-claude-plugins
+/plugin install claude-switch@PsychQuant/psychquant-claude-plugins
 ```
 
 ## 版本歷史

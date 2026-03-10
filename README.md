@@ -6,12 +6,12 @@
 
 ```bash
 # 添加 Marketplace
-/plugin marketplace add kiki830621/che-claude-plugins
+/plugin marketplace add PsychQuant/psychquant-claude-plugins
 
 # 安裝 Plugin
-/plugin install mcp-tools@kiki830621/che-claude-plugins
-/plugin install che-things-mcp@kiki830621/che-claude-plugins
-/plugin install che-ical-mcp@kiki830621/che-claude-plugins
+/plugin install mcp-tools@PsychQuant/psychquant-claude-plugins
+/plugin install che-things-mcp@PsychQuant/psychquant-claude-plugins
+/plugin install che-ical-mcp@PsychQuant/psychquant-claude-plugins
 ```
 
 ## Plugins

@@ -26,10 +26,10 @@ This Skill:
 
 ```bash
 # Add marketplace (if not already added)
-/plugin marketplace add kiki830621/che-claude-plugins
+/plugin marketplace add PsychQuant/psychquant-claude-plugins
 
 # Install this plugin
-/plugin install postgresql-guide@kiki830621/che-claude-plugins
+/plugin install postgresql-guide@PsychQuant/psychquant-claude-plugins
 ```
 
 ## License

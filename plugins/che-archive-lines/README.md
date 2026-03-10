@@ -17,7 +17,7 @@ LINE macOS 版使用 Qt 框架，其 UI 元素不支援 macOS Accessibility API�
 ### 從 Marketplace 安裝
 
 ```bash
-/plugin install che-archive-lines@kiki830621/che-claude-plugins
+/plugin install che-archive-lines@PsychQuant/psychquant-claude-plugins
 ```
 
 ### 手動安裝

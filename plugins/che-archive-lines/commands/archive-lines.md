@@ -41,7 +41,7 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 
 或從 marketplace 來源：
 ```
-/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/che-claude-plugins/plugins/che-archive-lines/scripts/line-save-chat.sh
+/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/psychquant-claude-plugins/plugins/che-archive-lines/scripts/line-save-chat.sh
 ```
 
 ### Step 3: 執行對應操作

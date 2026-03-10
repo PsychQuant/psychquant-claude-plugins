@@ -36,10 +36,10 @@ This Skill:
 
 ```bash
 # Add marketplace
-/plugin marketplace add kiki830621/che-claude-plugins
+/plugin marketplace add PsychQuant/psychquant-claude-plugins
 
 # Install this plugin
-/plugin install claude-config-guide@kiki830621/che-claude-plugins
+/plugin install claude-config-guide@PsychQuant/psychquant-claude-plugins
 ```
 
 ## Related
