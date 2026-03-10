@@ -383,14 +383,64 @@ Published as `io.github.{owner}/{project-name}` on the [Official MCP Registry](h
 {CHANGELOG 內容}
 ```
 
-#### 方法 A: 使用 gh release（推薦）
+#### 方法 A: 使用 gh api + curl（推薦）
+
+`gh release create` 上傳大型 binary 容易卡住或 timeout。改用分步驟方式更可靠：
 
 ```bash
-# 取得專案名稱和 binary 名稱
+# 準備變數
 PROJECT_NAME=$(cat mcpb/manifest.json | grep '"name"' | head -1 | sed 's/.*"\([^"]*\)".*/\1/' | tr -d ' ')
-BINARY_NAME=$(ls mcpb/server/ | grep -v '.sh' | head -1)
+BINARY_NAME=$(ls mcpb/server/ | grep -v '.sh' | grep -v '.gitkeep' | head -1)
 MCPB_FILE=$(ls mcpb/*.mcpb | head -1)
+OWNER_REPO=$(gh repo view --json nameWithOwner --jq '.nameWithOwner')
 
+# Step 1: 建立 Release（不帶 assets，秒完成）
+RELEASE_ID=$(gh api repos/$OWNER_REPO/releases --method POST \
+  -f tag_name="v{version}" \
+  -f target_commitish="main" \
+  -f name="v{version} - {title}" \
+  -f body="{release-notes}" \
+  -F draft=false \
+  -F prerelease=false \
+  --jq '.id')
+
+echo "Release created: ID=$RELEASE_ID"
+
+# Step 2: 用 curl 上傳 Binary（支援進度條，不會 timeout）
+TOKEN=$(gh auth token)
+
+curl -L -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  "https://uploads.github.com/repos/$OWNER_REPO/releases/$RELEASE_ID/assets?name=$BINARY_NAME" \
+  --data-binary "@mcpb/server/$BINARY_NAME" \
+  --progress-bar -o /dev/null -w "Binary upload: HTTP %{http_code}, %{size_upload} bytes\n"
+
+# Step 3: 用 curl 上傳 MCPB
+MCPB_FILENAME=$(basename $MCPB_FILE)
+curl -L -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  "https://uploads.github.com/repos/$OWNER_REPO/releases/$RELEASE_ID/assets?name=$MCPB_FILENAME" \
+  --data-binary "@$MCPB_FILE" \
+  --progress-bar -o /dev/null -w "MCPB upload: HTTP %{http_code}, %{size_upload} bytes\n"
+
+# Step 4: 驗證
+gh release view v{version} --json assets --jq '.assets[] | "\(.name) (\(.size) bytes)"'
+```
+
+**為什麼不用 `gh release create` 帶 assets**：
+- 大型 binary（>10MB）上傳容易卡住，無進度回報
+- 上傳失敗時 release 會變成 untagged draft，需手動清理
+- `curl` 有進度條且不會 timeout
+
+#### 方法 B: 使用 gh release create（小型專案 Fallback）
+
+只適合 binary < 10MB 的小型專案：
+
+```bash
 gh release create v{version} \
   --title "v{version} - {title}" \
   --notes "{release-notes}" \
@@ -398,46 +448,7 @@ gh release create v{version} \
   $MCPB_FILE
 ```
 
-#### 方法 B: 使用 gh api（Fallback）
-
-如果 `gh release create` 失敗（常見錯誤：`workflow scope may be required`），改用 API：
-
-```bash
-# Step 1: 建立 Release
-gh api repos/{owner}/{repo}/releases --method POST \
-  -f tag_name="v{version}" \
-  -f name="v{version} - {title}" \
-  -f body="{release-notes}" \
-  -F draft=false \
-  -F prerelease=false
-
-# Step 2: 取得 Release ID（從上一步的回應中取得，或用以下命令）
-RELEASE_ID=$(gh api repos/{owner}/{repo}/releases/tags/v{version} --jq '.id')
-
-# Step 3: 上傳 Binary 和 MCPB（使用 curl）
-TOKEN=$(gh auth token)
-
-# 上傳 Binary
-curl -L \
-  -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/octet-stream" \
-  "https://uploads.github.com/repos/{owner}/{repo}/releases/$RELEASE_ID/assets?name=$BINARY_NAME" \
-  --data-binary "@mcpb/server/$BINARY_NAME"
-
-# 上傳 MCPB
-MCPB_FILENAME=$(basename $MCPB_FILE)
-curl -L \
-  -X POST \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/octet-stream" \
-  "https://uploads.github.com/repos/{owner}/{repo}/releases/$RELEASE_ID/assets?name=$MCPB_FILENAME" \
-  --data-binary "@$MCPB_FILE"
-```
-
-**注意**：`gh api` 不支援大型檔案上傳，必須用 `curl` 配合 `--data-binary`。
+**注意**：如果遇到 `workflow scope may be required` 錯誤，必須改用方法 A。
 
 ### Step 4.5: 更新 GitHub Repo About 描述
 
@@ -782,9 +793,11 @@ git push origin main
 |------|----------|
 | Dropbox 衝突導致 build 失敗 | `rm -rf .build` 後重新編譯 |
 | lipo 失敗 | 確認兩種架構都編譯成功 |
-| gh release 失敗（workflow scope） | 改用 `gh api` 方法（見 Step 4 方法 B） |
-| gh release 失敗（其他） | 確認 `gh auth login` 已登入 |
-| LFS 上傳失敗 | 確認 `.gitattributes` 設定正確 |
+| gh release create 卡住（大型 binary） | 改用方法 A（`gh api` + `curl`，見 Step 4） |
+| gh release 失敗（workflow scope） | 改用方法 A（`gh api` + `curl`） |
+| Release 變成 untagged draft | `gh release delete` 清理後重建 |
+| Fork tag 衝突 | `git tag -d vX.Y.Z` 刪本地舊 tag，或 `git fetch fork --no-tags` |
+| LFS lock 認證錯誤 | `GIT_LFS_SKIP_PUSH=1 git push` 跳過 LFS lock 驗證 |
 | curl 上傳 binary 失敗 | 確認 `gh auth token` 有效，檔案路徑正確 |
 
 ### MCP Server 對應表

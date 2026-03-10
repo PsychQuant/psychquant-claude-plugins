@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "mcp-tools",
-      "version": "1.9.0",
+      "version": "1.10.0",
       "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test",
       "author": {
         "name": "Che Cheng"
