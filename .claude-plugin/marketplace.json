@@ -177,6 +177,36 @@
       },
       "source": "./plugins/codex-batch",
       "category": "productivity"
+    },
+    {
+      "name": "che-svg-mcp",
+      "version": "0.1.0",
+      "description": "SVG MCP Server — Swift 原生 XML 操作，33 個工具，Session-based 向量圖形編輯",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-svg-mcp",
+      "category": "creative"
+    },
+    {
+      "name": "che-pixel-mcp",
+      "version": "0.1.0",
+      "description": "Pixel MCP Server — Swift 原生 Core Image 操作，36 個工具，200+ 濾鏡，Session-based 點陣圖形編輯",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-pixel-mcp",
+      "category": "creative"
+    },
+    {
+      "name": "che-creative-suite",
+      "version": "0.1.0",
+      "description": "Creative Suite — 協調 che-svg-mcp（向量）與 che-pixel-mcp（點陣）的圖形處理工作流，含 creative-router skill 與 creative-agent",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-creative-suite",
+      "category": "creative"
     }
   ]
 }

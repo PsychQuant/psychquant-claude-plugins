@@ -25,6 +25,9 @@ psychquant-claude-plugins/
 │   ├── che-xcode-mcp/           # Xcode / App Store Connect
 │   ├── ai-docs-guide/           # Claude Code + OpenAI 文檔查詢
 │   ├── claude-config-guide/     # [deprecated] → ai-docs-guide
+│   ├── che-svg-mcp/             # SVG 向量圖形 MCP Server
+│   ├── che-pixel-mcp/           # 點陣圖形 MCP Server (Core Image)
+│   ├── che-creative-suite/      # 圖形處理工作流協調器
 │   ├── claude-switch/           # Claude Code 模型切換
 │   ├── mcp-tools/               # MCP Server 開發工具集
 │   ├── postgresql-guide/        # PostgreSQL 文檔查詢

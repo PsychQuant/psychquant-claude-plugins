@@ -1,0 +1,8 @@
+{
+  "name": "che-creative-suite",
+  "version": "0.1.0",
+  "description": "Creative Suite — 協調 che-svg-mcp（向量）與 che-pixel-mcp（點陣）的圖形處理工作流",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["creative", "image", "svg", "pixel", "orchestrator", "workflow"]
+}

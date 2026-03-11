@@ -1,0 +1,7 @@
+{
+  "svg": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-svg-mcp-wrapper.sh",
+    "description": "SVG MCP server - Vector graphics manipulation with 33 tools"
+  }
+}

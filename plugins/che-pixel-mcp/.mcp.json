@@ -1,0 +1,7 @@
+{
+  "pixel": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-pixel-mcp-wrapper.sh",
+    "description": "Pixel MCP server - Raster image manipulation with 36 tools and 200+ Core Image filters"
+  }
+}
