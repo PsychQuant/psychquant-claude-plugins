@@ -465,7 +465,12 @@ gh repo edit {owner}/{repo} --description "{updated-description}"
 
 用 `gh repo view --json description` 先確認現有描述，再決定是否需要更新。
 
-### Step 5: 複製 binary 到 ~/bin（本地安裝）
+### Step 5: 本地安裝（可選）
+
+使用 AskUserQuestion 詢問：
+> 是否要將 binary 安裝到 ~/bin？（如果使用 plugin wrapper 的自動下載機制，可以跳過）
+
+如果選擇「是」：
 
 ```bash
 cp mcpb/server/$BINARY_NAME ~/bin/
@@ -474,18 +479,20 @@ xattr -cr ~/bin/$BINARY_NAME
 codesign --force --sign - ~/bin/$BINARY_NAME
 ```
 
-**驗證**：確認 `~/bin` 拿到的是 universal binary 且已簽名：
+**驗證**：
 ```bash
 file ~/bin/$BINARY_NAME
 lipo -info ~/bin/$BINARY_NAME
 codesign -dv ~/bin/$BINARY_NAME
 ```
 
+如果選擇「否」，跳到 Phase 4。Binary 已在 `mcpb/server/` 和 GitHub Release 中，plugin wrapper 會在需要時自動下載。
+
 ---
 
-## Phase 3.5: Binary 一致性驗證（Swift 專案限定）
+## Phase 3.5: Binary 一致性驗證（Swift 專案限定，僅在 Step 5 選「是」時執行）
 
-**注意**：此 Phase 只適用於 Swift 專案。Python/TypeScript 使用 wrapper script，跳過此步驟。
+**注意**：此 Phase 只適用於 Swift 專案且已安裝到 ~/bin 的情況。
 
 ### Step 1: Hash 比對
 
@@ -508,25 +515,9 @@ lipo -info ~/bin/$BINARY_NAME
 
 **預期**：兩者都顯示 `x86_64 arm64`（universal binary）。
 
-### Step 3: arm64 slice 比對（額外驗證）
+### Step 3: 驗證結果
 
-提取 arm64 slice 確認 binary 內容一致：
-
-```bash
-TMPFILE_1="/tmp/_mcpb_deploy_verify_mcpb_$$"
-TMPFILE_2="/tmp/_mcpb_deploy_verify_bin_$$"
-
-lipo -thin arm64 mcpb/server/$BINARY_NAME -output "$TMPFILE_1"
-lipo -thin arm64 ~/bin/$BINARY_NAME -output "$TMPFILE_2"
-
-shasum -a 256 "$TMPFILE_1" "$TMPFILE_2"
-
-rm -f "$TMPFILE_1" "$TMPFILE_2"
-```
-
-### Step 4: 驗證結果
-
-如果任何步驟不一致，**停止並報錯**：
+如果 hash 不一致，**停止並報錯**：
 
 > ❌ Binary 一致性驗證失敗！mcpb/server 和 ~/bin 的 binary 不一致。
 > 請使用 `/mcp-tools:mcp-sync` 修復。
@@ -746,13 +737,8 @@ git push origin main
 - URL: https://github.com/$MCP_REPO_FULL/releases/tag/v{version}
 
 ## 本地安裝
-- Binary 已複製到: `~/bin/{BinaryName}`
-
-## Binary Consistency（Swift 專案）
-| 位置 | 架構 | Hash (前 12 碼) | 狀態 |
-|------|------|-----------------|------|
-| mcpb/server/{BinaryName} | universal (arm64 + x86_64) | {hash}... | ✅ |
-| ~/bin/{BinaryName} | universal (arm64 + x86_64) | {hash}... | ✅ |
+- [ ] 已安裝到 ~/bin（如選擇安裝）
+- [ ] 未安裝（plugin wrapper 會在需要時自動從 GitHub Release 下載）
 
 ## Claude Code Plugin（如有發布）
 - Plugin 目錄: `$MARKETPLACE_NAME/plugins/{project-name}`
