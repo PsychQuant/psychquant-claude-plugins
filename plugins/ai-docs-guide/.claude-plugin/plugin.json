@@ -1,8 +1,8 @@
 {
   "name": "ai-docs-guide",
-  "version": "1.1.0",
-  "description": "Auto-triggered Skills for querying Claude Code, OpenAI, and Gemini official documentation via WebFetch. /ai-docs-guide:all for cross-platform comparison.",
+  "version": "1.2.0",
+  "description": "Auto-triggered Skills for querying Claude Code, OpenAI, Codex CLI, and Gemini official documentation via WebFetch. /ai-docs-guide:all for cross-platform comparison.",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
-  "keywords": ["claude-code", "openai", "gemini", "google", "docs", "documentation", "api", "mcp", "settings"]
+  "keywords": ["claude-code", "openai", "codex", "codex-cli", "gemini", "google", "docs", "documentation", "api", "mcp", "settings"]
 }
