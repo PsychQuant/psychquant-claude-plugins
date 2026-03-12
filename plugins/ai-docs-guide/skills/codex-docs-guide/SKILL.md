@@ -1,7 +1,7 @@
 ---
 name: codex-docs-guide
 description: |
-  Query OpenAI Codex CLI official documentation with accurate, up-to-date information.
+  Query OpenAI Codex CLI configuration, features, and documentation.
   Use this skill proactively when the conversation involves:
   - Codex CLI installation, setup, or authentication
   - Codex CLI configuration (config.toml, AGENTS.md, profiles)
@@ -13,12 +13,12 @@ description: |
   - Codex security, sandboxing, approval modes
   - Codex IDE extension or app configuration
   - Codex integrations (GitHub, Slack, Linear)
-allowed-tools: WebFetch
+allowed-tools: Bash, WebFetch
 ---
 
 # Codex Docs Guide
 
-Query OpenAI Codex official documentation directly via WebFetch.
+Query OpenAI Codex source code and official documentation for accurate, up-to-date information.
 
 ## When to Use
 
@@ -31,120 +31,96 @@ When the user asks about or the conversation involves:
 - Codex app, IDE extension, or cloud
 - Any OpenAI Codex product or feature
 
+## Strategy: Source Code First, Docs Second
+
+**Primary source**: `openai/codex` GitHub repo — the definitive source for config schemas, valid values, CLI flags, protocol definitions, and SDK types.
+
+**Secondary source**: WebFetch from `https://developers.openai.com/codex/` — for conceptual guides, tutorials, and best practices.
+
 ## Execution Steps (IMPORTANT!)
 
-**You MUST WebFetch official documentation - never answer from memory!**
+**You MUST query the source — never answer from memory!**
 
-### Step 1: Identify the topic and WebFetch the corresponding URL
+### Step 1: Determine query type and choose method
 
-Base URL: `https://developers.openai.com/codex`
+| Query Type | Method | Example |
+|-----------|--------|---------|
+| Config valid values, schema | Repo: config.schema.json | "What values does reasoning_effort accept?" |
+| CLI flags, options | Repo: main.rs or docs/ | "What flags does `codex` accept?" |
+| Model definitions, defaults | Repo: models.json | "What's the default reasoning effort for gpt-5.4?" |
+| Protocol types, enums | Repo: protocol src | "What ReasoningEffort variants exist?" |
+| SDK types, interfaces | Repo: sdk/ | "What options does exec() accept?" |
+| Conceptual guides, tutorials | WebFetch docs site | "How does sandboxing work?" |
+| Pricing, enterprise, auth | WebFetch docs site | "How much does Codex cost?" |
 
-**Getting Started:**
+### Step 2a: Query GitHub Repo (primary)
 
-| Topic | URL |
-|-------|-----|
+**Search for keywords across the repo:**
+```bash
+gh search code "keyword" --repo openai/codex --limit 20
+```
+
+**Read specific key files via GitHub API:**
+```bash
+# Config schema (all valid config keys and values)
+gh api repos/openai/codex/contents/codex-rs/core/config.schema.json -q '.content' | base64 -d
+
+# Model definitions (models, defaults, reasoning efforts)
+gh api repos/openai/codex/contents/codex-rs/core/models.json -q '.content' | base64 -d
+
+# CLI entry point (flags, arguments)
+gh api repos/openai/codex/contents/codex-rs/exec/src/main.rs -q '.content' | base64 -d
+
+# In-repo documentation
+gh api repos/openai/codex/contents/docs/ -q '.[].name'
+gh api repos/openai/codex/contents/docs/config.md -q '.content' | base64 -d
+```
+
+**Key files in `openai/codex` repo:**
+
+| File | Contains |
+|------|----------|
+| `codex-rs/core/config.schema.json` | Full config schema with all valid values |
+| `codex-rs/core/models.json` | Model definitions, defaults, supported efforts |
+| `codex-rs/exec/src/main.rs` | CLI entry point, flags, arguments |
+| `codex-rs/protocol/src/config_types.rs` | Rust config types and enums |
+| `codex-rs/protocol/src/openai_models.rs` | ReasoningEffort enum, model types |
+| `sdk/typescript/src/threadOptions.ts` | TypeScript SDK types |
+| `sdk/typescript/src/exec.ts` | SDK exec options, CLI arg mapping |
+| `sdk/python/src/codex_app_server/` | Python SDK types |
+| `codex-rs/docs/` | Internal protocol and interface docs |
+| `docs/` | User-facing documentation (markdown) |
+
+### Step 2b: Query Docs Site (secondary)
+
+Prepend `https://developers.openai.com` to paths:
+
+| Topic | URL Path |
+|-------|----------|
 | Codex overview | /codex/ |
 | Quickstart | /codex/quickstart/ |
-| Pricing | /codex/pricing/ |
-| Models | /codex/models/ |
-| Changelog | /codex/changelog/ |
-
-**CLI:**
-
-| Topic | URL |
-|-------|-----|
 | CLI overview | /codex/cli/ |
 | CLI features | /codex/cli/features/ |
-| Command line options | /codex/cli/reference |
-| CLI slash commands | /codex/cli/slash-commands/ |
-
-**App & IDE:**
-
-| Topic | URL |
-|-------|-----|
-| App overview | /codex/app/ |
-| App features | /codex/app/features/ |
-| App settings | /codex/app/settings/ |
-| IDE extension overview | /codex/ide/ |
-| IDE features | /codex/ide/features/ |
-| IDE settings | /codex/ide/settings/ |
-
-**Configuration:**
-
-| Topic | URL |
-|-------|-----|
+| CLI reference | /codex/cli/reference |
+| Slash commands | /codex/cli/slash-commands/ |
 | Config basics | /codex/config/basics/ |
-| Config advanced | /codex/config/advanced/ |
-| Config reference | /codex/config/reference/ |
-| Config sample | /codex/config/sample/ |
 | Speed & fast mode | /codex/speed/ |
-| Rules | /codex/rules/ |
+| Models | /codex/models/ |
 | AGENTS.md | /codex/agents-md/ |
 | MCP setup | /codex/mcp/ |
 | Skills | /codex/skills/ |
-| Multi-agents | /codex/multi-agents/ |
-
-**Concepts:**
-
-| Topic | URL |
-|-------|-----|
-| Prompting | /codex/concepts/prompting/ |
-| Customization | /codex/concepts/customization/ |
-| Sandboxing | /codex/concepts/sandboxing/ |
-| Multi-agents | /codex/concepts/multi-agents/ |
-| Workflows | /codex/concepts/workflows/ |
-| Models | /codex/concepts/models/ |
-
-**Automation:**
-
-| Topic | URL |
-|-------|-----|
-| Non-interactive mode | /codex/non-interactive/ |
-| Codex SDK | /codex/sdk/ |
-| App server | /codex/app-server/ |
-| MCP server | /codex/mcp-server/ |
-| GitHub Action | /codex/github-action/ |
-
-**Integrations:**
-
-| Topic | URL |
-|-------|-----|
-| GitHub | /codex/integrations/github/ |
-| Slack | /codex/integrations/slack/ |
-| Linear | /codex/integrations/linear/ |
-
-**Security:**
-
-| Topic | URL |
-|-------|-----|
-| Security overview | /codex/security/ |
-| Security setup | /codex/security/setup/ |
-| Threat model | /codex/security/threat-model/ |
-
-**Administration:**
-
-| Topic | URL |
-|-------|-----|
-| Authentication | /codex/authentication/ |
-| Enterprise setup | /codex/enterprise/ |
-
-**Learn:**
-
-| Topic | URL |
-|-------|-----|
+| SDK | /codex/sdk/ |
+| Non-interactive | /codex/non-interactive/ |
+| Security | /codex/security/ |
 | Best practices | /codex/learn/best-practices/ |
 
-### Step 2: WebFetch with full URL
-
-Prepend `https://developers.openai.com` to the path:
-
 ```
-WebFetch("https://developers.openai.com/codex/cli/reference", "Extract the documentation content about...")
+WebFetch("https://developers.openai.com/codex/cli/reference", "Extract documentation about...")
 ```
 
 ### Step 3: Parse and respond
 
-Extract relevant information from WebFetch results and answer the user directly.
+Extract relevant information and answer the user directly.
 
 ## Quick Reference
 
@@ -169,16 +145,8 @@ brew install codex              # Homebrew
 | `--search` | Enable web search |
 | `--oss` | Use local OSS model (Ollama) |
 
-### Models
-| Model | Use case |
-|-------|----------|
-| `gpt-5.4` | Flagship, recommended for most tasks |
-| `gpt-5.3-codex` | Best for complex software engineering |
-| `gpt-5.3-codex-spark` | Near-instant iteration (Pro only) |
-
-### Speed
-- `/fast` — Toggle fast mode (1.5x speed, 2x credits, GPT-5.4 only)
-- `codex-spark` — Separate lightweight model for instant responses
+### Reasoning Effort Levels
+`none` | `minimal` | `low` | `medium` | `high` | `xhigh`
 
 ### Key paths
 | Path | Purpose |
@@ -189,15 +157,16 @@ brew install codex              # Homebrew
 | `.agents/skills/` | Repo skills |
 | `$HOME/.agents/skills` | Global skills |
 
-## If topic is not in the table
+## Fallback
 
-1. Try WebSearch for `site:developers.openai.com/codex <topic>`
-2. Use the URL from search results with WebFetch
-3. Fall back to `WebFetch("https://developers.openai.com/codex/", "...")` for the main index
+If topic is not covered above:
+1. `gh search code "topic" --repo openai/codex`
+2. WebSearch for `site:developers.openai.com/codex <topic>`
+3. WebFetch `https://developers.openai.com/codex/` for the main index
 
 ## Important Reminders
 
-- **Never answer Codex configuration questions from memory** — always WebFetch first
-- Codex docs are at `developers.openai.com/codex/`, NOT under `/docs/`
-- Some URL paths may 404 — if so, try the parent path or use WebSearch
+- **Source code is authoritative** for valid values, schemas, and types — prefer repo over docs
+- **Docs site is authoritative** for guides, tutorials, and conceptual explanations
 - Config is TOML (`config.toml`), not JSON — different from Claude Code
+- Some doc URL paths may 404 — if so, try the parent path or use WebSearch
