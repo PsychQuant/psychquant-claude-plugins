@@ -446,129 +446,88 @@ git push origin main
 
 ### 選項 A: Glama
 
+使用 `agent-browser`（Playwright）搭配 `--session glama` 保存登入狀態。
+
 #### 檢查是否已在 Glama 上
 
-先搜尋看看：
 ```bash
-# 用 Safari 開啟搜尋
-osascript -e 'tell application "Safari" to set URL of current tab of front window to "https://glama.ai/mcp/servers?search='"$PROJECT_NAME"'"'
+agent-browser open "https://glama.ai/mcp/servers?search=$PROJECT_NAME" --session glama --headed
+agent-browser snapshot -i --session glama --headed
 ```
 
-等 3 秒後檢查結果。如果找到，表示已提交過，跳過。
+從 snapshot 中搜尋是否有該專案的連結。如果找到，表示已提交過，跳過。
+
+#### 登入檢查
+
+如果 snapshot 中出現 `Sign Up` 按鈕而非使用者頭像，表示未登入：
+
+```bash
+# 導航到登入頁面
+agent-browser open "https://glama.ai/auth/sign-in" --session glama --headed
+```
+
+使用 AskUserQuestion 提示使用者：
+> 請在彈出的瀏覽器視窗中完成 GitHub 登入（點 GitHub 圖示）。登入完成後告訴我。
+
+`--session glama` 會保存登入狀態，後續操作不需要再登入。
 
 #### 提交到 Glama
 
-**前置條件**：使用者必須已登入 Glama（支援 GitHub/Google/Discord OAuth）。
-
-1. 在 Safari 中導航到 Glama MCP Servers 頁面：
+1. 導航到 MCP Servers 頁面並點擊「Add Server」：
 
 ```bash
-osascript -e 'tell application "Safari" to set URL of current tab of front window to "https://glama.ai/mcp/servers"'
+agent-browser open "https://glama.ai/mcp/servers" --session glama --headed
+agent-browser snapshot -i --session glama --headed
+# 找到 "Add Server" 按鈕的 ref（通常在前 20 個元素中）
+agent-browser click @eN --session glama --headed  # N = Add Server 按鈕的 ref
 ```
 
-2. 等頁面載入後點擊「Add Server」：
+2. 等彈窗出現後，取得表單欄位 ref：
 
 ```bash
-sleep 3
-osascript -e '
-tell application "Safari"
-    do JavaScript "
-        var buttons = document.querySelectorAll(\"button\");
-        for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent.trim() === \"Add Server\") {
-                buttons[i].click();
-                break;
-            }
-        }
-    " in current tab of front window
-end tell'
+agent-browser snapshot -i --session glama --headed
+# 預期看到：textbox "Name", textbox "Description", textbox "GitHub Repository URL", button "Submit for Review"
 ```
 
-3. 等彈窗出現後填入表單（使用 React-compatible 方式）：
+3. 填入表單：
 
 ```bash
-sleep 2
-osascript -e '
-tell application "Safari"
-    do JavaScript "
-        function setReactValue(el, value) {
-            var prototype = el.tagName === \"TEXTAREA\" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-            var nativeSetter = Object.getOwnPropertyDescriptor(prototype, \"value\").set;
-            el.focus();
-            nativeSetter.call(el, value);
-            el.dispatchEvent(new Event(\"input\", { bubbles: true }));
-            el.dispatchEvent(new Event(\"change\", { bubbles: true }));
-            var propsKey = Object.keys(el).find(function(k) { return k.startsWith(\"__reactProps$\"); });
-            if (propsKey && el[propsKey] && el[propsKey].onChange) {
-                el[propsKey].onChange({ target: el, currentTarget: el });
-            }
-        }
-
-        var nameInputs = document.querySelectorAll(\"input[name=name]\");
-        var visibleName = null;
-        for (var i = 0; i < nameInputs.length; i++) {
-            if (nameInputs[i].offsetParent !== null) { visibleName = nameInputs[i]; break; }
-        }
-
-        var descInputs = document.querySelectorAll(\"textarea[name=description]\");
-        var visibleDesc = null;
-        for (var i = 0; i < descInputs.length; i++) {
-            if (descInputs[i].offsetParent !== null) { visibleDesc = descInputs[i]; break; }
-        }
-
-        var urlInput = document.querySelector(\"input[name=githubRepositoryUrl]\");
-
-        if (visibleName) setReactValue(visibleName, \"PLACEHOLDER_NAME\");
-        if (visibleDesc) setReactValue(visibleDesc, \"PLACEHOLDER_DESC\");
-        if (urlInput) setReactValue(urlInput, \"PLACEHOLDER_URL\");
-
-        \"filled\";
-    " in current tab of front window
-end tell'
+agent-browser fill @eN "PROJECT_NAME" --session glama --headed
+agent-browser fill @eN "DESCRIPTION" --session glama --headed
+agent-browser fill @eN "https://github.com/OWNER/REPO" --session glama --headed
 ```
 
-替換 `PLACEHOLDER_NAME`、`PLACEHOLDER_DESC`、`PLACEHOLDER_URL` 為實際值。
+替換 `@eN` 為 snapshot 中對應欄位的 ref，替換 `PROJECT_NAME`、`DESCRIPTION`、`OWNER/REPO` 為實際值。
 
-4. 點擊「Submit for Review」：
+4. 截圖確認填寫內容後，點擊提交：
 
 ```bash
-osascript -e '
-tell application "Safari"
-    do JavaScript "
-        var buttons = document.querySelectorAll(\"button\");
-        for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent.trim().includes(\"Submit for Review\") && buttons[i].offsetParent !== null) {
-                buttons[i].click();
-                break;
-            }
-        }
-    " in current tab of front window
-end tell'
+agent-browser screenshot /tmp/glama-filled.png --session glama --headed
+agent-browser click @eN --session glama --headed  # N = Submit for Review 按鈕的 ref
 ```
 
 5. 等待確認：
 
 ```bash
 sleep 3
-osascript -e '
-tell application "Safari"
-    do JavaScript "
-        var urlInput = document.querySelector(\"input[name=githubRepositoryUrl]\");
-        urlInput && urlInput.offsetParent !== null ? \"form still open\" : \"form closed (likely success)\";
-    " in current tab of front window
-end tell'
+agent-browser screenshot /tmp/glama-submitted.png --session glama --headed
+```
+
+如果表單已關閉回到主頁面，表示提交成功。
+
+6. 關閉瀏覽器（session 會保留）：
+
+```bash
+agent-browser close --session glama
 ```
 
 **注意事項**：
+- `--session glama` 保存登入狀態，下次執行不需要重新登入
+- `--headed` 讓瀏覽器可見，方便使用者在需要時手動介入（如 2FA）
 - Glama 審核需要時間，提交後狀態為 pending review
-- macOS-only server 無法通過 Docker 檢查，可能需要在 PR 或 Glama 上說明
+- macOS-only server 無法通過 Docker 檢查，但通常人工審核會放行
 - 如果出現 `A submission for this repository is already pending review`，表示已提交成功
 - 審核通過後，Glama 頁面 URL 通常為 `https://glama.ai/mcp/servers/{owner}-{project-name}`
-
-#### 如果未登入 Glama
-
-提示使用者：
-> 請先在 Safari 中登入 Glama（https://glama.ai），支援 GitHub/Google/Discord 帳號。登入後告訴我，我再繼續提交。
 
 ### 選項 B: awesome-mcp-servers
 
@@ -683,7 +642,7 @@ open "https://mcpservers.org"
 | 平台 | 類型 | 提交方式 | 審核 |
 |------|------|----------|------|
 | [MCP Registry](https://registry.modelcontextprotocol.io) | 官方 | `mcp-publisher publish` | 即時 |
-| [Glama](https://glama.ai/mcp/servers) | 第三方 | Web 表單（需登入） | 人工審核 |
+| [Glama](https://glama.ai/mcp/servers) | 第三方 | agent-browser（`--session glama`） | 人工審核 |
 | [awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | GitHub List | PR | 人工審核（需 Glama 連結） |
 | [mcpservers.org](https://mcpservers.org) | 第三方 | Web 表單/PR | 視情況 |
 
@@ -699,6 +658,7 @@ open "https://mcpservers.org"
 | 缺少 `transport` | 加入 `"transport": {"type": "stdio"}` |
 | snake_case 欄位被拒 | 全部改 camelCase（`registryType`、`fileSha256`） |
 | 版本衝突 | 不能覆蓋已發布版本，需要新版本號 |
-| Glama 表單 React 填值失效 | 用 `__reactProps$` + `onChange` 方式（見 Phase 4） |
-| Glama 未登入 | 先在 Safari 登入（支援 GitHub/Google/Discord OAuth） |
+| Glama 表單填值失敗 | 確認用 `agent-browser fill` 而非 `type`，fill 會清除再填入 |
+| Glama 未登入 | 用 `agent-browser open "https://glama.ai/auth/sign-in" --session glama --headed` 讓使用者手動登入，session 會保存 |
+| Glama session 過期 | 重新用 `--session glama --headed` 開啟登入頁面，手動登入即可 |
 | awesome-mcp-servers 要求 Glama | 先完成 Glama 提交並通過審核 |
