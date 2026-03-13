@@ -1,7 +1,9 @@
 ---
+name: mcp-clone-references
 description: Clone 競品 MCP Server 原始碼到 references/ 進行分析
 argument-hint: [search-query]
 allowed-tools: Bash(gh:*), Bash(git:*), Bash(ls:*), Bash(mkdir:*), Bash(rm:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
+disable-model-invocation: true
 ---
 
 # MCP Clone References - 競品原始碼分析

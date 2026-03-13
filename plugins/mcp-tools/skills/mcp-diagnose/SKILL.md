@@ -1,4 +1,5 @@
 ---
+name: mcp-diagnose
 description: MCP Server 連線診斷（檢查連線、binary、基本呼叫）
 argument-hint: <mcp-server-name>
 allowed-tools: Bash(ls:*, file:*, claude:mcp*), Read, Grep, mcp__*

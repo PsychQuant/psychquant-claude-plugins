@@ -1,7 +1,7 @@
 {
   "name": "mcp-tools",
-  "version": "1.10.0",
-  "description": "MCP Server 開發工具集：mcp-new-app（建立專案）、mcp-deploy（部署發布+Plugin）、mcp-install（從 GitHub 安裝）、mcp-upgrade（升級建議）、mcp-clone（Clone 參考 repo + 自動分析）、mcp-clone-references（搜尋競品批次 clone）、mcp-sync（Binary 同步）、mcp-diagnose（連線診斷）、mcp-debug（功能除錯）、mcp-test（完整測試）、mcp-publish（Registry 發布）",
+  "version": "1.11.0",
+  "description": "MCP Server 開發工具集：mcp-new-app（建立專案）、mcp-deploy（部署發布+Plugin）、mcp-install（從 GitHub 安裝）、mcp-upgrade（升級建議）、mcp-clone（Clone 參考 repo + 自動分析）、mcp-clone-references（搜尋競品批次 clone）、mcp-sync（Binary 同步）、mcp-diagnose（連線診斷）、mcp-debug（功能除錯）、mcp-test（完整測試）、mcp-publish（Registry 發布）、mcp-to-plugin（Skill: MCP→Plugin 轉換 + Keychain 密鑰管理）",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "scaffold", "deploy", "plugin", "install", "release", "upgrade", "sync", "binary", "debug", "test", "diagnose", "applescript", "eventkit", "swift", "python", "typescript"]

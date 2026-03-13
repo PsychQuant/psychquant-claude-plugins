@@ -1,7 +1,9 @@
 ---
+name: mcp-install
 description: 從 GitHub Release 安裝 MCP Server 到 ~/bin
 argument-hint: [version]
 allowed-tools: Bash(gh:*), Bash(curl:*), Bash(chmod:*), Bash(ls:*), Bash(mkdir:*), Bash(rm:*), Read, Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCP Install - 從 GitHub 安裝 MCP Server

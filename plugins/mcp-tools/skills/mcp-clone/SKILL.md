@@ -1,7 +1,9 @@
 ---
+name: mcp-clone
 description: Clone 參考 MCP Server 到 references/ 並自動分析可升級功能
 argument-hint: <github-url> [target-mcp-project]
 allowed-tools: Bash(git:*), Bash(ls:*), Bash(mkdir:*), Bash(rm:*), Bash(gh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task, Skill, WebFetch
+disable-model-invocation: true
 ---
 
 # MCP Clone - 參考原始碼 Clone + 升級分析

@@ -1,7 +1,9 @@
 ---
+name: mcp-publish
 description: 發布或更新 MCP Server 到官方 MCP Registry 及第三方平台（Glama、awesome-mcp-servers）
 argument-hint: [project-name]
 allowed-tools: Read, Write, Edit, Bash(brew:*), Bash(curl:*), Bash(mcp-publisher:*), Bash(shasum:*), Bash(git:*), Bash(gh:*), Bash(ls:*), Bash(cat:*), Bash(which:*), Bash(open:*), Bash(python3:*), Bash(cd:*), Bash(osascript:*), Bash(sleep:*), Bash(agent-browser:*), Grep, Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCP Publish - 發布到 MCP Registry 及公開平台

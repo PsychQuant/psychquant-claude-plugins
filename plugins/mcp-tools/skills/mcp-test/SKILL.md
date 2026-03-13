@@ -1,4 +1,5 @@
 ---
+name: mcp-test
 description: MCP Server 完整功能測試（驗證所有 tools）
 argument-hint: <mcp-server-name>
 allowed-tools: Bash(claude mcp:*), Bash(grep:*), Read, Grep, Glob

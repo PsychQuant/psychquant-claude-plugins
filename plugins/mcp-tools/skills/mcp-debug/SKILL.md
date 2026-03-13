@@ -1,4 +1,5 @@
 ---
+name: mcp-debug
 description: MCP Server 功能除錯（框架分析、權限問題、錯誤診斷）
 argument-hint: <mcp-server-name> [error-message]
 allowed-tools: Bash(sdef:*), Bash(osascript:*), Bash(claude mcp:*), Bash(pkill:*), Bash(swift:*), Bash(tccutil:*), Bash(open:*), Bash(lipo:*), Bash(file:*), Bash(shasum:*), Bash(cp:*), Bash(chmod:*), Bash(rm:*), Bash(ls:*), Bash(grep:*), Bash(codesign:*), Read, Write, Grep, Glob

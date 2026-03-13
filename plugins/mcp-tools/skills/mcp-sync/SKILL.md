@@ -1,7 +1,9 @@
 ---
+name: mcp-sync
 description: 同步 MCP Binary（.build → mcpb/server → ~/bin 一致性檢查和修復）
 argument-hint: [--check-only]
 allowed-tools: Read, Bash(swift:*), Bash(lipo:*), Bash(file:*), Bash(shasum:*), Bash(cp:*), Bash(rm:*), Bash(ls:*), Bash(chmod:*), Bash(mkdir:*), Bash(grep:*), Bash(cat:*), Bash(zip:*), Bash(unzip:*), Bash(codesign:*), Grep, Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCPB Sync - Binary 一致性同步

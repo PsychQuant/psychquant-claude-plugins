@@ -1,7 +1,9 @@
 ---
+name: mcp-deploy
 description: 部署 MCP Server 專案（編譯、打包 mcpb、建立 GitHub Release）
 argument-hint: [version]
 allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(lipo:*), Bash(file:*), Bash(shasum:*), Bash(git:*), Bash(gh:*), Bash(zip:*), Bash(rm:*), Bash(cp:*), Bash(mkdir:*), Bash(ls:*), Bash(chmod:*), Bash(npm:*), Bash(python:*), Bash(pip:*), Bash(codesign:*), Grep, Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCP Deploy - 部署 MCP 專案

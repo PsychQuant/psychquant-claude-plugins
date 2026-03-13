@@ -1,7 +1,9 @@
 ---
+name: mcp-new-app
 description: 互動式建立新 MCP Server 專案（Swift/Python/TypeScript）
 argument-hint: [project-name]
 allowed-tools: Write, Read, Bash(mkdir:*), Bash(git:*), Bash(chmod:*), Bash(swift:*), Bash(npm:*), Bash(python:*), Glob, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCP New App - 建立新 MCP 專案

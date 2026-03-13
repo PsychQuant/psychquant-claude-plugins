@@ -1,7 +1,9 @@
 ---
+name: mcp-upgrade
 description: 分析並提議 MCP Server 專案升級（依賴更新、結構優化、新功能建議）
 argument-hint: [focus-area]
 allowed-tools: Read, Write, Edit, Bash(swift:*), Bash(git:*), Bash(npm:*), Bash(pip:*), Bash(cat:*), Bash(grep:*), Bash(file:*), Bash(lipo:*), Bash(shasum:*), Bash(ls:*), Bash(rm:*), Grep, Glob, WebFetch, AskUserQuestion
+disable-model-invocation: true
 ---
 
 # MCP Upgrade - 專案升級建議
