@@ -11,25 +11,31 @@ This file provides guidance to Claude Code when working with this plugin marketp
 ```
 psychquant-claude-plugins/
 ├── .claude-plugin/
-│   └── marketplace.json         # Marketplace 元數據
+│   └── marketplace.json         # Marketplace 索引（版本必須與 plugin.json 同步）
+├── docs/
+│   └── plugin-file-schemas.md   # 所有設定檔的正確格式規範
 ├── plugins/
+│   ├── ai-docs-guide/           # Claude Code + OpenAI + Gemini 文檔查詢
+│   ├── archive-first/           # 防止 AI 刪除 archived/ 目錄
 │   ├── che-apple-mail-mcp/      # Apple Mail MCP + 歸檔
 │   ├── che-archive-lines/       # LINE 聊天記錄歸檔
 │   ├── che-bot-toolkit/         # Bot 開發工具集
-│   ├── codex-batch/             # Codex CLI 批次生成
+│   ├── che-creative-suite/      # 圖形處理工作流協調器
 │   ├── che-dropbox-ignore/      # Dropbox 同步排除管理
 │   ├── che-duckdb-mcp/          # DuckDB 資料庫操作
 │   ├── che-ical-mcp/            # macOS 行事曆 & 提醒事項
+│   ├── che-pixel-mcp/           # 點陣圖形 MCP Server (Core Image)
+│   ├── che-svg-mcp/             # SVG 向量圖形 MCP Server
+│   ├── che-telegram-mcp/        # Telegram Bot + 個人帳號 MCP
 │   ├── che-things-mcp/          # Things 3 任務管理
 │   ├── che-word-mcp/            # Word 文件處理
 │   ├── che-xcode-mcp/           # Xcode / App Store Connect
-│   ├── ai-docs-guide/           # Claude Code + OpenAI 文檔查詢
 │   ├── claude-config-guide/     # [deprecated] → ai-docs-guide
-│   ├── che-svg-mcp/             # SVG 向量圖形 MCP Server
-│   ├── che-pixel-mcp/           # 點陣圖形 MCP Server (Core Image)
-│   ├── che-creative-suite/      # 圖形處理工作流協調器
-│   ├── claude-switch/           # Claude Code 模型切換
+│   ├── claude-switch/           # Claude Code 多帳號管理
+│   ├── codex-batch/             # Codex CLI 批次生成
 │   ├── mcp-tools/               # MCP Server 開發工具集
+│   ├── perspective-writer/      # 模擬真人語氣的寫作工具
+│   ├── plugin-tools/            # Plugin 管理工具（update + health）
 │   ├── postgresql-guide/        # PostgreSQL 文檔查詢
 │   └── r-shiny-debugger/        # R Shiny Debug 工具
 └── README.md
@@ -165,47 +171,66 @@ allowed-tools: mcp__apple-mail__*, Bash(mkdir:*), Read, Write, Glob
 
 ## 開發指南
 
+### ⚠️ 檔案格式規範
+
+**寫入或修改 hooks.json、plugin.json、marketplace.json、.mcp.json、SKILL.md 前，必須先查閱 [`docs/plugin-file-schemas.md`](docs/plugin-file-schemas.md)。**
+
+歷史上最常見的錯誤是 hooks.json 格式不對（少了 `hooks` 陣列包裝層），導致 plugin failed to load。
+
 ### 新增 / 更新 Plugin
 
 1. 在 `plugins/` 下建立目錄
 2. 建立 `.claude-plugin/plugin.json`
-3. 建立 `commands/` 目錄和命令檔案
-4. **必須** 同步更新 `.claude-plugin/marketplace.json`（版本號 + 描述）
+3. 建立 `skills/` 目錄（推薦）或 `commands/` 目錄
+4. **必須** 同步更新 `.claude-plugin/marketplace.json`（版本號 + 描述 + 新 entry）
+5. **必須** bump 版本號（否則 `claude plugin update` 不會更新 cache）
 
-> **重要**：每次修改任何 plugin 的版本、描述、或新增/移除 command 時，**都必須同步更新 `.claude-plugin/marketplace.json`** 中對應的 entry。marketplace.json 是 Marketplace 的索引，不同步會導致使用者看到過時的資訊。
+> **重要**：每次修改任何 plugin 時，**都必須同步更新 `.claude-plugin/marketplace.json`** 中對應的 entry。marketplace.json 是 Marketplace 的索引，不同步會導致 `claude plugin update` 說 "already at latest" 而跳過更新。
 
 ### Plugin 結構範本
 
 ```
 plugins/new-plugin/
 ├── .claude-plugin/
-│   └── plugin.json           # 必須
-├── commands/
-│   └── command-name.md       # 至少一個命令
+│   └── plugin.json           # Manifest（唯一在此目錄的檔案）
+├── skills/                   # 推薦：使用 skills 而非 commands
+│   └── skill-name/
+│       └── SKILL.md
+├── hooks/                    # 可選
+│   └── hooks.json
+├── .mcp.json                 # 可選：MCP server 定義
 └── README.md                 # 建議
 ```
 
-### plugin.json 範本
+> **注意**：skills/、hooks/、agents/ 必須在 plugin root，**不在** `.claude-plugin/` 裡面。
 
-```json
-{
-  "name": "plugin-name",
-  "version": "1.0.0",
-  "description": "簡短說明",
-  "author": { "name": "Che Cheng" },
-  "license": "MIT",
-  "keywords": ["keyword1", "keyword2"]
-}
-```
+### Skills vs Commands
 
-### 命令檔案 Frontmatter
+官方文件明確指出 "Custom commands have been merged into skills"。**新建功能一律用 skills**。
 
-```yaml
----
-description: 命令的簡短說明
-argument-hint: <必填參數> [可選參數]
-allowed-tools: Tool1, Tool2, mcp__server__*
----
+| | Commands (舊) | Skills (新) |
+|---|---|---|
+| 路徑 | `commands/foo.md` | `skills/foo/SKILL.md` |
+| 附帶檔案 | 不支援 | 支援整個目錄 |
+| Claude 自動觸發 | 不行 | 可以（靠 description） |
+| 分叉上下文 | 不行 | `context: fork` |
+
+### 更新流程
+
+修改 plugin 後的完整同步流程（或直接用 `/plugin-tools:plugin-update`）：
+
+```bash
+# 1. bump 版本（plugin.json + marketplace.json）
+# 2. commit + push
+git add ... && git commit -m "..." && git push
+
+# 3. 同步 marketplace cache
+claude plugin marketplace update psychquant-claude-plugins
+
+# 4. 更新已安裝的 plugin（需要 @marketplace 後綴）
+claude plugin update {name}@psychquant-claude-plugins
+
+# 5. 重啟 Claude Code
 ```
 
 ## 安裝方式
@@ -221,5 +246,5 @@ allowed-tools: Tool1, Tool2, mcp__server__*
 
 ---
 
-最後更新: 2026-02-14
+最後更新: 2026-03-14
 維護者: Che Cheng
