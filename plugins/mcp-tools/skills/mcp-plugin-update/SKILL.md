@@ -18,11 +18,12 @@ allowed-tools:
 
 ## 為什麼需要這個？
 
-Plugin 修改後有 4 個環節容易漏掉：
-1. 忘了 commit/push 到 git remote
-2. 忘了同步 marketplace index
-3. 忘了 update 已安裝的 plugin
-4. 忘了重啟 Claude Code 使快取生效
+Plugin 修改後有 5 個環節容易漏掉：
+1. 忘了更新 `marketplace.json` 中的版本號（新 plugin 忘了加 entry）
+2. 忘了 commit/push 到 git remote
+3. 忘了同步 marketplace cache（`claude plugin marketplace update`）
+4. 忘了 update 已安裝的 plugin（`claude plugin update`）
+5. 忘了重啟 Claude Code 使快取生效
 
 此 skill 自動檢查並執行所有步驟。
 
@@ -60,6 +61,59 @@ git log origin/main..HEAD --oneline
 
 ---
 
+## Phase 1.5: 更新 marketplace.json（關鍵！）
+
+`marketplace.json` 位於 `.claude-plugin/marketplace.json`，是 marketplace 的 plugin index。
+**如果這個檔案沒更新，`claude plugin marketplace update` 不會看到新版本。**
+
+### Step 1: 檢查版本號是否正確
+
+```bash
+cd /Users/che/Developer/psychquant-claude-plugins
+cat .claude-plugin/marketplace.json | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for p in data['plugins']:
+    print(f\"  {p['name']}: {p['version']}\")
+"
+```
+
+### Step 2: 對比 plugin.json 的版本
+
+```bash
+# 讀取 plugin 實際版本
+cat plugins/{plugin_name}/.claude-plugin/plugin.json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(f\"plugin.json: {d['version']}\")
+"
+```
+
+如果 marketplace.json 的版本落後 plugin.json，用 Edit 工具更新。
+
+### Step 3: 新 Plugin 需加入 entry
+
+如果是全新的 plugin（不在 marketplace.json 中），需要加入一個新 entry：
+
+```json
+{
+  "name": "{plugin_name}",
+  "version": "1.0.0",
+  "description": "{description}",
+  "author": { "name": "Che Cheng" },
+  "source": "./plugins/{plugin_name}",
+  "category": "{category}"
+}
+```
+
+category 常用值：`development`、`productivity`、`creative`
+
+### Step 4: Commit marketplace.json
+
+marketplace.json 的變更也需要 commit + push，才能被 `marketplace update` 拉到。
+
+---
+
 ## Phase 2: 同步 Marketplace
 
 ### Step 1: 更新 marketplace index
@@ -88,13 +142,15 @@ claude plugin list 2>&1 | grep -A3 "{plugin_name}"
 
 ### Step 1: 更新 plugin
 
+注意：必須加 `@marketplace_name` 後綴，否則找不到 plugin。
+
 ```bash
-claude plugin update {plugin_name}
+claude plugin update {plugin_name}@psychquant-claude-plugins
 ```
 
 如果 plugin 尚未安裝：
 ```bash
-claude plugin install {plugin_name}
+claude plugin install {plugin_name}@psychquant-claude-plugins
 ```
 
 ### Step 2: 安裝新 Plugin（如果是新建的）
@@ -141,10 +197,10 @@ claude plugin list 2>&1 | grep -A5 "{plugin_name}"
 # 同步 marketplace（只需一次）
 claude plugin marketplace update psychquant-claude-plugins
 
-# 逐一更新
-claude plugin update plugin-a
-claude plugin update plugin-b
-claude plugin update plugin-c
+# 逐一更新（需加 @marketplace 後綴）
+claude plugin update plugin-a@psychquant-claude-plugins
+claude plugin update plugin-b@psychquant-claude-plugins
+claude plugin update plugin-c@psychquant-claude-plugins
 ```
 
 ---
