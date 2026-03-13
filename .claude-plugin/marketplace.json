@@ -20,8 +20,8 @@
     },
     {
       "name": "plugin-tools",
-      "version": "1.0.0",
-      "description": "Claude Code Plugin 管理工具集：plugin-update（同步與更新流程）",
+      "version": "1.1.0",
+      "description": "Claude Code Plugin 管理工具集：plugin-update（同步與更新流程）、plugin-health（健康檢查與診斷）",
       "author": {
         "name": "Che Cheng"
       },
