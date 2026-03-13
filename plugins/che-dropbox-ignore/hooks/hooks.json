@@ -1,9 +1,14 @@
 {
-  "hooks": [
-    {
-      "event": "SessionStart",
-      "type": "command",
-      "command": "${CLAUDE_PLUGIN_ROOT}/bin/dropbox-ignore"
-    }
-  ]
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/bin/dropbox-ignore"
+          }
+        ]
+      }
+    ]
+  }
 }

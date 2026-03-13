@@ -60,7 +60,7 @@
     },
     {
       "name": "ai-docs-guide",
-      "version": "1.1.0",
+      "version": "1.3.0",
       "description": "Auto-triggered Skills for querying Claude Code, OpenAI, and Gemini official documentation via WebFetch. /ai-docs-guide:all for cross-platform comparison.",
       "author": {
         "name": "Che Cheng"
@@ -90,7 +90,7 @@
     },
     {
       "name": "che-ical-mcp",
-      "version": "1.2.1",
+      "version": "1.3.1",
       "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，24 個工具，冪等寫入、重複事件、地點觸發、結構化位置、彈性日期解析、模糊匹配、篩選/排序/限制、事件提醒更新",
       "author": {
         "name": "Che Cheng"
@@ -150,7 +150,7 @@
     },
     {
       "name": "che-dropbox-ignore",
-      "version": "0.1.0",
+      "version": "2.1.0",
       "description": "Dropbox 同步排除管理 — 自動對 .git、build artifacts 等設定 com.dropbox.ignored xattr",
       "author": {
         "name": "Che Cheng"
@@ -170,7 +170,7 @@
     },
     {
       "name": "archive-first",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Protect files from AI-assisted deletion — auto-lock archived/ directories, block destructive commands on archived paths (macOS)",
       "author": {
         "name": "Che Cheng"
@@ -216,6 +216,16 @@
         "name": "Che Cheng"
       },
       "source": "./plugins/che-telegram-mcp",
+      "category": "productivity"
+    },
+    {
+      "name": "perspective-writer",
+      "version": "1.0.0",
+      "description": "Write letters, emails, autobiographies, and formal documents by simulating the writer's authentic voice",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/perspective-writer",
       "category": "productivity"
     },
     {

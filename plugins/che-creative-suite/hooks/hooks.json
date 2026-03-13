@@ -1,9 +1,14 @@
 {
-  "hooks": [
-    {
-      "event": "SessionStart",
-      "type": "command",
-      "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-creative-deps.sh"
-    }
-  ]
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-creative-deps.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
