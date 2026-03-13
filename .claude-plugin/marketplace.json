@@ -11,11 +11,21 @@
     {
       "name": "mcp-tools",
       "version": "1.11.0",
-      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-plugin-update",
+      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin",
       "author": {
         "name": "Che Cheng"
       },
       "source": "./plugins/mcp-tools",
+      "category": "development"
+    },
+    {
+      "name": "plugin-tools",
+      "version": "1.0.0",
+      "description": "Claude Code Plugin 管理工具集：plugin-update（同步與更新流程）",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/plugin-tools",
       "category": "development"
     },
     {

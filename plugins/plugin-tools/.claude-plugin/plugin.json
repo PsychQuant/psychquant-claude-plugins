@@ -1,0 +1,8 @@
+{
+  "name": "plugin-tools",
+  "version": "1.0.0",
+  "description": "Claude Code Plugin 管理工具集：plugin-update（同步與更新流程）",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["plugin", "marketplace", "update", "sync", "management"]
+}
