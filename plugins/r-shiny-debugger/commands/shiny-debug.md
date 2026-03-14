@@ -196,11 +196,111 @@ agent-browser errors
 ═══════════════════════════════════════════
 ```
 
+### Step 7.5: 產生 E2E 腳本（可選）
+
+測試報告輸出後，詢問用戶：
+```
+要從這次 debug session 產生 E2E 測試腳本嗎？（shinytest2）
+```
+
+如果用戶同意，根據 debug session 中的操作步驟，產生 shinytest2 腳本。
+
+#### 前置條件
+
+1. **檢查 E2E 基礎設施是否存在**：
+```bash
+ls scripts/global_scripts/98_test/e2e/_setup.R 2>/dev/null
+ls scripts/global_scripts/98_test/e2e/helpers/fn_e2e_app_driver.R 2>/dev/null
+```
+
+如果不存在，告知用戶需要先建立 E2E 基礎設施，並跳過此步驟。
+
+2. **讀取現有 E2E helpers** 以了解可用的 assertion 函數：
+```bash
+cat scripts/global_scripts/98_test/e2e/helpers/fn_e2e_assertions.R
+```
+
+#### 操作對應表
+
+將 debug session 中的 agent-browser 操作轉換為 shinytest2 API：
+
+| Debug 操作 | shinytest2 對應 |
+|------------|----------------|
+| 登入（fill password + click submit） | `create_logged_in_app()`（helper 已封裝） |
+| 切換 tab（click sidebar item） | `app$set_inputs(sidebar_menu = "tabName")` |
+| 填入 input（fill @ref "value"） | `app$set_inputs(\`input-id\` = "value")` |
+| 點擊按鈕（click @ref） | `app$click("input-id")` |
+| 檢查 log 無錯誤 | `assert_no_r_errors(app, context = "描述")` |
+| 檢查 tab 載入正常 | `assert_tab_loads(app, "tabName")` |
+| 驗證 AI 按鈕可用 | `assert_ai_button_works(app, "tabName", "module_id")` |
+| 等待 | `app$wait_for_idle(timeout = 10000)` + `Sys.sleep(N)` |
+
+**優先使用既有 helper**：如果操作對應到 `assert_tab_loads()` 或 `assert_ai_button_works()`，直接用 helper 而不是拆成底層操作。
+
+#### 腳本模板
+
+```r
+# E2E Test: {場景名稱}
+# Level: L{級別} ({級別名稱})
+# Generated from /shiny-debug session on {日期}
+#
+# Principles: TD_R007 (E2E testing)
+
+test_that("{場景描述}", {
+  app <- create_logged_in_app()
+  on.exit(stop_app_safely(app), add = TRUE)
+
+  # Verify login worked
+  assert_logged_in(app)
+
+  # --- 以下根據 debug session 操作產生 ---
+
+  # {步驟 1 描述}
+  {shinytest2 操作}
+  app$wait_for_idle(timeout = 10000)
+  assert_no_r_errors(app, context = "{步驟 1 描述}")
+
+  # {步驟 2 描述}
+  {shinytest2 操作}
+  app$wait_for_idle(timeout = 10000)
+  assert_no_r_errors(app, context = "{步驟 2 描述}")
+
+  # ... 更多步驟
+})
+```
+
+#### 測試級別判斷
+
+根據 debug session 的操作類型自動判斷級別：
+
+| 操作內容 | 級別 | 理由 |
+|----------|------|------|
+| 只有登入 + 首頁載入 | L1 Smoke | 最基本驗證 |
+| Tab 切換、無 R 錯誤 | L2 Navigation | 導航正常性 |
+| 元件互動、資料篩選、KPI 檢查 | L3 Functional | 功能正確性 |
+| 截圖比對 | L4 Visual | 視覺一致性 |
+
+#### 命名與放置
+
+- 檔名：`test-{場景名}.R`（kebab-case，與既有檔案一致）
+- 位置：`scripts/global_scripts/98_test/e2e/test-{場景名}.R`
+- 如果該檔案已存在，詢問用戶：覆蓋 or 追加 test_that block
+
+#### 產生後驗證
+
+```bash
+# 確認語法正確
+Rscript -e "parse('scripts/global_scripts/98_test/e2e/test-{場景名}.R'); cat('PARSE OK\n')"
+```
+
+---
+
 ### Step 8: 清理
 
 詢問用戶：
 1. 繼續測試 → 回到 Step 5
-2. 結束
+2. 產生 E2E 腳本 → 回到 Step 7.5
+3. 結束
 
 ```bash
 agent-browser close

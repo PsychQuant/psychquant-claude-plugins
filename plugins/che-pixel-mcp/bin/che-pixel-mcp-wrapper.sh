@@ -12,15 +12,18 @@ done
 if [[ -z "$BINARY" ]]; then
     echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
     mkdir -p "$INSTALL_DIR"
-    URL=$(curl -sL "https://api.github.com/repos/$REPO/releases/latest" \
-        | grep '"browser_download_url"' | grep "$BINARY_NAME" | head -1 \
-        | sed 's/.*"\(https[^"]*\)".*/\1/')
-    if [[ -z "$URL" ]]; then
-        echo "ERROR: No download URL found. Install manually: https://github.com/$REPO/releases" >&2
+    if command -v gh &>/dev/null; then
+        gh release download --repo "$REPO" --pattern "$BINARY_NAME" --dir "$INSTALL_DIR" --clobber 2>&2 \
+            && chmod +x "$INSTALL_DIR/$BINARY_NAME"
+    else
+        echo "ERROR: gh CLI not found. Install with: brew install gh" >&2
+        echo "Then run: gh release download --repo $REPO --pattern $BINARY_NAME --dir $INSTALL_DIR" >&2
         exit 1
     fi
-    curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
-        || { echo "ERROR: Download failed." >&2; exit 1; }
+    if [[ ! -x "$INSTALL_DIR/$BINARY_NAME" ]]; then
+        echo "ERROR: Download failed. Install manually: https://github.com/$REPO/releases" >&2
+        exit 1
+    fi
     BINARY="$INSTALL_DIR/$BINARY_NAME"
     echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
 fi

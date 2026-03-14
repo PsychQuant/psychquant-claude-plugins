@@ -33,7 +33,7 @@ When the user asks about or the conversation involves:
 
 ## Strategy: Source Code First, Docs Second
 
-**Primary source**: `openai/codex` GitHub repo — the definitive source for config schemas, valid values, CLI flags, protocol definitions, and SDK types.
+**Primary source**: [`openai/codex`](https://github.com/openai/codex) GitHub repo — the definitive source for config schemas, valid values, CLI flags, protocol definitions, and SDK types.
 
 **Secondary source**: WebFetch from `https://developers.openai.com/codex/` — for conceptual guides, tutorials, and best practices.
 
