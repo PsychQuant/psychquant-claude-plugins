@@ -237,6 +237,16 @@
       },
       "source": "./plugins/che-creative-suite",
       "category": "creative"
+    },
+    {
+      "name": "che-zotero-mcp",
+      "version": "1.0.0",
+      "description": "Zotero reference manager + academic search + knowledge graph MCP Server",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-zotero-mcp",
+      "category": "productivity"
     }
   ]
 }

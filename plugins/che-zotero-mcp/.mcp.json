@@ -1,0 +1,7 @@
+{
+  "zotero": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-zotero-mcp-wrapper.sh",
+    "description": "Zotero reference manager, academic search (Semantic Scholar/ORCID), and knowledge graph"
+  }
+}
