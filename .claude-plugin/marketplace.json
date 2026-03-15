@@ -247,6 +247,16 @@
       },
       "source": "./plugins/che-zotero-mcp",
       "category": "productivity"
+    },
+    {
+      "name": "r-docs-guide",
+      "version": "1.0.0",
+      "description": "Auto-triggered Skills for querying R package documentation via WebFetch. Covers CRAN, tidyverse, Shiny, and general R packages.",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/r-docs-guide",
+      "category": "development"
     }
   ]
 }

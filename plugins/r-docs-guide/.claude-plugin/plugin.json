@@ -1,0 +1,8 @@
+{
+  "name": "r-docs-guide",
+  "version": "1.0.0",
+  "description": "Auto-triggered Skills for querying R package documentation via WebFetch. Covers CRAN, tidyverse, Shiny, and general R packages. /r-docs-guide for cross-ecosystem lookup.",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["r", "rstats", "cran", "tidyverse", "shiny", "ggplot2", "dplyr", "documentation", "packages"]
+}
