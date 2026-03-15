@@ -1,5 +1,5 @@
 ---
-name: all
+name: ai-docs-guide
 description: |
   Query ALL AI platform documentation at once (OpenAI, Gemini, Claude).
   Use this skill when:
