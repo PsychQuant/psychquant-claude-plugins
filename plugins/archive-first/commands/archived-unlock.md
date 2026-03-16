@@ -1,16 +1,16 @@
 ---
-description: Disable archive protection (allow destructive commands on archived/ temporarily)
+description: Disable archive protection (allow operations on archived/ temporarily)
 ---
 
 # Archive-First: Unlock
 
-Disable the PreToolUse hooks to temporarily allow operations on `archived/` paths. Re-enable with `/archive-first:archived-lock` when done.
+Temporarily disable the PreToolUse hooks to allow operations on `archived/` paths.
 
 ## Steps
 
-1. Disable the archive-first plugin:
+1. Create the disabled flag:
    ```bash
-   claude plugin disable archive-first@psychquant-claude-plugins
+   mkdir -p ~/.cache/archive-first && touch ~/.cache/archive-first/disabled
    ```
 
 2. Confirm to the user that protection is disabled.

@@ -180,7 +180,7 @@
     },
     {
       "name": "archive-first",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "description": "Protect files from AI-assisted deletion \u2014 PreToolUse hooks block destructive commands on archived/ paths, toggle with archived-lock/archived-unlock",
       "author": {
         "name": "Che Cheng"

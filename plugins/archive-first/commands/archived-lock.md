@@ -4,13 +4,13 @@ description: Enable archive protection (PreToolUse hooks block destructive comma
 
 # Archive-First: Lock
 
-Enable the PreToolUse hooks that block destructive commands (`rm`, `rmdir`, `unlink`) and write/edit operations on `archived/` paths.
+Enable the PreToolUse hooks that block destructive commands on `archived/` paths.
 
 ## Steps
 
-1. Enable the archive-first plugin:
+1. Remove the disabled flag:
    ```bash
-   claude plugin enable archive-first@psychquant-claude-plugins
+   rm -f ~/.cache/archive-first/disabled
    ```
 
 2. Confirm to the user that protection is active.
