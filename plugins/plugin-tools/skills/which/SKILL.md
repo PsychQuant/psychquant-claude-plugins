@@ -36,23 +36,34 @@ allowed-tools:
 
 ### Step 1: 掃描本機 CLI 工具
 
-在呼叫 `claude -p` 前，先收集這台電腦實際安裝的 CLI 工具：
+在呼叫 `claude -p` 前，收集這台電腦實際安裝的 CLI 工具。
+每個指令都用 `2>/dev/null` — 沒裝的 package manager 會回傳空字串，不影響流程。
 
 ```bash
-# Homebrew packages
+# Package managers（每台電腦不同，有什麼掃什麼）
 BREW_LIST=$(brew list --formula 2>/dev/null | tr '\n' ', ')
-
-# npm global packages
+APT_LIST=$(dpkg --get-selections 2>/dev/null | awk '{print $1}' | tr '\n' ', ')
 NPM_GLOBAL=$(npm -g ls --depth=0 --parseable 2>/dev/null | xargs -I{} basename {} | tail -n +2 | tr '\n' ', ')
-
-# pip packages
 PIP_LIST=$(pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | tr '\n' ', ')
+CARGO_LIST=$(cargo install --list 2>/dev/null | grep -E '^\S' | awk '{print $1}' | tr '\n' ', ')
 
-# ~/bin + /usr/local/bin executables
-BIN_TOOLS=$(ls ~/bin /usr/local/bin 2>/dev/null | sort -u | tr '\n' ', ')
+# Executables in common paths
+BIN_TOOLS=$(ls ~/bin /usr/local/bin ~/.local/bin 2>/dev/null | sort -u | tr '\n' ', ')
 
-# R packages (if R is installed)
+# Language-specific（有裝才掃）
 R_PKGS=$(Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
+GO_TOOLS=$(ls ~/go/bin 2>/dev/null | tr '\n' ', ')
+
+# 組合成清單（跳過空的）
+CLI_INVENTORY=""
+[ -n "$BREW_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- Homebrew: $BREW_LIST"
+[ -n "$APT_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- apt: $APT_LIST"
+[ -n "$NPM_GLOBAL" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- npm global: $NPM_GLOBAL"
+[ -n "$PIP_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- pip: $PIP_LIST"
+[ -n "$CARGO_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- cargo: $CARGO_LIST"
+[ -n "$BIN_TOOLS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- bin paths: $BIN_TOOLS"
+[ -n "$R_PKGS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- R packages: $R_PKGS"
+[ -n "$GO_TOOLS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- Go tools: $GO_TOOLS"
 ```
 
 ### Step 2: 呼叫 claude -p
@@ -71,12 +82,8 @@ claude -p "任務：$ARGUMENTS
 6. LSP servers（如果任務涉及特定語言的程式碼）
 7. CLI 工具（從下方已安裝清單中挑選相關的）
 
-本機已安裝的 CLI 工具：
-- Homebrew: $BREW_LIST
-- npm global: $NPM_GLOBAL
-- pip: $PIP_LIST
-- ~/bin + /usr/local/bin: $BIN_TOOLS
-- R packages: $R_PKGS
+本機已安裝的 CLI 工具（自動偵測，只顯示有安裝的 package manager）：
+$CLI_INVENTORY
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
