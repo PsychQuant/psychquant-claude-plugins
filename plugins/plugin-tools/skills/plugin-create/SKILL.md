@@ -1,5 +1,5 @@
 ---
-name: create-plugin
+name: plugin-create
 description: |
   建立新的 Claude Code Plugin，含完整目錄結構、marketplace.json 同步、CLAUDE.md 產生、GitHub Issue 追蹤。
   支援從零建立或從現有 .claude/skills/ 轉換。

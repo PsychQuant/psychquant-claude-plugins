@@ -19,7 +19,8 @@ Claude Code Plugin 完整生命週期工具。
 
 | Skill | 用途 |
 |-------|------|
-| `create-plugin` | 建立新 plugin 或從現有 skill 轉換（含 marketplace 同步、CLAUDE.md、GitHub Issue） |
+| `plugin-create` | 建立新 plugin 或從現有 skill 轉換（含 marketplace 同步、CLAUDE.md、GitHub Issue） |
+| `plugin-deploy` | 發布到 Anthropic 官方 marketplace（pre-flight check + 開啟提交頁） |
 | `plugin-update` | 修改 plugin 後同步到 marketplace + 更新安裝 |
 | `plugin-health` | 檢查所有已安裝 plugin 的健康狀態 |
 | `plugin-debug` | 深度除錯單一 plugin 的問題 |
@@ -27,7 +28,7 @@ Claude Code Plugin 完整生命週期工具。
 ## Plugin Lifecycle
 
 ```
-create-plugin → 開發/測試 → plugin-update → plugin-health → plugin-debug
+plugin-create → 開發/測試 → plugin-update → plugin-deploy → plugin-health → plugin-debug
     ↑                                              |
     └── 有問題？ ←─────────────────────────────────┘
 ```
@@ -36,10 +37,10 @@ create-plugin → 開發/測試 → plugin-update → plugin-health → plugin-d
 
 ```bash
 # 從零建立新 plugin
-/plugin-tools:create-plugin my-plugin
+/plugin-tools:plugin-create my-plugin
 
 # 從現有 skill 轉換（合併多個 skill）
-/plugin-tools:create-plugin convert codex-review issue
+/plugin-tools:plugin-create convert codex-review issue
 
 # 修改後同步
 /plugin-tools:plugin-update my-plugin
