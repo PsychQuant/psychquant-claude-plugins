@@ -34,25 +34,59 @@ allowed-tools:
 
 ## Execution
 
+### Step 1: 掃描本機 CLI 工具
+
+在呼叫 `claude -p` 前，先收集這台電腦實際安裝的 CLI 工具：
+
+```bash
+# Homebrew packages
+BREW_LIST=$(brew list --formula 2>/dev/null | tr '\n' ', ')
+
+# npm global packages
+NPM_GLOBAL=$(npm -g ls --depth=0 --parseable 2>/dev/null | xargs -I{} basename {} | tail -n +2 | tr '\n' ', ')
+
+# pip packages
+PIP_LIST=$(pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | tr '\n' ', ')
+
+# ~/bin + /usr/local/bin executables
+BIN_TOOLS=$(ls ~/bin /usr/local/bin 2>/dev/null | sort -u | tr '\n' ', ')
+
+# R packages (if R is installed)
+R_PKGS=$(Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
+```
+
+### Step 2: 呼叫 claude -p
+
 ```bash
 claude -p "任務：$ARGUMENTS
 
 請掃描你所有可用的工具，列出完成這個任務可能會用到的。
-掃描範圍包括：
+
+掃描範圍：
 1. MCP tools（mcp__* 開頭的工具）
 2. Skills（plugin 提供的 /plugin-name:skill-name）
 3. Commands（slash commands）
 4. Agents（可呼叫的 sub-agents）
 5. Hooks（這個任務可能會觸發哪些 PreToolUse / PostToolUse / Stop hooks）
 6. LSP servers（如果任務涉及特定語言的程式碼）
-7. CLI 工具（如果你知道有適合這個任務的 CLI 也一併列出）
+7. CLI 工具（從下方已安裝清單中挑選相關的）
+
+本機已安裝的 CLI 工具：
+- Homebrew: $BREW_LIST
+- npm global: $NPM_GLOBAL
+- pip: $PIP_LIST
+- ~/bin + /usr/local/bin: $BIN_TOOLS
+- R packages: $R_PKGS
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
 |----------|------|------|
 
 類型用：MCP / Skill / Command / Agent / Hook / LSP / CLI
-對於 Hooks，說明什麼操作會觸發它、觸發後會發生什麼。" --output-format text --max-turns 1
+對於 Hooks，說明什麼操作會觸發它、觸發後會發生什麼。
+對於 CLI，只列跟任務相關的，不用全部列出。" --output-format text --max-turns 1
 ```
+
+### Step 3: 輸出
 
 直接把 `claude -p` 的回傳顯示給使用者。
