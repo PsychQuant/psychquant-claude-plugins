@@ -7,6 +7,15 @@ description: |
 argument-hint: "[task description]"
 allowed-tools:
   - Bash(claude:*)
+  - Bash(brew:*)
+  - Bash(npm:*)
+  - Bash(pip:*)
+  - Bash(pip3:*)
+  - Bash(cargo:*)
+  - Bash(apt:*)
+  - Bash(Rscript:*)
+  - Bash(ls:*)
+  - AskUserQuestion
 ---
 
 # Which Better — 全面工具探索
@@ -95,8 +104,46 @@ B. WebSearch（補充搜尋）：
 " --output-format text --max-turns 10
 ```
 
-### Step 3: 輸出
+### Step 3: 顯示結果並詢問安裝
 
-直接把 `claude -p` 的回傳顯示給使用者。
+把 `claude -p` 的回傳顯示給使用者。
 
-如果使用者想安裝某個推薦的工具，直接執行安裝指令。
+然後用 AskUserQuestion 詢問：「要安裝哪些推薦的工具？」（multiSelect）
+
+### Step 4: 自動安裝
+
+使用者選擇後，依工具類型自動執行安裝：
+
+```bash
+# CLI 工具
+brew install {tool}              # macOS
+apt install {tool}               # Linux
+npm install -g {tool}            # Node.js
+pip install {tool}               # Python
+cargo install {tool}             # Rust
+
+# MCP server
+claude mcp add --transport http {name} {url}
+# 或
+claude mcp add --transport stdio {name} -- npx -y {package}
+
+# Claude Code plugin
+claude plugin install {plugin-name}@{marketplace}
+```
+
+安裝完成後，輸出安裝結果摘要：
+
+```markdown
+## 安裝結果
+
+| 工具 | 類型 | 狀態 |
+|------|------|------|
+| {tool1} | CLI | ✅ 已安裝 |
+| {tool2} | MCP | ✅ 已啟用 |
+| {tool3} | Plugin | ✅ 已安裝，執行 /reload-plugins 載入 |
+
+下一步：
+- MCP server 已自動啟用
+- Plugin 需要 /reload-plugins 或重啟 Claude Code
+- CLI 工具可立即使用
+```
