@@ -2,12 +2,21 @@
 name: which
 description: |
   找出當前任務可能用到的工具。啟動一個獨立的 claude -p 掃描所有可用的
-  MCP tools、skills、commands、agents、plugins，回傳工具清單。
+  MCP tools、skills、commands、agents、hooks、LSP、CLI，回傳工具清單。
   不佔主 session context。
   當用戶說「該用什麼工具」「有什麼工具可以用」「which tool」「找工具」時觸發。
 argument-hint: "[task description]"
 allowed-tools:
   - Bash(claude:*)
+  - Bash(ls:*)
+  - Bash(echo:*)
+  - Bash(tr:*)
+  - Bash(sort:*)
+  - Bash(head:*)
+  - Bash(wc:*)
+  - Bash(command:*)
+  - Bash(Rscript:*)
+  - Bash(pip3:*)
 ---
 
 # Which — 工具探索
@@ -20,32 +29,31 @@ allowed-tools:
 - `claude -p` 啟動時自動載入所有已安裝的 MCP servers、plugins（含 skills、commands、agents）
 - 回傳結果只有幾行文字，不佔主 session context
 
-## claude -p 啟動時自動載入的東西
+## claude -p 自動載入的東西
 
 | 類型 | 來源 |
 |------|------|
-| MCP tools | ~/.claude.json + .mcp.json + plugin 的 .mcp.json |
+| MCP tools | ~/.claude.json + .mcp.json + plugin .mcp.json |
 | Skills | 所有已安裝 plugin 的 skills/ |
 | Commands | 所有已安裝 plugin 的 commands/ |
 | Agents | 所有已安裝 plugin 的 agents/ |
+| Hooks | 所有已安裝 plugin 的 hooks/ |
 | LSP servers | plugin 的 .lsp.json |
 
-所以 claude -p 看得到所有已安裝的東西，不需要手動餵清單。
+不需要手動餵清單，claude -p 自己就看得到。
+只有 CLI 和語言 packages 需要額外掃描餵進去。
 
 ## Execution
 
-### Step 1: 掃描本機所有可執行指令
-
-直接掃 `$PATH` 裡所有 bin 目錄 — 不管是 brew、apt、npm、pip、cargo、手動裝的，全部一次掃到。
-典型的電腦約 1000-2000 個指令，~4K tokens，對 `claude -p` 不是負擔。
+### Step 1: 掃描本機 CLI 工具
 
 ```bash
-# 掃描 PATH 裡所有可執行指令（一行搞定，涵蓋所有 package manager）
-ALL_CMDS=$(ls /usr/bin /usr/local/bin /opt/homebrew/bin ~/bin ~/.local/bin ~/go/bin ~/.cargo/bin 2>/dev/null | sort -u | tr '\n' ', ')
+# 動態讀 $PATH，不硬編碼目錄
+ALL_CMDS=$(echo "$PATH" | tr ':' '\n' | while read dir; do ls "$dir" 2>/dev/null; done | sort -u | tr '\n' ', ')
 
-# 語言特定 packages（先偵測有沒有裝，有才掃）
+# 語言 packages（先偵測有沒有裝，有才掃；截斷避免塞爆 prompt）
 R_PKGS=$(command -v Rscript >/dev/null 2>&1 && Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
-PY_PKGS=$(command -v pip3 >/dev/null 2>&1 && pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | tr '\n' ', ')
+PY_PKGS=$(command -v pip3 >/dev/null 2>&1 && pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | head -200 | tr '\n' ', ')
 ```
 
 ### Step 2: 呼叫 claude -p
@@ -54,22 +62,22 @@ PY_PKGS=$(command -v pip3 >/dev/null 2>&1 && pip3 list --format=freeze 2>/dev/nu
 claude -p "任務：$ARGUMENTS
 
 請掃描你所有可用的工具，列出完成這個任務可能會用到的。
+用繁體中文回答。
 
 掃描範圍：
 1. MCP tools（mcp__* 開頭的工具）
 2. Skills（plugin 提供的 /plugin-name:skill-name）
 3. Commands（slash commands）
 4. Agents（可呼叫的 sub-agents）
-5. Hooks（這個任務可能會觸發哪些 PreToolUse / PostToolUse / Stop hooks）
+5. Hooks（這個任務可能會觸發哪些 hooks，說明觸發條件和效果）
 6. LSP servers（如果任務涉及特定語言的程式碼）
 7. CLI 工具（從下方已安裝清單中挑選相關的）
 
 本機 PATH 中所有可用指令：
 $ALL_CMDS
 
-語言 packages（自動偵測，未安裝的不顯示）：
 ${R_PKGS:+R packages: $R_PKGS}
-${PY_PKGS:+Python packages: $PY_PKGS}
+${PY_PKGS:+Python packages (top 200): $PY_PKGS}
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
