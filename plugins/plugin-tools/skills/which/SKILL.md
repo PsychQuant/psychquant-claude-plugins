@@ -43,13 +43,16 @@ claude -p "任務：$ARGUMENTS
 2. Skills（plugin 提供的 /plugin-name:skill-name）
 3. Commands（slash commands）
 4. Agents（可呼叫的 sub-agents）
-5. 常用 CLI 工具（gh, git, codex, Rscript, python3 等）
+5. Hooks（這個任務可能會觸發哪些 PreToolUse / PostToolUse / Stop hooks）
+6. LSP servers（如果任務涉及特定語言的程式碼）
+7. 常用 CLI 工具（gh, git, codex, Rscript, python3 等）
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
 |----------|------|------|
 
-類型用：MCP / Skill / Command / Agent / CLI" --output-format text --max-turns 1
+類型用：MCP / Skill / Command / Agent / Hook / LSP / CLI
+對於 Hooks，說明什麼操作會觸發它、觸發後會發生什麼。" --output-format text --max-turns 1
 ```
 
 直接把 `claude -p` 的回傳顯示給使用者。
