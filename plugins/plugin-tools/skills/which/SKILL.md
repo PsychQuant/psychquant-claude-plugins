@@ -34,36 +34,17 @@ allowed-tools:
 
 ## Execution
 
-### Step 1: 掃描本機 CLI 工具
+### Step 1: 掃描本機所有可執行指令
 
-在呼叫 `claude -p` 前，收集這台電腦實際安裝的 CLI 工具。
-每個指令都用 `2>/dev/null` — 沒裝的 package manager 會回傳空字串，不影響流程。
+直接掃 `$PATH` 裡所有 bin 目錄 — 不管是 brew、apt、npm、pip、cargo、手動裝的，全部一次掃到。
+典型的電腦約 1000-2000 個指令，~4K tokens，對 `claude -p` 不是負擔。
 
 ```bash
-# Package managers（每台電腦不同，有什麼掃什麼）
-BREW_LIST=$(brew list --formula 2>/dev/null | tr '\n' ', ')
-APT_LIST=$(dpkg --get-selections 2>/dev/null | awk '{print $1}' | tr '\n' ', ')
-NPM_GLOBAL=$(npm -g ls --depth=0 --parseable 2>/dev/null | xargs -I{} basename {} | tail -n +2 | tr '\n' ', ')
-PIP_LIST=$(pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | tr '\n' ', ')
-CARGO_LIST=$(cargo install --list 2>/dev/null | grep -E '^\S' | awk '{print $1}' | tr '\n' ', ')
+# 掃描 PATH 裡所有可執行指令（一行搞定，涵蓋所有 package manager）
+ALL_CMDS=$(ls /usr/bin /usr/local/bin /opt/homebrew/bin ~/bin ~/.local/bin ~/go/bin ~/.cargo/bin 2>/dev/null | sort -u | tr '\n' ', ')
 
-# Executables in common paths
-BIN_TOOLS=$(ls ~/bin /usr/local/bin ~/.local/bin 2>/dev/null | sort -u | tr '\n' ', ')
-
-# Language-specific（有裝才掃）
+# R packages（如果有裝）
 R_PKGS=$(Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
-GO_TOOLS=$(ls ~/go/bin 2>/dev/null | tr '\n' ', ')
-
-# 組合成清單（跳過空的）
-CLI_INVENTORY=""
-[ -n "$BREW_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- Homebrew: $BREW_LIST"
-[ -n "$APT_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- apt: $APT_LIST"
-[ -n "$NPM_GLOBAL" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- npm global: $NPM_GLOBAL"
-[ -n "$PIP_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- pip: $PIP_LIST"
-[ -n "$CARGO_LIST" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- cargo: $CARGO_LIST"
-[ -n "$BIN_TOOLS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- bin paths: $BIN_TOOLS"
-[ -n "$R_PKGS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- R packages: $R_PKGS"
-[ -n "$GO_TOOLS" ] && CLI_INVENTORY="${CLI_INVENTORY}\n- Go tools: $GO_TOOLS"
 ```
 
 ### Step 2: 呼叫 claude -p
@@ -82,8 +63,10 @@ claude -p "任務：$ARGUMENTS
 6. LSP servers（如果任務涉及特定語言的程式碼）
 7. CLI 工具（從下方已安裝清單中挑選相關的）
 
-本機已安裝的 CLI 工具（自動偵測，只顯示有安裝的 package manager）：
-$CLI_INVENTORY
+本機 PATH 中所有可用指令：
+$ALL_CMDS
+
+R packages（如果有）：$R_PKGS
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
@@ -91,7 +74,8 @@ $CLI_INVENTORY
 
 類型用：MCP / Skill / Command / Agent / Hook / LSP / CLI
 對於 Hooks，說明什麼操作會觸發它、觸發後會發生什麼。
-對於 CLI，只列跟任務相關的，不用全部列出。" --output-format text --max-turns 1
+對於 CLI，只列跟任務相關的，不用全部列出。
+如果你不確定某個 CLI 工具的用途，可以用 Bash 跑 '<tool> --help | head -5' 確認。" --output-format text --max-turns 3
 ```
 
 ### Step 3: 輸出
