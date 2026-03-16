@@ -267,6 +267,16 @@
       },
       "source": "./plugins/r-docs-guide",
       "category": "development"
+    },
+    {
+      "name": "che-apple-dev",
+      "version": "1.0.0",
+      "description": "Apple platform development toolkit — build, deploy, debug, device management for Xcode projects",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-apple-dev",
+      "category": "development"
     }
   ]
 }

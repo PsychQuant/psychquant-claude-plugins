@@ -1,0 +1,8 @@
+{
+  "name": "che-apple-dev",
+  "description": "Apple platform development toolkit — build, deploy, debug, device management for Xcode projects",
+  "version": "1.0.0",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
