@@ -45,7 +45,7 @@ claude -p "任務：$ARGUMENTS
 4. Agents（可呼叫的 sub-agents）
 5. Hooks（這個任務可能會觸發哪些 PreToolUse / PostToolUse / Stop hooks）
 6. LSP servers（如果任務涉及特定語言的程式碼）
-7. 常用 CLI 工具（gh, git, codex, Rscript, python3 等）
+7. CLI 工具（如果你知道有適合這個任務的 CLI 也一併列出）
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
