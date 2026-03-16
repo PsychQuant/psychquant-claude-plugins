@@ -1,7 +1,7 @@
 {
   "name": "plugin-tools",
-  "version": "1.2.0",
-  "description": "Claude Code Plugin 管理工具集：plugin-update（同步與更新流程）、plugin-health（健康檢查與診斷）、plugin-debug（深度除錯單一 plugin）",
+  "version": "1.3.0",
+  "description": "Claude Code Plugin 完整生命週期工具：create-plugin（建立 + marketplace 同步 + CLAUDE.md + Issue）、plugin-update、plugin-health、plugin-debug",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["plugin", "marketplace", "update", "sync", "management"]

@@ -41,6 +41,15 @@ my-plugin/
 
 | Skill | 用途 |
 |-------|------|
+| `/plugin-tools:create-plugin` | 建立新 plugin（含 marketplace 同步、CLAUDE.md、GitHub Issue） |
 | `/plugin-tools:plugin-health` | 檢查所有 plugin 健康狀態 |
 | `/plugin-tools:plugin-debug` | 深度除錯單一 plugin |
 | `/plugin-tools:plugin-update` | 更新 plugin 到最新版本 |
+
+## Plugin 生命週期
+
+```
+create-plugin → 開發/測試 → plugin-update → plugin-health → plugin-debug
+    ↑                                              |
+    └── 有問題？ ←─────────────────────────────────┘
+```
