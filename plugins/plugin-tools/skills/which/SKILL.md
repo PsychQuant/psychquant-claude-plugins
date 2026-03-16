@@ -25,14 +25,13 @@ allowed-tools:
 ```bash
 claude -p "任務：$ARGUMENTS
 
-請掃描你所有可用的工具（MCP tools、skills、slash commands），找出最適合這個任務的 5-10 個。
+請掃描你所有可用的工具（MCP tools、skills、slash commands），列出完成這個任務可能會用到的工具。
 
 輸出格式（markdown 表格）：
 | 工具名稱 | 類型 | 用途 |
 |----------|------|------|
 
-類型用：MCP / Skill / Command / CLI
-只列最相關的，不要列所有工具。" --output-format text --max-turns 1
+類型用：MCP / Skill / Command / CLI" --output-format text --max-turns 1
 ```
 
 直接把 `claude -p` 的回傳顯示給使用者。
