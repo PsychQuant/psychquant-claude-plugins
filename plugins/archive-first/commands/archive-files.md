@@ -1,5 +1,5 @@
 ---
-description: Copy a directory to archived/ with timestamp and lock it with immutable flag
+description: Copy a directory to archived/ with timestamp as a regression baseline
 ---
 
 # Archive-First: Create Backup
@@ -18,13 +18,7 @@ Archive the specified directory (or current project) as a regression baseline be
    cp -r <target> ./archived/<dirname>-$(date +%Y%m%d-%H%M%S)
    ```
 
-3. Lock files (not directories) with the immutable flag:
-   ```bash
-   find ./archived/<dirname>-* -type f -exec chflags uchg {} +
-   ```
-   This protects existing files from modification while still allowing new files to be copied into the directories.
-
-4. Confirm to the user:
+3. Confirm to the user:
    - Show the archived path
-   - Show the number of files protected
-   - Remind them they can use `/archive-first:unlock` to remove protection later
+   - Show the number of files copied
+   - Remind them that PreToolUse hooks will block destructive commands on `archived/`

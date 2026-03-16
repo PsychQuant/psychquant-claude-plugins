@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "COMMAND=$(jq -r '.tool_input.command // empty'); if echo \"$COMMAND\" | grep -qE '(rm|rmdir|unlink).*archived'; then jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Blocked: destructive command targeting archived/ directory. Use /archive-first:unlock to remove protection first.\"}}'; else exit 0; fi"
+            "command": "COMMAND=$(jq -r '.tool_input.command // empty'); if echo \"$COMMAND\" | tr ';' '\\n' | sed 's/&&/\\n/g' | sed 's/||/\\n/g' | grep -E '(rm|rmdir|unlink)' | grep -qE 'archived'; then jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Blocked: destructive command targeting archived/ directory. Use /archive-first:archived-unlock to disable protection first.\"}}'; else exit 0; fi"
           }
         ]
       },
@@ -25,17 +25,6 @@
           {
             "type": "command",
             "command": "FILE_PATH=$(jq -r '.tool_input.file_path // empty'); if echo \"$FILE_PATH\" | grep -qE '/archived/'; then jq -n '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:\"Blocked: cannot edit files in archived/ directory. Use /archive-first:unlock to remove protection first.\"}}'; else exit 0; fi"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "for dir in $(find . -maxdepth 3 -type d -name 'archived' -not -path '*/dist/*' -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/build/*' -not -path '*/.astro/*' 2>/dev/null); do find \"$dir\" -type f -exec chflags uchg {} + 2>/dev/null; done; exit 0"
           }
         ]
       }

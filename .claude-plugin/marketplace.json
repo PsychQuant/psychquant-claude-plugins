@@ -180,8 +180,8 @@
     },
     {
       "name": "archive-first",
-      "version": "1.5.0",
-      "description": "Protect files from AI-assisted deletion \u2014 auto-lock archived/ directories, block destructive commands on archived paths (macOS)",
+      "version": "2.0.0",
+      "description": "Protect files from AI-assisted deletion \u2014 PreToolUse hooks block destructive commands on archived/ paths, toggle with archived-lock/archived-unlock",
       "author": {
         "name": "Che Cheng"
       },
