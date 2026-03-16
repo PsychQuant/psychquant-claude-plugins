@@ -1,33 +1,27 @@
 ---
 name: plugin-deploy
 description: |
-  發布 plugin 到 Anthropic 官方 marketplace。引導準備提交所需的檔案和資訊，
-  然後開啟提交頁面。
-  當用戶提到「發布 plugin」「submit plugin」「上架 plugin」「deploy plugin」
-  「提交到官方」時使用。
+  發布 plugin 到自己的 marketplace（pre-flight check + version bump + commit + push + sync）。
+  完整的發布流程，確保 plugin 品質和 marketplace 同步。
+  當用戶提到「發布 plugin」「deploy plugin」「上架」「release plugin」時使用。
 argument-hint: "[plugin-name]"
 allowed-tools:
   - Read
+  - Write
+  - Edit
   - Glob
   - Grep
-  - Bash(open:*)
+  - Bash(git:*)
+  - Bash(gh:*)
   - Bash(ls:*)
   - Bash(cat:*)
+  - Bash(claude:*)
   - AskUserQuestion
 ---
 
-# Plugin Deploy — 發布到官方 Marketplace
+# Plugin Deploy — 發布到自己的 Marketplace
 
-引導你準備並提交 plugin 到 Anthropic 官方 marketplace。
-
-## 提交入口
-
-| 平台 | URL |
-|------|-----|
-| Claude.ai | https://claude.ai/settings/plugins/submit |
-| Console | https://platform.claude.com/plugins/submit |
-
-任何人都可以提交，但會經過 Anthropic 審核。
+完整的 plugin 發布流程：品質檢查 → 版本號 → marketplace 同步 → commit → push → reload。
 
 ## Execution Steps
 
@@ -36,15 +30,15 @@ allowed-tools:
 從 `$ARGUMENTS` 取得 plugin name，找到 plugin 目錄：
 
 ```bash
-# 在 marketplace repo 中找
-PLUGIN_DIR=$(find . -path "*/plugins/$PLUGIN_NAME/.claude-plugin/plugin.json" -exec dirname {} \; | head -1 | sed 's|/.claude-plugin||')
+MARKETPLACE_ROOT="找到 marketplace repo 根目錄"
+PLUGIN_DIR="$MARKETPLACE_ROOT/plugins/$PLUGIN_NAME"
 ```
 
 如果找不到，問使用者。
 
 ### Step 2: Pre-flight Checklist
 
-檢查 plugin 是否準備好提交：
+檢查 plugin 是否準備好發布：
 
 | 項目 | 檢查方式 | 必要？ |
 |------|---------|--------|
@@ -53,11 +47,11 @@ PLUGIN_DIR=$(find . -path "*/plugins/$PLUGIN_NAME/.claude-plugin/plugin.json" -e
 | description 有填 | 長度 > 0 | 必要 |
 | version 有填 | semver 格式 | 必要 |
 | 至少一個 skill 或 command | 掃描 `skills/` 和 `commands/` | 必要 |
+| 每個 SKILL.md 有 description | 讀取 frontmatter | 必要 |
 | README.md 存在 | 檔案存在 | 建議 |
 | CLAUDE.md 存在 | 檔案存在 | 建議 |
-| LICENSE 存在 | 檔案存在 | 建議 |
-| 無硬編碼路徑 | grep 絕對路徑 | 建議 |
-| 用 ${CLAUDE_PLUGIN_ROOT} | grep hooks/MCP 中的路徑 | 如有 hooks/MCP |
+| 無硬編碼絕對路徑 | grep `/Users/` 等 | 建議 |
+| hooks 用 ${CLAUDE_PLUGIN_ROOT} | grep hooks 中的路徑 | 如有 hooks |
 
 ### Step 3: Present Checklist
 
@@ -73,13 +67,13 @@ PLUGIN_DIR=$(find . -path "*/plugins/$PLUGIN_NAME/.claude-plugin/plugin.json" -e
 
 ### 建議項目
 - [x] README.md ✅
-- [ ] LICENSE ❌ — 建議加上（MIT 最簡單）
+- [ ] LICENSE ❌
 - [x] CLAUDE.md ✅
 
 ### 問題
-- ❌ LICENSE 缺失：建議在 plugin 根目錄加上 LICENSE 檔案
+{列出需要修正的項目}
 
-要修正問題後繼續，還是直接提交？
+要修正問題後繼續，還是直接發布？
 ```
 
 ### Step 4: Fix Issues (Optional)
@@ -87,44 +81,74 @@ PLUGIN_DIR=$(find . -path "*/plugins/$PLUGIN_NAME/.claude-plugin/plugin.json" -e
 如果有問題，幫使用者修正：
 - 缺 README.md → 從 CLAUDE.md 和 skills 自動產生
 - 缺 LICENSE → 建立 MIT LICENSE
-- 硬編碼路徑 → 替換成 `${CLAUDE_PLUGIN_ROOT}`
+- 硬編碼路徑 → 提示修正
 
-### Step 5: Prepare Submission Info
+### Step 5: Version Bump
 
-整理提交需要的資訊：
+問使用者版本號要怎麼升：
 
-```markdown
-## 提交資訊
+```
+目前版本：{current_version}
 
-| 欄位 | 值 |
-|------|-----|
-| Plugin Name | {name} |
-| Description | {description} |
-| Version | {version} |
-| Author | {author} |
-| Repository | {repo URL} |
-| Skills | {list} |
-| Commands | {list} |
-| Category | {category} |
+1. Patch（{x.y.z+1}）— bug fix、小修正
+2. Minor（{x.y+1.0}）— 新功能、新 skill
+3. Major（{x+1.0.0}）— 破壞性變更
+4. 自訂版本號
 ```
 
-### Step 6: Open Submission Page
+更新兩個地方的版本號：
+1. `plugins/{name}/.claude-plugin/plugin.json` 的 `version`
+2. `.claude-plugin/marketplace.json` 中對應 plugin 的 `version`
+
+### Step 6: Update marketplace.json
+
+確認 marketplace.json 中的 plugin entry 資訊是最新的：
+- version 已更新
+- description 與 plugin.json 一致
+- 如果是新 plugin，確認 entry 已存在
+
+### Step 7: Commit & Push
 
 ```bash
-open "https://claude.ai/settings/plugins/submit"
+cd "$MARKETPLACE_ROOT"
+git add "plugins/{plugin-name}" ".claude-plugin/marketplace.json"
+git commit -m "release: {plugin-name} v{new_version} — {簡述變更}"
+git push origin main
+```
+
+### Step 8: Sync & Reload
+
+```bash
+# 同步 marketplace cache
+claude plugin marketplace update {marketplace-name}
+
+# 更新已安裝的 plugin
+claude plugin update {plugin-name}
+```
+
+### Step 9: Verify
+
+```bash
+# 確認版本正確
+claude plugin list | grep {plugin-name}
 ```
 
 提示使用者：
 ```
-提交頁面已開啟。請用上面的資訊填寫表單。
-提交後 Anthropic 會進行審核，通過後你的 plugin 就會出現在官方 marketplace。
+{plugin-name} v{new_version} 已發布！
 
-注意：審核時間不確定，建議同時維護自己的 marketplace（PsychQuant）作為主要發布管道。
+- marketplace.json ✅ 已更新
+- git push ✅ 已推送
+- plugin cache ✅ 已同步
+- 安裝版本 ✅ 已更新
+
+其他使用者可透過以下指令安裝/更新：
+  /plugin marketplace update {marketplace-name}
+  /plugin install {plugin-name}@{marketplace-name}
 ```
 
 ## Notes
 
-- 官方 marketplace 有審核流程，時間不確定
-- 自己的 marketplace（如 PsychQuant）不需要審核，push 即生效
-- 兩者可以並行：自己的 marketplace 是主要管道，官方是額外曝光
-- 提交後如果被拒，可以根據回饋修改後重新提交
+- 這個 skill 發布到**自己的 marketplace**（如 PsychQuant），push 即生效，不需要審核
+- 如果未來要提交到 Anthropic 官方 marketplace，目前只接受企業級合作夥伴
+- 發布前建議先用 `claude --plugin-dir` 本地測試
