@@ -1,0 +1,8 @@
+{
+  "name": "tool-finder",
+  "version": "1.0.0",
+  "description": "找出任務可用的工具（MCP、Skills、CLI）或搜尋更好的替代方案",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["tools", "discovery", "which", "search", "recommendation"]
+}

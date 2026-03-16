@@ -1,7 +1,7 @@
 {
   "name": "plugin-tools",
-  "version": "1.6.0",
-  "description": "Claude Code Plugin 完整生命週期 + 工具探索：plugin-create、plugin-deploy、plugin-update、plugin-health、plugin-debug、which、which-better",
+  "version": "1.7.0",
+  "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-deploy、plugin-update、plugin-health、plugin-debug",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["plugin", "marketplace", "update", "sync", "management"]

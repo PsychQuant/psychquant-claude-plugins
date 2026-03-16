@@ -20,7 +20,7 @@
     },
     {
       "name": "plugin-tools",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "description": "Claude Code Plugin \u5b8c\u6574\u751f\u547d\u9031\u671f\u5de5\u5177\uff1aplugin-create\u3001plugin-deploy\u3001plugin-update\u3001plugin-health\u3001plugin-debug",
       "author": {
         "name": "Che Cheng"
@@ -277,6 +277,16 @@
       },
       "source": "./plugins/che-apple-dev",
       "category": "development"
+    },
+    {
+      "name": "tool-finder",
+      "version": "1.0.0",
+      "description": "找出任務可用的工具（MCP、Skills、CLI）或搜尋更好的替代方案",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/tool-finder",
+      "category": "productivity"
     }
   ]
 }
