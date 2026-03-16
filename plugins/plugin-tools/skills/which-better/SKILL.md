@@ -38,7 +38,8 @@ allowed-tools:
 
 ```bash
 ALL_CMDS=$(ls /usr/bin /usr/local/bin /opt/homebrew/bin ~/bin ~/.local/bin ~/go/bin ~/.cargo/bin 2>/dev/null | sort -u | tr '\n' ', ')
-R_PKGS=$(Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
+R_PKGS=$(command -v Rscript >/dev/null 2>&1 && Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
+PY_PKGS=$(command -v pip3 >/dev/null 2>&1 && pip3 list --format=freeze 2>/dev/null | cut -d= -f1 | tr '\n' ', ')
 ```
 
 ### Step 2: 呼叫 claude -p（有 WebSearch + WebFetch 能力）
@@ -56,7 +57,8 @@ claude -p "任務：$ARGUMENTS
 本機 PATH 中所有可用指令：
 $ALL_CMDS
 
-R packages：$R_PKGS
+${R_PKGS:+R packages: $R_PKGS}
+${PY_PKGS:+Python packages: $PY_PKGS}
 
 ## 第二步：上網搜尋更好的替代方案
 
