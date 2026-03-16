@@ -15,6 +15,8 @@ allowed-tools:
   - Bash(head:*)
   - Bash(wc:*)
   - Bash(command:*)
+  - Bash(cut:*)
+  - Bash(sed:*)
   - Bash(Rscript:*)
   - Bash(pip3:*)
 ---
@@ -49,7 +51,8 @@ allowed-tools:
 
 ```bash
 # 動態讀 $PATH，不硬編碼目錄
-ALL_CMDS=$(echo "$PATH" | tr ':' '\n' | while read dir; do ls "$dir" 2>/dev/null; done | sort -u | tr '\n' ', ')
+# Empty PATH segments (leading/trailing :) mean current directory
+ALL_CMDS=$(echo "$PATH" | tr ':' '\n' | sed 's/^$/./' | while read dir; do ls "$dir" 2>/dev/null; done | sort -u | tr '\n' ', ')
 
 # 語言 packages（先偵測有沒有裝，有才掃；截斷避免塞爆 prompt）
 R_PKGS=$(command -v Rscript >/dev/null 2>&1 && Rscript -e "cat(installed.packages()[,'Package'], sep=', ')" 2>/dev/null)
