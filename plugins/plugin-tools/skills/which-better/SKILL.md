@@ -51,16 +51,26 @@ R packages：$R_PKGS
 
 ## 第二步：上網搜尋更好的替代方案
 
-用 WebSearch 搜尋：
+從以下來源搜尋更好的工具：
+
+A. Curated lists（用 WebFetch 直接讀）：
+- MCP servers: https://api.anthropic.com/mcp-registry/v0/servers?limit=100
+- awesome-mcp-servers: https://github.com/punkpeye/awesome-mcp-servers
+- Claude plugins: https://github.com/anthropics/claude-plugins-official
+- awesome-cli-apps: https://github.com/agarrharr/awesome-cli-apps
+
+B. WebSearch（補充搜尋）：
 - '{task} best tool 2025/2026'
 - '{task} alternative to {已找到的工具名}'
-- 'awesome {相關領域}' GitHub lists
+- 'awesome {相關領域} github'
+- 'mcp server {task}'
+- 'claude code plugin {task}'
 
 搜尋目標：
 - 有沒有更快、更強、更新的替代品
 - 有沒有專門為這個任務設計的工具（而非通用工具）
-- 有沒有 MCP server 可以安裝（搜尋 'mcp server {task}'）
-- 有沒有 Claude Code plugin 可以安裝
+- 有沒有現成的 MCP server 可以 claude mcp add
+- 有沒有 Claude Code plugin 可以 /plugin install
 
 ## 第三步：比較並推薦
 
