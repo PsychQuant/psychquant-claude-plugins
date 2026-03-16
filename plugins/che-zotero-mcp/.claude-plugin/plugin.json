@@ -1,6 +1,6 @@
 {
   "name": "che-zotero-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zotero reference manager + academic search + knowledge graph MCP Server",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
