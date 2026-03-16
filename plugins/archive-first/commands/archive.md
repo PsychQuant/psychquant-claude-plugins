@@ -18,10 +18,11 @@ Archive the specified directory (or current project) as a regression baseline be
    cp -r <target> ./archived/<dirname>-$(date +%Y%m%d-%H%M%S)
    ```
 
-3. Lock all files with the immutable flag:
+3. Lock files (not directories) with the immutable flag:
    ```bash
-   chflags -R uchg ./archived/<dirname>-*
+   find ./archived/<dirname>-* -type f -exec chflags uchg {} +
    ```
+   This protects existing files from modification while still allowing new files to be copied into the directories.
 
 4. Confirm to the user:
    - Show the archived path
