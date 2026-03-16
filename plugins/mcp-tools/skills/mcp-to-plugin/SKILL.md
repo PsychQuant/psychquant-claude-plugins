@@ -92,12 +92,16 @@ gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null  # GitHub repo
 
 ## Phase 1: 建立 Plugin 結構
 
-Plugin 目標路徑：`/Users/che/Developer/psychquant-claude-plugins/plugins/{plugin_name}/`
+> **Note**: Plugin 基礎結構（目錄、plugin.json、CLAUDE.md、marketplace.json）也可以用
+> `/plugin-tools:plugin-create {plugin_name}` 一鍵建立。本 phase 保留手動步驟是因為
+> MCP plugin 需要額外的 `bin/` 和 `.mcp.json`，plugin-create 不會自動建這些。
+
+Plugin 目標路徑：marketplace repo 下的 `plugins/{plugin_name}/`
 
 ### Step 1: 建立目錄
 
 ```bash
-PLUGIN_DIR="/Users/che/Developer/psychquant-claude-plugins/plugins/{plugin_name}"
+PLUGIN_DIR="$MARKETPLACE_ROOT/plugins/{plugin_name}"
 mkdir -p "$PLUGIN_DIR/.claude-plugin"
 mkdir -p "$PLUGIN_DIR/bin"
 mkdir -p "$PLUGIN_DIR/commands"
@@ -441,7 +445,7 @@ cp ~/.claude.json ~/.claude.json.backup.$(date +%s)
 
 ## Plugin 資訊
 - 名稱: {plugin_name}
-- 位置: /Users/che/Developer/psychquant-claude-plugins/plugins/{plugin_name}/
+- 位置: $MARKETPLACE_ROOT/plugins/{plugin_name}/
 - MCP Servers: {列出所有 server_id}
 
 ## 密鑰管理
@@ -464,5 +468,5 @@ cp ~/.claude.json ~/.claude.json.backup.$(date +%s)
 ## 下一步
 - 重啟 Claude Code 載入新 Plugin
 - 測試: 使用 slash commands 驗證功能
-- 如需發布到 marketplace: `/mcp-tools:mcp-deploy`
+- 如需發布到 marketplace: `/plugin-tools:plugin-deploy {plugin_name}`
 ```
