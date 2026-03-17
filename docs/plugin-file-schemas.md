@@ -349,6 +349,33 @@ model: haiku
 | `${CLAUDE_SESSION_ID}` | 當前 session ID |
 | `${CLAUDE_SKILL_DIR}` | SKILL.md 所在目錄 |
 
+### Auto-Completion 命名策略
+
+Plugin skill 的完整呼叫格式是 `/plugin-name:skill-name`。當 plugin name 很長時，skill name 加上短前綴可以讓 auto-completion 更快找到：
+
+```
+# plugin name 長，但 skill 前綴統一 → 打 "idd-" 就跳出全部
+issue-driven-dev:idd-issue
+issue-driven-dev:idd-diagnose
+issue-driven-dev:idd-verify
+
+# plugin name 短 → skill 不需要前綴
+mcp-tools:mcp-diagnose    ← "mcp-" 前綴跟 plugin name 重複
+mcp-tools:diagnose         ← 直接用就好
+```
+
+**命名原則**：
+
+| Plugin name 長度 | Skill 命名建議 | 範例 |
+|-------------------|---------------|------|
+| 短（≤8 字元） | 不加前綴 | `mcp-tools:diagnose` |
+| 長（>8 字元） | 加 2-4 字元前綴 | `issue-driven-dev:idd-verify` |
+
+**前綴選擇**：
+- 取 plugin name 的縮寫（`issue-driven-dev` → `idd`）
+- 同一 plugin 的所有 skill 用相同前綴
+- 前綴必須在所有已安裝 plugin 中唯一
+
 ### 動態注入
 
 `` !`command` `` — 在 skill 載入前執行 shell command，輸出取代 placeholder。
@@ -376,4 +403,4 @@ plugin-root/
 
 ---
 
-最後更新: 2026-03-14
+最後更新: 2026-03-17
