@@ -30,8 +30,8 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "1.0.0",
-      "description": "Issue-driven development: well-documented GitHub Issues + Codex CLI verification. Human defines the problem, AI solves it.",
+      "version": "2.0.0",
+      "description": "Issue-driven development methodology: issue \u2192 diagnose \u2192 implement \u2192 verify \u2192 close. Every change traces back to an issue.",
       "author": {
         "name": "Che Cheng"
       },
