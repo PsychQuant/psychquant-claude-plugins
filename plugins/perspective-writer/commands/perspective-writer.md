@@ -121,8 +121,23 @@ Now draft the letter, following these principles:
 - While drafting, continuously check: does this sentence have a concrete referent?
   If not, either find one from the user's materials or ask. Never fill a gap with vague phrasing.
 
+**The #1 rule: Lead with WHY, not WHO (前置動機).**
+
+The reader's first question is always "why am I receiving this?" — never "who is this person?"
+The first sentence of any correspondence must answer WHY before WHO.
+
+- BAD: "I am Che Cheng, I got my PhD from NTU... I am writing to apply for..."
+  (Reader still doesn't know why you're writing to THEM specifically)
+- GOOD: "I attended your keynote at IASC-ARS 2025 and am writing to apply for..."
+  (Immediately answers: you're not spam, you have a specific reason)
+
+For replies: the first sentence should respond to the other person's last message, not start
+with your own agenda. ("Thank you for your reply. The earlier email didn't arrive..." — not
+"I would like to update you on my plans...")
+
+WHO (credentials, background) goes later in the email, compressed. The CV is attached.
+
 **What real people do that AI doesn't:**
-- Start with the point, not a self-introduction (the recipient will read your name and affiliation anyway)
 - Mention specific things about the recipient's work that actually connect to their situation
   (not a literature review, but "I read your paper on X, and it's relevant to a problem I'm facing")
 - Express genuine motivation, not manufactured enthusiasm
