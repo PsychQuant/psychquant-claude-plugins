@@ -135,6 +135,43 @@ Now draft the letter, following these principles:
 - Closing: simple and warm, not stiff. "謝謝老師" is fine. "感謝老師撥冗審閱" is borderline robotic.
 - The email itself serves as the cover letter. Don't repeat what's in the attached autobiography.
 
+**Cultural calibration (Japanese academic context):**
+- Leave space for the recipient to not respond, not commit, not feel obligated.
+- Use softeners like "if by any chance" or "if it is convenient" before any request or proposal.
+- If the recipient gave a vague timeline (e.g., "at least until 2027"), do NOT pin it down in your reply
+  (e.g., "closer to 2027" feels like pressure). Use "in the future" or "when the time is right" instead.
+- Japanese professors value indirectness. A sentence that says "I am available anytime" is less pressure
+  than "I will contact you in January 2027."
+- When the recipient has declined or delayed, your reply should convey understanding and zero urgency.
+  The relationship is more important than the immediate opportunity.
+
+**Pressure calibration (applies to all correspondence):**
+
+After drafting, re-read every sentence and ask: **"How much social pressure does this sentence put on the
+recipient?"** This is especially critical when:
+- The recipient has already said no, or deferred
+- There is a power asymmetry (you are junior)
+- The cultural context values indirectness (Japanese, some Taiwanese formal contexts)
+
+Common pressure traps:
+- **Pinning down vague timelines.** If they said "maybe next year," don't reply with a specific month.
+- **Listing specific ways you can help.** The more specific, the more it implies they should say yes.
+  "I would be delighted to help" (open) vs "I could collect data, run analyses, and coordinate with
+  your lab" (feels like you're already planning to move in).
+- **Eagerness overflow.** The right word choice matters:
+
+| Too eager (pressure) | Appropriate | Low-key |
+|---------------------|-------------|---------|
+| enthusiastic | delighted | happy |
+| eager | glad | grateful |
+| passionate about | interested in | appreciate |
+| I can't wait to | I look forward to | I hope to |
+| as soon as possible | at your convenience | when the time is right |
+
+- **The "less is more" principle for proposals.** When offering to help or proposing collaboration,
+  one short sentence is less pressure than a detailed paragraph. Let the recipient ask for details
+  if they are interested.
+
 ## Phase 5: Anti-Patterns Checklist
 
 Before presenting the draft, check for these AI writing tells and remove every instance:
