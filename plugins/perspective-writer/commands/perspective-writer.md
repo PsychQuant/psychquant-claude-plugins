@@ -238,3 +238,37 @@ Show the draft to the user. Don't just dump it. Explain:
 
 If the user says the tone is wrong, don't just adjust surface-level wording.
 Go back to Phase 1 and ask what you got wrong about their internal state.
+
+## Phase 7: Persist for Next Time
+
+After the user confirms the draft (or after tone corrections), ask:
+
+> "要不要把跟 [recipient] 的通信習慣記下來？這樣下次寫信就不用重新調整語氣了。
+> 我可以寫進這個專案的 CLAUDE.md 或 .claude/rules/ 裡，你隨時可以修改。"
+
+If the user agrees, persist the following (choose the right location):
+
+**CLAUDE.md** — recipient's basic info (name, title, relationship, preferred address):
+```markdown
+## 合作者資訊
+| 欄位 | 內容 |
+|------|------|
+| 姓名 | ... |
+| 稱呼 | **...**（寫信時一律用此稱呼） |
+| 關係 | 長輩/同輩/晚輩 |
+```
+
+**.claude/rules/correspondence.md** — tone rules, vocabulary preferences, letter structure:
+```markdown
+# 通信規則 — [Recipient]
+## 稱呼與語氣
+## 用詞偏好（避免/改用對照表）
+## 信件結構
+## 注意事項
+```
+
+**Important**:
+- If CLAUDE.md or rules files already exist, READ them first and ADD to them. Don't overwrite.
+- Always tell the user: "這些設定存在 `CLAUDE.md` 和 `.claude/rules/correspondence.md`，你隨時可以打開修改。"
+- If the user corrected the tone during Phase 6, the correction itself is the most valuable thing to persist.
+  Capture the specific fix (e.g., "用『請教』不用『討論』") not just a vague rule.
