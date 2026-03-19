@@ -242,30 +242,10 @@ Go back to Phase 1 and ask what you got wrong about their internal state.
 ## Phase 6b: Learn from User Edits
 
 If the user edits the draft file directly (detected via system-reminder about file modification),
-this is the **most valuable feedback**. The diff between your draft and their edit reveals exactly
-what your simulation got wrong.
+invoke the **`draft-learner`** skill: `/perspective-writer:draft-learner`
 
-**Mandatory steps when you detect draft edits:**
-
-1. **Diff analysis** — Compare your original draft with the user's edited version. Categorize each change:
-   - **Tone shift** (e.g., 你→您, casual→formal, added honorifics)
-   - **Content cut** (e.g., removed a compliment, deleted a paragraph)
-   - **Content add** (e.g., added a closing greeting, added a time slot)
-   - **Structure change** (e.g., merged paragraphs, reordered)
-
-2. **Extract rules** — Turn each change into a concrete, reusable rule:
-   - BAD: "be more formal" (vague)
-   - GOOD: "用「您」不是「你」" / "不需要誇對方的研究設計" / "結尾加「祝 事事順心」"
-
-3. **Update rules file** — If `.claude/rules/correspondence-[recipient].md` exists, read it and
-   update with the new rules. If it doesn't exist, offer to create it.
-
-4. **Confirm with user** — Show what you learned:
-   > "從你的修改我學到了幾個點：[list changes]。我已經更新了 `.claude/rules/correspondence-[name].md`，你可以打開確認。"
-
-**Do NOT skip this phase.** User edits to drafts are the highest-signal feedback —
-higher than verbal corrections, because the user showed you exactly what they wanted
-rather than trying to describe it.
+This skill handles diffing, rule extraction, and updating `.claude/rules/` automatically.
+Do NOT duplicate its logic here.
 
 ## Phase 7: Persist for Next Time
 
