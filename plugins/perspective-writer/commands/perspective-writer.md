@@ -203,6 +203,32 @@ Before presenting the draft, check for these AI writing tells and remove every i
 | "不僅...更..." "不僅...也..." | AI loves this construction. Humans use it sparingly. | Use it at most once per document |
 | Ending with "期盼" "期許" "展望" | Overly formal, sounds like a press release | End like a person: "謝謝老師" or "希望有機會跟老師聊聊" |
 
+## Phase 5b: Output Format
+
+**CRITICAL: Never use markdown blockquote (`>`) for email/letter drafts.**
+Blockquotes render with a left border line in terminals and chat UIs, making the draft look like
+a quoted reply rather than original text. The user will copy this text to send — it must be clean.
+
+**Correct format**: Use a horizontal rule (`---`) before and after the draft to visually separate it.
+Write the body as plain paragraphs with no `>` prefix. Lists (`-`) are fine for bullet points
+within the email (e.g., available time slots).
+
+```
+---
+
+Recipient greeting,
+
+Body paragraph 1.
+
+Body paragraph 2.
+- Item 1
+- Item 2
+
+Signature
+
+---
+```
+
 ## Phase 6: Present and Iterate
 
 Show the draft to the user. Don't just dump it. Explain:
