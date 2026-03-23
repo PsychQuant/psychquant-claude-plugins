@@ -90,3 +90,25 @@ else
     echo "⚠️  che-ical-mcp not found - installing automatically..."
     install_binary
 fi
+
+# Current time context (always output for temporal awareness)
+NOW_ISO=$(date '+%Y-%m-%dT%H:%M:%S%z')
+NOW_WEEKDAY_NUM=$(date "+%u")
+NOW_EN=$(LANG=en_US.UTF-8 date "+%A")
+case "$NOW_WEEKDAY_NUM" in
+    1) NOW_ZH="週一" ;; 2) NOW_ZH="週二" ;; 3) NOW_ZH="週三" ;;
+    4) NOW_ZH="週四" ;; 5) NOW_ZH="週五" ;; 6) NOW_ZH="週六" ;;
+    7) NOW_ZH="週日" ;; *) NOW_ZH="" ;;
+esac
+case "$NOW_WEEKDAY_NUM" in
+    1) NOW_JA="月曜日" ;; 2) NOW_JA="火曜日" ;; 3) NOW_JA="水曜日" ;;
+    4) NOW_JA="木曜日" ;; 5) NOW_JA="金曜日" ;; 6) NOW_JA="土曜日" ;;
+    7) NOW_JA="日曜日" ;; *) NOW_JA="" ;;
+esac
+LOCALE="${LANG:-en_US.UTF-8}"
+case "$LOCALE" in
+    zh_TW*|zh_HK*) echo "🕐 現在: ${NOW_ISO} ${NOW_ZH} (${NOW_EN})" ;;
+    zh_CN*)        echo "🕐 现在: ${NOW_ISO} ${NOW_ZH} (${NOW_EN})" ;;
+    ja_JP*)        echo "🕐 現在: ${NOW_ISO} ${NOW_JA} (${NOW_EN})" ;;
+    *)             echo "🕐 Now: ${NOW_ISO} ${NOW_EN} (${NOW_ZH})" ;;
+esac
