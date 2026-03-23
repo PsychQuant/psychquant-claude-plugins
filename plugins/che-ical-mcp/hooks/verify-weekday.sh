@@ -57,19 +57,39 @@ except:
     pass
 " 2>/dev/null)
 
+# Current time context
+NOW_ISO=$(date "+%Y-%m-%dT%H:%M:%S%z")
+NOW_DATE=$(date "+%Y-%m-%d")
+NOW_WEEKDAY_EN=$(LANG=en_US.UTF-8 date "+%A")
+NOW_WEEKDAY_NUM=$(date "+%u")
+case "$NOW_WEEKDAY_NUM" in
+    1) NOW_ZH="週一" ;; 2) NOW_ZH="週二" ;; 3) NOW_ZH="週三" ;;
+    4) NOW_ZH="週四" ;; 5) NOW_ZH="週五" ;; 6) NOW_ZH="週六" ;;
+    7) NOW_ZH="週日" ;; *) NOW_ZH="" ;;
+esac
+case "$NOW_WEEKDAY_NUM" in
+    1) NOW_JA="月曜日" ;; 2) NOW_JA="火曜日" ;; 3) NOW_JA="水曜日" ;;
+    4) NOW_JA="木曜日" ;; 5) NOW_JA="金曜日" ;; 6) NOW_JA="土曜日" ;;
+    7) NOW_JA="日曜日" ;; *) NOW_JA="" ;;
+esac
+
 # Detect locale for output language
 LOCALE="${LANG:-en_US.UTF-8}"
 case "$LOCALE" in
     zh_TW*|zh_HK*)
         echo "⚠️ 日期驗證: ${DATE_PART} 是 ${WEEKDAY_ZH} (${WEEKDAY_EN})。請確認這與用戶要求的星期一致。事件: ${TITLE}"
+        echo "🕐 現在: ${NOW_ISO} ${NOW_ZH} (${NOW_WEEKDAY_EN})"
         ;;
     zh_CN*)
         echo "⚠️ 日期验证: ${DATE_PART} 是 ${WEEKDAY_ZH} (${WEEKDAY_EN})。请确认这与用户要求的星期一致。事件: ${TITLE}"
+        echo "🕐 现在: ${NOW_ISO} ${NOW_ZH} (${NOW_WEEKDAY_EN})"
         ;;
     ja_JP*)
         echo "⚠️ 曜日検証: ${DATE_PART} は ${WEEKDAY_JA} (${WEEKDAY_EN}) です。ユーザーの指定した曜日と一致しているか確認してください。イベント: ${TITLE}"
+        echo "🕐 現在: ${NOW_ISO} ${NOW_JA} (${NOW_WEEKDAY_EN})"
         ;;
     *)
         echo "⚠️ Day-of-week check: ${DATE_PART} is ${WEEKDAY_EN} (${WEEKDAY_ZH}). Verify this matches the user's intended day. Event: ${TITLE}"
+        echo "🕐 Now: ${NOW_ISO} ${NOW_WEEKDAY_EN} (${NOW_ZH})"
         ;;
 esac
