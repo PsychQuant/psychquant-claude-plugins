@@ -47,6 +47,37 @@ whether the level of detail serves the paragraph's goal. If one sentence has too
 compress multiple referents into a single narrative arc
 (e.g., "standard software couldn't handle the model → wrote custom estimation in RStan").
 
+## The Fabrication Trap
+
+T-schema says every sentence needs a referent. But there is a subtler failure mode: a sentence
+can *appear* to have a referent while actually being fabricated. This happens in two ways:
+
+**1. Embellishing the writer's experience.**
+
+You read the user's CV, see "Statistics TA, 10 semesters," and write: "I guided students through
+derivations of hypothesis testing logic." This sounds specific. It has a referent — but the referent
+is *your inference*, not something the user actually did. Maybe they ran software labs, not derivations.
+
+The fix: when describing what the user *did* (not what they *know*), treat it like a quote — it must
+come from their materials or their own words. If the CV says "Statistics TA" and nothing more,
+write "Statistics TA" and nothing more. Do not infer *how* they taught.
+
+**2. Writing claims the user cannot defend.**
+
+You research the recipient's publications and construct a technical connection: "Your D-optimality
+framework for fMRI design shares the same Fisher information foundation as my Cramér-Rao bound work."
+This may even be mathematically correct. But if the user says "I don't understand this," it cannot
+go in the letter. The user will be asked about it in an interview and will not be able to answer.
+
+The fix: before writing any claim that connects the user's work to the recipient's work at a
+technical level, ask the user: "Do you understand this connection well enough to discuss it
+in an interview?" If no, either simplify to a level they can defend ("I'm interested in learning
+about optimal design") or leave it out entirely.
+
+**The test**: for every sentence about the user's experience or expertise, ask:
+- "Did the user tell me this, or did I infer it?" → If inferred, ask them to confirm.
+- "Could the user explain this sentence in their own words?" → If not, don't write it.
+
 ## Why AI Correspondence Fails
 
 AI-generated correspondence describes the writer's qualifications like a product spec sheet.
