@@ -1,0 +1,181 @@
+# Quantitative Method Section Decision Tree
+# Based on: 02_jars_standards/jars_visual_framework.md Section 5.2
+
+decision_tree:
+  name: "Quantitative Method Section Checklist"
+  version: "1.0"
+  description: "Decision tree for writing a compliant JARS-Quant Method section"
+  root: "start_method"
+
+  nodes:
+    start_method:
+      type: "action"
+      action: "Begin Method section with Participants subsection"
+      yes: "describe_participants"
+
+    # === PARTICIPANTS (Q1) ===
+    describe_participants:
+      type: "decision"
+      question: "Have you described participant demographics?"
+      axioms: ["Q1"]
+      evidence:
+        - "Age (M, SD, range)"
+        - "Gender/sex distribution"
+        - "Race/ethnicity if relevant"
+        - "Education level if relevant"
+        - "Other relevant characteristics"
+      yes: "describe_sampling"
+      no: "add_demographics"
+
+    add_demographics:
+      type: "action"
+      action: "Add demographic information"
+      yes: "describe_sampling"
+
+    describe_sampling:
+      type: "decision"
+      question: "Have you described the sampling method?"
+      axioms: ["Q1"]
+      evidence:
+        - "Sampling frame identified"
+        - "Recruitment procedure described"
+        - "Inclusion/exclusion criteria stated"
+      yes: "report_sample_size"
+      no: "add_sampling"
+
+    add_sampling:
+      type: "action"
+      action: "Add sampling method description"
+      yes: "report_sample_size"
+
+    report_sample_size:
+      type: "decision"
+      question: "Have you reported sample size with justification?"
+      axioms: ["Q1"]
+      evidence:
+        - "N clearly stated"
+        - "Power analysis or rationale provided"
+        - "Attrition explained if applicable"
+      yes: "start_measures"
+      no: "add_sample_size"
+
+    add_sample_size:
+      type: "action"
+      action: "Add sample size and justification"
+      yes: "start_measures"
+
+    # === MEASURES (Q2) ===
+    start_measures:
+      type: "action"
+      action: "Begin Measures/Materials subsection"
+      yes: "describe_reliability"
+
+    describe_reliability:
+      type: "decision"
+      question: "Have you reported reliability for each measure?"
+      axioms: ["Q2"]
+      evidence:
+        - "Cronbach's α or equivalent"
+        - "ICC for rater-based measures"
+        - "Test-retest if applicable"
+      yes: "describe_validity"
+      no: "add_reliability"
+
+    add_reliability:
+      type: "action"
+      action: "Add reliability evidence"
+      yes: "describe_validity"
+
+    describe_validity:
+      type: "decision"
+      question: "Have you provided validity evidence?"
+      axioms: ["Q2"]
+      evidence:
+        - "Content validity"
+        - "Criterion validity"
+        - "Construct validity"
+        - "Citations to validation studies"
+      yes: "describe_scoring"
+      no: "add_validity"
+
+    add_validity:
+      type: "action"
+      action: "Add validity evidence"
+      yes: "describe_scoring"
+
+    describe_scoring:
+      type: "decision"
+      question: "Have you described scoring procedures?"
+      axioms: ["Q2"]
+      evidence:
+        - "Response format"
+        - "Scoring rules"
+        - "Handling of missing data"
+      yes: "start_procedure"
+      no: "add_scoring"
+
+    add_scoring:
+      type: "action"
+      action: "Add scoring procedures"
+      yes: "start_procedure"
+
+    # === PROCEDURE (Q3) ===
+    start_procedure:
+      type: "action"
+      action: "Begin Procedure subsection"
+      yes: "describe_design"
+
+    describe_design:
+      type: "decision"
+      question: "Have you described the research design?"
+      axioms: ["Q3"]
+      evidence:
+        - "Design type (experimental, correlational, etc.)"
+        - "Independent/dependent variables"
+        - "Control conditions"
+      yes: "describe_power"
+      no: "add_design"
+
+    add_design:
+      type: "action"
+      action: "Add design description"
+      yes: "describe_power"
+
+    describe_power:
+      type: "decision"
+      question: "Have you reported power analysis?"
+      axioms: ["Q3"]
+      evidence:
+        - "Effect size assumption"
+        - "Alpha level"
+        - "Desired power (typically .80)"
+        - "Resulting sample size"
+      yes: "describe_analysis_plan"
+      no: "add_power"
+
+    add_power:
+      type: "action"
+      action: "Add power analysis"
+      yes: "describe_analysis_plan"
+
+    describe_analysis_plan:
+      type: "decision"
+      question: "Have you specified planned analyses?"
+      axioms: ["Q3"]
+      evidence:
+        - "Primary analyses"
+        - "Secondary analyses"
+        - "Exploratory analyses (if any)"
+      yes: "method_complete"
+      no: "add_analysis_plan"
+
+    add_analysis_plan:
+      type: "action"
+      action: "Add analysis plan"
+      yes: "method_complete"
+
+    method_complete:
+      type: "result"
+      result: "Quantitative Method Section Complete"
+      description: "Method section meets JARS-Quant requirements (Q1-Q3)"
+      axioms: ["Q1", "Q2", "Q3"]

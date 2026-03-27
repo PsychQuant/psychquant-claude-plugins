@@ -1,0 +1,568 @@
+# APA 7 Writing Style - ASBE Format
+# Source: archive/original_md_axioms/chapter4_writing_style_axiomatization.md
+
+meta:
+  domain: "APA 7 Writing Style"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "2024-12-30"
+  source: "APA Publication Manual, 7th Edition, Chapter 4"
+  description: |
+    Axiomatization of APA 7 writing style principles using ASBE format.
+    Covers clarity, precision, conciseness, voice, tense, and structure.
+
+axioms:
+  - id: "A1_clarity"
+    name: "Clarity Principle"
+    one_liner: "Scholarly writing must be clear"
+
+    statement_natural: |
+      All scholarly text must be clear to facilitate understanding.
+      Clarity is achieved through simple words, direct construction,
+      logical order, and consistent terminology.
+
+    statement_formal: |
+      ∀t ∈ Text, Scholarly(t) → Clear(t)
+      where Clear(t) ≡ SimpleWords(t) ∧ DirectConstruction(t) ∧
+                       LogicalOrder(t) ∧ ConsistentTerminology(t)
+
+    rationale: |
+      Clarity is the foundation of effective communication.
+      All other style principles serve to enhance clarity.
+
+    violations:
+      - description: "Jargon-heavy prose obscuring meaning"
+        content: |
+          The epistemological ramifications of our paradigmatic
+          reconceptualization necessitate a hermeneutic reevaluation
+          of extant methodological frameworks.
+        explanation: |
+          Prioritizes impressive vocabulary over understanding.
+          Reader cannot extract the intended meaning.
+
+      - description: "Ambiguous pronoun reference"
+        content: |
+          The researchers gave the participants questionnaires.
+          They were completed in 15 minutes.
+        explanation: |
+          "They" could refer to researchers, participants, or questionnaires.
+          Ambiguous reference forces reader to guess.
+
+    compliant:
+      - description: "Clear, direct statement"
+        content: |
+          Our new approach requires us to rethink how we
+          interpret our research methods.
+        explanation: |
+          Same meaning as jargon example, but immediately understandable.
+
+      - description: "Clear pronoun reference"
+        content: |
+          The researchers gave the participants questionnaires.
+          The participants completed the questionnaires in 15 minutes.
+        explanation: |
+          Repeating the noun eliminates ambiguity.
+
+  - id: "A2_precision"
+    name: "Precision Requirement"
+    one_liner: "Scientific text must be precise"
+
+    statement_natural: |
+      All scientific text must be precise, using specific terms,
+      quantified claims, and defined concepts.
+
+    statement_formal: |
+      ∀t ∈ Text, Scientific(t) → Precise(t)
+      where Precise(t) ≡ SpecificTerms(t) ∧ QuantifiedClaims(t) ∧ DefinedConcepts(t)
+
+    violations:
+      - description: "Vague quantification"
+        content: |
+          Many participants showed significant improvement.
+        explanation: |
+          "Many" and "significant" are imprecise.
+          How many? What level of significance?
+
+      - description: "Undefined technical term"
+        content: |
+          The participants exhibited high cognitive load during the task.
+        explanation: |
+          "Cognitive load" is used without definition.
+          Reader may not know what this means.
+
+    compliant:
+      - description: "Precise quantification"
+        content: |
+          Of the 120 participants, 78 (65%) showed improvement
+          greater than 1 standard deviation (p < .001).
+        explanation: |
+          Exact numbers, percentages, and statistical criteria provided.
+
+      - description: "Term defined on first use"
+        content: |
+          Cognitive load—the mental effort required to process information—
+          was measured using a secondary task paradigm.
+        explanation: |
+          Technical term defined inline for reader clarity.
+
+  - id: "A3_economy"
+    name: "Economy of Expression"
+    one_liner: "Use minimum words for maximum clarity"
+
+    statement_natural: |
+      When equal meaning can be expressed more concisely, prefer the
+      shorter form. Eliminate redundancy, wordiness, and empty phrases.
+
+    statement_formal: |
+      ∀t ∈ Text, ∃t' such that
+        Meaning(t) = Meaning(t') ∧ Length(t') < Length(t)
+        → Prefer(t')
+
+    violations:
+      - description: "Redundant modifier"
+        content: |
+          The results were absolutely essential for understanding the phenomenon.
+        explanation: |
+          "Absolutely" adds nothing to "essential."
+          Essential is already an absolute concept.
+
+      - description: "Wordy phrase"
+        content: |
+          In the event that participants failed to complete the task...
+        explanation: |
+          7 words where 2 would suffice.
+
+      - description: "Nominalization instead of verb"
+        content: |
+          The researchers made a decision to conduct an investigation.
+        explanation: |
+          "Made a decision" = "decided"
+          "Conduct an investigation" = "investigate"
+
+    compliant:
+      - description: "Concise modifier"
+        content: |
+          The results were essential for understanding the phenomenon.
+        explanation: |
+          Removes redundant intensifier.
+
+      - description: "Direct phrase"
+        content: |
+          If participants failed to complete the task...
+        explanation: |
+          2 words instead of 7, same meaning.
+
+      - description: "Verb instead of nominalization"
+        content: |
+          The researchers decided to investigate.
+        explanation: |
+          6 words instead of 10, more direct.
+
+  - id: "A4_active_voice"
+    name: "Active Voice Preference"
+    one_liner: "Use active voice when possible"
+
+    statement_natural: |
+      Use active voice when possible. Active voice clarifies who
+      performs the action, making sentences more direct and engaging.
+
+    statement_formal: |
+      ∀s ∈ Sentence, CanBeActive(s) → UseActive(s)
+      where ActiveVoice(s) ≡ Subject(s) = Actor(Action(s))
+
+    rationale: |
+      Active voice identifies the actor clearly. Passive voice is
+      acceptable when the actor is unknown, irrelevant, or when
+      emphasizing the receiver of the action.
+
+    violations:
+      - description: "Unnecessary passive voice"
+        content: |
+          The experiment was conducted by the researchers.
+          The data were analyzed using SPSS.
+        explanation: |
+          Actor (researchers) is known and important.
+          Passive obscures agency unnecessarily.
+
+    compliant:
+      - description: "Clear active voice"
+        content: |
+          The researchers conducted the experiment.
+          We analyzed the data using SPSS.
+        explanation: |
+          Actor is clear, sentence is more direct.
+
+      - description: "Appropriate passive (actor unknown)"
+        content: |
+          The manuscript was written in the 12th century.
+        explanation: |
+          Actor is genuinely unknown. Passive is appropriate.
+
+  - id: "A5_tense_consistency"
+    name: "Tense Consistency Principle"
+    one_liner: "Each section maintains consistent primary tense"
+
+    statement_natural: |
+      Each section of a paper should maintain a consistent primary tense.
+      Tense shifts are permissible when justified by meaning.
+
+    statement_formal: |
+      ∀section ∈ Paper, ∃te ∈ Tenses such that
+        DominantTense(section) = te ∧
+        |{s : Tense(s) = te}| ≥ 0.7 × |Sentences(section)|
+
+    violations:
+      - description: "Unjustified tense shift"
+        content: |
+          The participants completed the survey. Then they are
+          answering follow-up questions. Finally, they submitted
+          their responses.
+        explanation: |
+          Shifts from past to present to past without reason.
+          Creates confusion about temporal sequence.
+
+    compliant:
+      - description: "Consistent tense in method"
+        content: |
+          The participants completed the survey. Then they answered
+          follow-up questions. Finally, they submitted their responses.
+        explanation: |
+          Consistent past tense throughout the procedure description.
+
+  - id: "A6_tense_selection"
+    name: "Section-Appropriate Tense"
+    one_liner: "Use tenses appropriate to each section"
+
+    statement_natural: |
+      Different sections of a paper use different dominant tenses
+      based on their communicative function.
+
+    statement_formal: |
+      TenseAssignment: Section → Tense
+        LiteratureReview → Past | PresentPerfect
+        Method → Past
+        Results → Past
+        Discussion → Present | Past
+        Implications → Present | Future
+
+    violations:
+      - description: "Wrong tense for method section"
+        content: |
+          First, we will recruit participants from the university.
+          Then, we administer the questionnaire.
+        explanation: |
+          Method section describes completed procedures.
+          Should use past tense, not future or present.
+
+    compliant:
+      - description: "Correct method tense"
+        content: |
+          First, we recruited participants from the university.
+          Then, we administered the questionnaire.
+        explanation: |
+          Past tense correctly describes completed procedures.
+
+      - description: "Correct literature review tense"
+        content: |
+          Smith (2020) found that anxiety affects performance.
+          Several studies have shown similar results.
+        explanation: |
+          Past for specific findings, present perfect for established knowledge.
+
+  - id: "A7_paragraph_unity"
+    name: "Paragraph Unity Axiom"
+    one_liner: "One main idea per paragraph"
+
+    statement_natural: |
+      Each paragraph should focus on a single main idea.
+      All sentences in the paragraph should relate to and support
+      that central idea.
+
+    statement_formal: |
+      ∀p ∈ Paragraph, ∃! idea such that
+        ∀s ∈ Sentences(p), Relates(s, idea)
+
+    violations:
+      - description: "Paragraph with multiple unrelated ideas"
+        content: |
+          The budget meeting is scheduled for tomorrow.
+          I prefer coffee to tea. The new policy affects
+          all employees. It might rain this weekend.
+        explanation: |
+          Four sentences, four unrelated topics.
+          Reader cannot identify the paragraph's purpose.
+
+    compliant:
+      - description: "Unified paragraph"
+        content: |
+          The budget meeting tomorrow will address three key issues.
+          First, we need to review the Q4 revenue projections.
+          Second, the hiring freeze requires immediate discussion.
+          Third, we must decide on funding for the expansion project.
+        explanation: |
+          All sentences support the main idea: budget meeting topics.
+
+  - id: "A8_transitions"
+    name: "Transition Requirement"
+    one_liner: "Adjacent paragraphs need transitional elements"
+
+    statement_natural: |
+      Adjacent paragraphs require transitional elements to connect
+      ideas and guide the reader through the argument.
+
+    statement_formal: |
+      ∀p₁, p₂ ∈ Paragraph where Adjacent(p₁, p₂),
+        ∃tr ∈ Transition such that Connects(tr, p₁, p₂)
+
+    violations:
+      - description: "Missing transition between paragraphs"
+        content: |
+          [Para 1] ...The results showed a significant effect.
+
+          [Para 2] Participants were recruited from the university.
+        explanation: |
+          Abrupt jump from results to method discussion.
+          Reader is disoriented without transition.
+
+    compliant:
+      - description: "Clear transition"
+        content: |
+          [Para 1] ...The results showed a significant effect.
+
+          [Para 2] To understand why this effect occurred, we need
+          to consider how participants were recruited.
+        explanation: |
+          Transition connects result to recruitment discussion.
+
+  - id: "A9_parallel_structure"
+    name: "Parallel Structure Axiom"
+    one_liner: "List items must have parallel grammatical structure"
+
+    statement_natural: |
+      Items in lists must have parallel grammatical structure.
+      This applies to bulleted lists, numbered lists, and series
+      within sentences.
+
+    statement_formal: |
+      ∀list ∈ Lists, ∀item₁, item₂ ∈ list,
+        Structure(item₁) ≅ Structure(item₂)
+
+    violations:
+      - description: "Non-parallel list"
+        content: |
+          The study aimed to:
+          1. Measure anxiety levels
+          2. Depression was also assessed
+          3. To determine the correlation between them
+        explanation: |
+          Items have different structures: infinitive, passive, infinitive.
+          Breaks parallel structure.
+
+    compliant:
+      - description: "Parallel list"
+        content: |
+          The study aimed to:
+          1. Measure anxiety levels
+          2. Assess depression levels
+          3. Determine the correlation between them
+        explanation: |
+          All items are infinitive phrases. Parallel structure maintained.
+
+theorems:
+  - id: "T1_known_new"
+    name: "Known-New Contract"
+    one_liner: "Begin with known info, end with new"
+    derives_from: ["A1_clarity", "A8_transitions"]
+
+    statement_natural: |
+      Sentences should begin with information the reader already
+      knows (from context or previous sentences) and end with
+      new information.
+
+    statement_formal: |
+      ∀s₁, s₂ where Consecutive(s₁, s₂),
+        Begin(s₂) ⊆ Information(s₁) ∪ Context
+        End(s₂) = NewInfo(s₂)
+
+    rationale: |
+      From A1 and A8: Clarity requires connecting new information
+      to existing knowledge. Known information at the beginning
+      provides a hook for new information at the end.
+
+    violations:
+      - description: "New information at beginning"
+        content: |
+          Mitochondrial dysfunction causes the symptoms.
+          The patient reported fatigue and weakness.
+        explanation: |
+          "Mitochondrial dysfunction" introduced cold.
+          Reader has no context for this term.
+
+    compliant:
+      - description: "Known bridges to new"
+        content: |
+          The patient reported fatigue and weakness.
+          These symptoms are caused by mitochondrial dysfunction.
+        explanation: |
+          "These symptoms" refers back to known info.
+          New term appears at sentence end where emphasis falls.
+
+  - id: "T2_clarity_conciseness_tradeoff"
+    name: "Clarity-Conciseness Trade-off"
+    one_liner: "Optimal point between clarity and brevity"
+    derives_from: ["A1_clarity", "A3_economy"]
+
+    statement_natural: |
+      There exists an optimal point where clarity and conciseness
+      are both maximized. Too concise becomes unclear; too verbose
+      dilutes clarity.
+
+    statement_formal: |
+      ∃ optimal t such that Clarity(t) × Conciseness(t) is maximized
+      ∂(Clarity)/∂(Length) changes sign at optimal point
+
+    violations:
+      - description: "Too concise (unclear)"
+        content: |
+          Results sig.
+        explanation: |
+          Brevity sacrifices clarity completely.
+          Abbreviation and incomplete sentence confuse reader.
+
+      - description: "Too verbose (diluted)"
+        content: |
+          It is important to note that the results that we obtained
+          from the analysis that we conducted were found to be
+          statistically significant at the level of p < .05.
+        explanation: |
+          Excessive wordiness buries the key information.
+
+    compliant:
+      - description: "Optimal balance"
+        content: |
+          The results were statistically significant (p < .05).
+        explanation: |
+          Clear and concise. No wasted words, but fully understandable.
+
+  - id: "T3_active_clarity"
+    name: "Active Voice Clarity Theorem"
+    one_liner: "Active voice enhances clarity"
+    derives_from: ["A1_clarity", "A4_active_voice"]
+
+    statement_natural: |
+      Active voice produces clearer sentences than passive voice
+      in most cases, because it identifies the actor explicitly.
+
+    statement_formal: |
+      ∀s ∈ Sentence,
+        Clarity(ActiveVersion(s)) > Clarity(PassiveVersion(s))
+      Exception: Actor is unknown OR irrelevant
+
+    violations:
+      - description: "Passive obscuring agency"
+        content: |
+          Mistakes were made in the data collection process.
+        explanation: |
+          Who made the mistakes? Passive hides responsibility.
+
+    compliant:
+      - description: "Active clarifying agency"
+        content: |
+          The research assistants made mistakes in data collection.
+        explanation: |
+          Clear who made mistakes. Enables accountability.
+
+rules:
+  - id: "R1_pronoun_distance"
+    name: "Pronoun Distance Rule"
+    one_liner: "Pronouns within 2 sentences of antecedent"
+    derives_from: ["A1_clarity"]
+
+    statement_natural: |
+      Pronouns should appear within 2 sentences of their antecedent.
+      Greater distance risks ambiguity.
+
+    statement_formal: |
+      ∀pronoun ∈ Pronouns,
+        Distance(pronoun, Antecedent(pronoun)) ≤ 2 sentences
+
+    violations:
+      - description: "Pronoun too far from antecedent"
+        content: |
+          Dr. Smith published the study in 2020. The research
+          examined anxiety in adolescents. Multiple schools
+          participated. Various measures were used. She found
+          significant effects.
+        explanation: |
+          "She" is 4 sentences from "Dr. Smith."
+          Reader may forget the antecedent.
+
+    compliant:
+      - description: "Pronoun near antecedent"
+        content: |
+          Dr. Smith published the study in 2020. She examined
+          anxiety in adolescents using multiple measures.
+        explanation: |
+          "She" immediately follows "Dr. Smith."
+
+  - id: "R2_modifier_placement"
+    name: "Modifier Placement Rule"
+    one_liner: "Place modifiers adjacent to what they modify"
+    derives_from: ["A1_clarity"]
+
+    statement_natural: |
+      Modifiers should be placed adjacent to the word or phrase
+      they modify to avoid ambiguity.
+
+    statement_formal: |
+      ∀modifier m, Distance(m, Modified(m)) = minimal ∧
+        Unambiguous(Attachment(m))
+
+    violations:
+      - description: "Misplaced modifier"
+        content: |
+          The researcher observed the children playing with a telescope.
+        explanation: |
+          Did the researcher use a telescope, or were children
+          playing with one? Ambiguous placement.
+
+    compliant:
+      - description: "Clear modifier placement"
+        content: |
+          Using a telescope, the researcher observed the children playing.
+        explanation: |
+          Modifier clearly attaches to "researcher."
+
+  - id: "R3_paragraph_length"
+    name: "Paragraph Length Rule"
+    one_liner: "100-200 words per paragraph"
+    derives_from: ["A7_paragraph_unity", "A3_economy"]
+
+    statement_natural: |
+      Paragraphs should contain approximately 100-200 words for
+      optimal comprehension. Shorter paragraphs feel incomplete;
+      longer paragraphs lose focus.
+
+    statement_formal: |
+      ∀p ∈ Paragraph, 100 ≤ |words(p)| ≤ 200
+      Equivalently: 3 ≤ |sentences(p)| ≤ 7
+
+    violations:
+      - description: "One-sentence paragraph"
+        content: |
+          The results were significant.
+        explanation: |
+          Cannot develop an idea in one sentence.
+          Feels abrupt and underdeveloped.
+
+    compliant:
+      - description: "Well-developed paragraph"
+        content: |
+          The results revealed a significant main effect of condition.
+          Participants in the experimental group (M = 4.2, SD = 0.8)
+          scored higher than those in the control group (M = 3.1, SD = 0.9).
+          This difference was statistically significant, t(98) = 6.42, p < .001.
+          The effect size was large (d = 1.29), suggesting a meaningful
+          practical difference between conditions.
+        explanation: |
+          5 sentences, ~70 words. Develops the finding fully.

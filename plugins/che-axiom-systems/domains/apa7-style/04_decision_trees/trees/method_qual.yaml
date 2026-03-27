@@ -1,0 +1,216 @@
+# Qualitative Method Section Decision Tree
+# Based on: 02_jars_standards/jars_visual_framework.md Section 5.2
+
+decision_tree:
+  name: "Qualitative Method Section Checklist"
+  version: "1.0"
+  description: "Decision tree for writing a compliant JARS-Qual Method section"
+  root: "start_method"
+
+  nodes:
+    start_method:
+      type: "action"
+      action: "Begin Method section with Researcher Description"
+      yes: "position_researcher"
+
+    # === RESEARCHER DESCRIPTION (QL1) ===
+    position_researcher:
+      type: "decision"
+      question: "Have you described the researcher(s)' background?"
+      axioms: ["QL1"]
+      evidence:
+        - "Relevant training and experience"
+        - "Prior knowledge of topic"
+        - "Personal connection to research area"
+      yes: "state_perspective"
+      no: "add_background"
+
+    add_background:
+      type: "action"
+      action: "Add researcher background"
+      yes: "state_perspective"
+
+    state_perspective:
+      type: "decision"
+      question: "Have you stated the theoretical/epistemological perspective?"
+      axioms: ["QL1"]
+      evidence:
+        - "Paradigm (e.g., constructivist, critical)"
+        - "Theoretical framework"
+        - "Epistemological stance"
+      yes: "describe_relationship"
+      no: "add_perspective"
+
+    add_perspective:
+      type: "action"
+      action: "Add theoretical perspective"
+      yes: "describe_relationship"
+
+    describe_relationship:
+      type: "decision"
+      question: "Have you described relationship to participants?"
+      axioms: ["QL1"]
+      evidence:
+        - "Prior relationship (if any)"
+        - "Power dynamics"
+        - "Reflexivity statement"
+      yes: "start_context"
+      no: "add_relationship"
+
+    add_relationship:
+      type: "action"
+      action: "Add relationship description"
+      yes: "start_context"
+
+    # === CONTEXT (QL2) ===
+    start_context:
+      type: "action"
+      action: "Begin Context/Setting description"
+      yes: "describe_setting"
+
+    describe_setting:
+      type: "decision"
+      question: "Have you described the research setting?"
+      axioms: ["QL2"]
+      evidence:
+        - "Physical or virtual location"
+        - "Organizational context"
+        - "Community characteristics"
+      yes: "describe_culture"
+      no: "add_setting"
+
+    add_setting:
+      type: "action"
+      action: "Add setting description"
+      yes: "describe_culture"
+
+    describe_culture:
+      type: "decision"
+      question: "Have you addressed relevant cultural factors?"
+      axioms: ["QL2"]
+      evidence:
+        - "Cultural context"
+        - "Social/political environment"
+        - "Historical context if relevant"
+      yes: "specify_timeframe"
+      no: "add_culture"
+
+    add_culture:
+      type: "action"
+      action: "Add cultural context"
+      yes: "specify_timeframe"
+
+    specify_timeframe:
+      type: "decision"
+      question: "Have you specified the time period?"
+      axioms: ["QL2"]
+      evidence:
+        - "Data collection dates"
+        - "Duration of fieldwork"
+        - "Temporal context of phenomenon"
+      yes: "start_data_collection"
+      no: "add_timeframe"
+
+    add_timeframe:
+      type: "action"
+      action: "Add time period"
+      yes: "start_data_collection"
+
+    # === DATA COLLECTION (QL3) ===
+    start_data_collection:
+      type: "action"
+      action: "Begin Data Collection description"
+      yes: "describe_methods"
+
+    describe_methods:
+      type: "decision"
+      question: "Have you described data collection methods?"
+      axioms: ["QL3"]
+      evidence:
+        - "Interview type (structured, semi-structured, unstructured)"
+        - "Observation approach"
+        - "Document analysis"
+        - "Focus groups"
+      yes: "describe_duration"
+      no: "add_methods"
+
+    add_methods:
+      type: "action"
+      action: "Add collection methods"
+      yes: "describe_duration"
+
+    describe_duration:
+      type: "decision"
+      question: "Have you described duration and frequency of data collection?"
+      axioms: ["QL3"]
+      evidence:
+        - "Number of interviews/observations"
+        - "Length of each session"
+        - "Total time in field"
+      yes: "state_saturation"
+      no: "add_duration"
+
+    add_duration:
+      type: "action"
+      action: "Add duration details"
+      yes: "state_saturation"
+
+    state_saturation:
+      type: "decision"
+      question: "Have you stated saturation criteria?"
+      axioms: ["QL3"]
+      evidence:
+        - "How saturation was defined"
+        - "When it was reached"
+        - "Stopping rules"
+      yes: "start_analysis"
+      no: "add_saturation"
+
+    add_saturation:
+      type: "action"
+      action: "Add saturation criteria"
+      yes: "start_analysis"
+
+    # === ANALYSIS (QL4) ===
+    start_analysis:
+      type: "action"
+      action: "Begin Data Analysis description"
+      yes: "describe_coding"
+
+    describe_coding:
+      type: "decision"
+      question: "Have you described the coding process?"
+      axioms: ["QL4"]
+      evidence:
+        - "Initial coding approach"
+        - "Code development (a priori vs. emergent)"
+        - "Software used (if any)"
+      yes: "explain_themes"
+      no: "add_coding"
+
+    add_coding:
+      type: "action"
+      action: "Add coding process"
+      yes: "explain_themes"
+
+    explain_themes:
+      type: "decision"
+      question: "Have you explained theme development?"
+      axioms: ["QL4"]
+      evidence:
+        - "How themes were identified"
+        - "Relationship between themes"
+        - "Iterative refinement process"
+      yes: "method_complete"
+      no: "add_themes"
+
+    add_themes:
+      type: "action"
+      action: "Add theme development explanation"
+      yes: "method_complete"
+
+    method_complete:
+      type: "result"
+      result: "Qualitative Method Section Complete"
+      description: "Method section meets JARS-Qual requirements (QL1-QL4)"
+      axioms: ["QL1", "QL2", "QL3", "QL4"]

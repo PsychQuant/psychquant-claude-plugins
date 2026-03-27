@@ -1,0 +1,2307 @@
+# Weight Control Axioms - ASBE Format
+# 體重控制公理系統 (公理化範例規範格式)
+
+meta:
+  domain: "Weight Control (CHONNa Framework)"
+  version: "1.5.0"
+  created: "2026-01-01"
+  updated: "2026-01-01"
+  author: "Che Cheng"
+  description: |
+    A formal axiomatization of body weight dynamics based on elemental mass balance.
+    Built on the CHONNa framework: Carbon, Hydrogen, Oxygen, Nitrogen, Sodium.
+    Includes Bayesian personalization framework for individual parameter estimation.
+    Now includes structural constraints, Wang et al. five-level model, and mass loss pathways.
+    Grounded in indirect calorimetry principles - the gold standard for metabolic measurement.
+
+  revision_history:
+    - version: "1.0.0"
+      date: "2026-01-01"
+      changes: "Initial axiom set (A0-A5, T1-T6, R1-R2)"
+    - version: "1.1.0"
+      date: "2026-01-01"
+      changes: "Added methodology section, bidirectional relationship"
+    - version: "1.2.0"
+      date: "2026-01-01"
+      changes: "Added Bayesian parameter estimation framework (B1)"
+    - version: "1.3.0"
+      date: "2026-01-01"
+      changes: |
+        Major additions synced from structural_constraints.md:
+        - Event taxonomy (Basic/Complex Events, Continuous Processes)
+        - State model with metabolic adaptation
+        - Weight curve structural axioms (SC1-SC3)
+        - Wang et al. (1992) five-level body composition model
+        - Comprehensive mass loss pathways inventory
+        - Academic references section
+    - version: "1.4.0"
+      date: "2026-01-01"
+      changes: |
+        Added theoretical foundations:
+        - A6: CO₂ immediate excretion axiom
+        - Element pathways (CHONNa tracking)
+        - Indirect calorimetry as empirical foundation
+        - Stoichiometric constraints framework
+    - version: "1.5.0"
+      date: "2026-01-01"
+      changes: |
+        Added body composition and weight loss target framework:
+        - T7: Fat Compartment Hierarchy Theorem (脂肪區隔層次定理)
+        - T8: Nitrogen Balance Protection Theorem (氮平衡保護定理)
+        - D1: Weight Loss Target Definition (減重目標定義)
+        - New definitions section (Level 3.5)
+
+# =============================================================================
+# METHODOLOGICAL PRINCIPLE (最根本的原則)
+# =============================================================================
+
+methodology:
+  principle: "Only Trust Chemistry, Not Statistics"
+  one_liner: "只相信化學，不相信統計"
+
+  statement: |
+    我們只使用化學方程式和物理定律，不使用大樣本統計公式。
+    因為化學反應對每個人都一樣，但每個人的個體差異太大，
+    群體平均值對個人沒有意義。
+
+  trusted_sources:
+    - type: "Chemical Equations"
+      description: "化學反應方程式"
+      examples:
+        - "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O (葡萄糖氧化)"
+        - "C₅₅H₁₀₄O₆ + 78O₂ → 55CO₂ + 52H₂O (脂肪氧化)"
+      reason: "化學反應不因人而異"
+
+    - type: "Physical Laws"
+      description: "物理定律"
+      examples:
+        - "質量守恆定律"
+        - "原子不滅定律 (化學反應中原子不會產生或消失，只會重新排列)"
+        - "能量守恆定律"
+        - "氣體定律 (PV=nRT)"
+      reason: "物理定律是普遍的"
+      implications:
+        - "吃進去的碳原子 = 呼出的碳原子 + 留在體內的碳原子"
+        - "脂肪裡的碳必須變成 CO₂ 呼出才能離開身體"
+        - "這解釋了「為什麼減肥要呼吸」"
+
+    - type: "Stoichiometry"
+      description: "化學計量學"
+      examples:
+        - "RQ = VCO₂/VO₂ = 1.0 (碳水) / 0.7 (脂肪)"
+        - "脂肪碳含量 = 77%"
+      reason: "這是化學結構的必然結果"
+
+    - type: "Biological/Anatomical Distinctions"
+      description: "生物學/解剖學結構區分"
+      examples:
+        - "肝醣 ≠ 血糖 (不同分子：多醣 vs 單醣)"
+        - "肝臟肝醣 ≠ 肌肉肝醣 (不同位置、不同功能、不同酵素)"
+        - "皮下脂肪 ≠ 內臟脂肪 (不同代謝特性)"
+        - "細胞內水 (ICF) ≠ 細胞外水 (ECF) (不同隔室)"
+        - "白肌纖維 ≠ 紅肌纖維 (不同能量系統)"
+      reason: "這些是解剖學/生化學事實，每個人都有這些區分"
+
+  cautious_sources:
+    - type: "Population Formulas"
+      description: "大樣本統計公式 - 謹慎使用"
+      examples:
+        - "BMR = 10×體重 + 6.25×身高 - 5×年齡 + 5 (Mifflin-St Jeor)"
+        - "METs × 體重 × 時間 = 熱量消耗"
+        - "心率與攝氧量的線性關係"
+      caution: "個體差異太大，群體平均不能直接套用"
+      valid_uses:
+        - as_prior: "作為個人參數的初始估計 (先驗)"
+        - for_sanity_check: "用於合理性檢查 (估計值超過公式值3倍可能有問題)"
+        - bayesian_update: "作為貝氏更新的 prior，再用個人數據更新"
+
+    - type: "Empirical Constants"
+      description: "經驗常數 - 可從理論推導"
+      examples:
+        - "1 kg 脂肪 = 7700 kcal"
+        - "RQ_fat ≈ 0.7"
+        - "RQ_carb ≈ 1.0"
+      caution: "這些是群體平均，個人可能差異 ±50%"
+      theoretical_basis:
+        - "7700 kcal/kg 可從脂肪分子 (C₅₅H₁₀₄O₆) 的燃燒熱推導"
+        - "RQ 值可從化學反應式的化學計量推導"
+
+  bidirectional_relationship:
+    theory_to_statistics:
+      description: "理論可以解釋/推導統計公式"
+      examples:
+        - "BMR ∝ 體重 → 因為代謝活性組織質量大致與體重成正比"
+        - "7700 kcal/kg → 因為脂肪的化學式決定燃燒熱"
+        - "RQ = 0.7 → 因為脂肪氧化的化學計量"
+    statistics_to_theory:
+      description: "群體數據可以幫助估計理論中的常數"
+      examples:
+        - "用群體 BMR 數據估計代謝效率常數的合理範圍"
+        - "用群體脂肪組織含水量數據 (~13%) 估計脂肪熱值"
+        - "用群體運動數據估計汗水率的正常範圍"
+
+  personal_parameters: |
+    個人參數必須從自己的數據估計:
+    - 代謝速率 → 從多次體重測量推論
+    - 汗水率 → 從運動前後體重差測量
+    - 呼吸商 RQ → 從飲食組成和體重變化推論
+    - 基礎代謝 → 從睡眠期間體重變化推論
+
+# =============================================================================
+# INDIRECT CALORIMETRY: EMPIRICAL FOUNDATION (間接熱量測定法：經驗基礎)
+# =============================================================================
+# All "calorie" knowledge in nutrition science derives from this method.
+# The CHONNa framework shares the same stoichiometric foundation.
+
+indirect_calorimetry:
+  id: "IC_foundation"
+  one_liner: "間接熱量測定法：所有代謝知識的經驗來源"
+
+  definition: |
+    Indirect calorimetry measures metabolic rate by analyzing respiratory gases
+    (O₂ consumption and CO₂ production) rather than directly measuring heat output.
+    It is the GOLD STANDARD for metabolic measurement in research and clinical settings.
+
+  historical_context:
+    direct_calorimetry:
+      method: "Place subject in insulated chamber, measure heat output"
+      pioneers: "Lavoisier (1780s), Atwater & Rosa (1899)"
+      limitation: "Expensive, impractical, but proved energy conservation applies to humans"
+
+    indirect_calorimetry:
+      method: "Measure O₂ consumed and CO₂ produced, calculate energy from stoichiometry"
+      pioneers: "Zuntz (1890s), Weir (1949), Frayn (1983)"
+      advantage: "Practical, accurate, can be done with portable equipment"
+
+  fundamental_principle: |
+    所有能量產生都需要 O₂，所有燃料氧化都產生 CO₂。
+    化學計量是固定的，因此從氣體交換可以反推代謝。
+
+    All energy production requires O₂ consumption.
+    All fuel oxidation produces CO₂.
+    Stoichiometry is fixed, so gas exchange reveals metabolism.
+
+  stoichiometric_basis:
+    glucose:
+      equation: "C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + 686 kcal"
+      RQ: 1.0
+      energy_per_L_O2: "5.05 kcal"
+      note: "RQ = 6 CO₂ / 6 O₂ = 1.0"
+
+    fat:
+      equation: "C₅₅H₁₀₄O₆ + 78O₂ → 55CO₂ + 52H₂O + ~7500 kcal"
+      RQ: 0.705
+      energy_per_L_O2: "4.69 kcal"
+      note: "RQ = 55 CO₂ / 78 O₂ ≈ 0.70"
+
+    protein:
+      equation: "Complex (varies by amino acid composition)"
+      RQ: 0.80
+      energy_per_L_O2: "4.46 kcal"
+      note: "Requires urine nitrogen correction"
+
+    mixed_diet:
+      typical_RQ: "0.82-0.87"
+      note: "Weighted average of fuel sources"
+
+  core_equations:
+    weir_equation:
+      name: "Weir Equation (1949)"
+      formula: "EE (kcal/day) = 3.941 × VO₂ + 1.106 × VCO₂ - 2.17 × N_urine"
+      simplified: "EE ≈ 3.9 × VO₂ + 1.1 × VCO₂"
+      units: "VO₂, VCO₂ in L/day; N_urine in g/day"
+      note: "Most widely used equation for energy expenditure"
+
+    frayn_equations:
+      name: "Frayn Substrate Oxidation Equations (1983)"
+      fat_oxidation: "ṁ_fat (g/min) = 1.67 × VO₂ - 1.67 × VCO₂"
+      carb_oxidation: "ṁ_carb (g/min) = 4.55 × VCO₂ - 3.21 × VO₂"
+      units: "VO₂, VCO₂ in L/min"
+      note: "Allows partitioning of fuel sources"
+
+    respiratory_quotient:
+      name: "Respiratory Quotient (RQ)"
+      formula: "RQ = VCO₂ / VO₂"
+      interpretation:
+        - "RQ = 1.0 → 100% carbohydrate oxidation"
+        - "RQ = 0.85 → mixed fuel (typical)"
+        - "RQ = 0.70 → 100% fat oxidation"
+        - "RQ > 1.0 → lipogenesis (making fat from carbs)"
+        - "RQ < 0.70 → ketogenesis or gluconeogenesis"
+
+  what_it_produced:
+    bmr_formulas:
+      description: "All BMR prediction equations derive from IC measurements"
+      examples:
+        - name: "Harris-Benedict (1918)"
+          basis: "IC measurements on 239 subjects"
+        - name: "Mifflin-St Jeor (1990)"
+          basis: "IC measurements on 498 subjects"
+        - name: "Katch-McArdle"
+          basis: "IC measurements related to lean body mass"
+      note: "These formulas are statistical summaries of IC data"
+
+    food_calorie_values:
+      description: "Atwater factors come from IC + bomb calorimetry"
+      values:
+        carbohydrate: "4 kcal/g (from RQ=1.0 oxidation)"
+        protein: "4 kcal/g (corrected for urea loss)"
+        fat: "9 kcal/g (from RQ=0.7 oxidation)"
+      note: "These are averages; individual foods vary"
+
+    exercise_calories:
+      description: "MET tables derive from IC measurements during activities"
+      examples:
+        - "Walking 3 mph: 3.3 METs (from IC)"
+        - "Running 6 mph: 9.8 METs (from IC)"
+        - "Cycling moderate: 8.0 METs (from IC)"
+      note: "1 MET = 3.5 mL O₂/kg/min = 1 kcal/kg/hr"
+
+    metabolic_research:
+      description: "All metabolic ward studies use IC as primary outcome"
+      applications:
+        - "Measuring effect of diet composition on metabolism"
+        - "Quantifying metabolic adaptation to weight loss"
+        - "Comparing thermic effect of different foods"
+
+  connection_to_chonna:
+    shared_foundation: |
+      CHONNa 框架與間接熱量測定法共享相同的化學計量基礎：
+      - 質量守恆 (原子不滅)
+      - 化學計量約束 (固定莫爾比)
+      - 氣體交換反映代謝
+
+      The CHONNa framework and indirect calorimetry share the same foundation:
+      - Mass conservation (atoms are conserved)
+      - Stoichiometric constraints (fixed molar ratios)
+      - Gas exchange reflects metabolism
+
+    chonna_advantages: |
+      CHONNa 提供更豐富的資訊：
+
+      1. 元素層級追蹤
+         - IC 只給「熱量」
+         - CHONNa 追蹤 C, H, O, N, Na 各自的命運
+
+      2. 水分波動解釋
+         - IC 無法解釋體重計上的水分噪音
+         - CHONNa 透過 H 和 Na 追蹤解釋水分動態
+
+      3. 多層級整合
+         - 連結 Wang 五層模型
+         - 從原子到全身的完整追蹤
+
+      4. 預測能力
+         - 不只測量，還能預測
+         - 基於化學計量的約束方程
+
+    mathematical_equivalence: |
+      間接熱量測定的 Frayn 公式可以從 CHONNa 碳平衡推導：
+
+      From carbon balance:
+        C_oxidized = C_food - ΔC_body
+        C_in_CO2 = VCO₂ × (12/22.4) g/L
+
+      From fat stoichiometry:
+        1 mol fat (860g) → 55 mol CO₂
+        ∴ ṁ_fat = (VCO₂ / 55) × 860 × correction_for_carb
+
+      This is equivalent to Frayn's equation when properly derived.
+
+  practical_measurement:
+    equipment:
+      - name: "Metabolic cart"
+        description: "Gold standard, lab-based"
+        measures: "VO₂, VCO₂, RQ continuously"
+        cost: "$20,000-50,000"
+
+      - name: "Douglas bag"
+        description: "Classic method, collect expired air"
+        measures: "Average VO₂, VCO₂ over collection period"
+        cost: "$1,000-5,000"
+
+      - name: "Portable metabolic analyzers"
+        description: "Wearable during activities"
+        measures: "VO₂, VCO₂ during exercise"
+        cost: "$5,000-15,000"
+
+      - name: "Breath acetone analyzers"
+        description: "Consumer devices for ketosis"
+        measures: "Acetone (proxy for fat oxidation)"
+        cost: "$50-200"
+        limitation: "Only indicates ketosis, not total fat oxidation"
+
+    future_technology: |
+      穿戴式 CO₂/O₂ 感測器可能革命性改變代謝追蹤：
+      - 24 小時連續監測
+      - 即時脂肪氧化率
+      - 個人化運動區間
+      - 飲食反應監測
+
+      這將比體重計準確 100 倍（無水分噪音）
+
+  key_insight: |
+    間接熱量測定法證明了：
+    1. 人體遵守熱力學定律
+    2. 代謝可以從呼吸推斷
+    3. 化學計量是普遍適用的
+
+    CHONNa 框架建立在這個經驗基礎上，
+    但提供更完整的元素層級追蹤能力。
+
+    Indirect calorimetry proved that:
+    1. The human body obeys thermodynamics
+    2. Metabolism can be inferred from respiration
+    3. Stoichiometry is universally applicable
+
+    The CHONNa framework builds on this empirical foundation,
+    but provides richer element-level tracking capabilities.
+
+  references:
+    - author: "Weir JB"
+      year: 1949
+      title: "New methods for calculating metabolic rate with special reference to protein metabolism"
+      journal: "J Physiol"
+      note: "The Weir equation"
+
+    - author: "Frayn KN"
+      year: 1983
+      title: "Calculation of substrate oxidation rates in vivo from gaseous exchange"
+      journal: "J Appl Physiol"
+      note: "Substrate oxidation equations"
+
+    - author: "Ferrannini E"
+      year: 1988
+      title: "The theoretical bases of indirect calorimetry: a review"
+      journal: "Metabolism"
+      note: "Comprehensive theoretical foundation"
+
+    - author: "Atwater WO, Rosa EB"
+      year: 1899
+      title: "Description of a new respiration calorimeter"
+      institution: "US Department of Agriculture"
+      note: "Early direct + indirect calorimetry validation"
+
+# =============================================================================
+# LEVEL 0: PHYSICS AXIOMS
+# =============================================================================
+
+axioms:
+  - id: "A0_mass_conservation"
+    one_liner: "質量守恆：體重變化 = 輸入 - 輸出"
+
+    statement_natural: |
+      Mass cannot be created or destroyed in ordinary chemical reactions.
+      All body weight changes result from matter entering or leaving the body.
+      This is the fundamental physics underlying all weight control.
+
+    statement_formal: |
+      ∀ system S:
+        dM_S/dt = Σ(ṁ_in) - Σ(ṁ_out)
+      where:
+        M_S = total mass of system S (kg)
+        ṁ = mass flow rate (g/s)
+
+    rationale: |
+      Unlike "calories" which are abstract energy units, mass is directly
+      measurable and strictly conserved. This axiom grounds weight control
+      in physical reality rather than nutritional abstraction.
+
+    violations:
+      - description: "Claiming mass appears from nowhere"
+        content: |
+          "I gained 2 kg overnight from eating one slice of cake (50g)."
+        explanation: |
+          50g input cannot produce 2000g mass gain. The additional weight
+          must come from water retention (which has its own mass source).
+
+      - description: "Magical weight loss"
+        content: |
+          "This supplement burns fat without any diet changes."
+        explanation: |
+          Fat loss requires carbon to leave the body (as CO₂). If carbon
+          intake exceeds output, fat cannot decrease regardless of supplements.
+
+    compliant:
+      - description: "Correct mass accounting"
+        content: |
+          "I ate 300g of food and drank 500mL water. My weight increased ~800g,
+          which will decrease as I exhale CO₂ and excrete water."
+        explanation: |
+          Input mass ≈ immediate weight change, with gradual loss through outputs.
+
+      - description: "Understanding weight loss mechanism"
+        content: |
+          "I lost 1 kg of fat. That carbon left my body as ~2.8 kg of CO₂
+          through my breath."
+        explanation: |
+          Correctly identifies respiration as the primary fat loss pathway.
+
+# =============================================================================
+# LEVEL 1: ELEMENT AXIOMS (CHONNa)
+# =============================================================================
+
+  - id: "A1_carbon_conservation"
+    one_liner: "碳守恆：脂肪變化追蹤呼出的 CO₂"
+
+    statement_natural: |
+      Body carbon changes equal carbon consumed minus carbon excreted.
+      Carbon leaves primarily through breath (CO₂) and excretion (urea, feces).
+      Fat is 77% carbon; losing fat means exhaling carbon as CO₂.
+
+    statement_formal: |
+      ΔC_body = C_food - (C_CO₂ + C_urea + C_feces + C_other)
+
+      where:
+        C_food = Σ(m_i × ρ_C,i) for each food item i
+        C_CO₂ = V_CO₂ × 0.536 g/L
+        ρ_C = {carb: 0.40, fat: 0.77, protein: 0.53}
+
+    rationale: |
+      Carbon is the backbone of all organic molecules. Understanding carbon
+      flux demystifies fat loss: the fat literally leaves through breathing.
+
+    violations:
+      - description: "Thinking fat leaves through sweat"
+        content: |
+          "I'm not losing weight because I'm not sweating enough during exercise."
+        explanation: |
+          Sweat is 99% water. Fat carbon leaves as CO₂, not through skin.
+
+    compliant:
+      - description: "Correct fat loss understanding"
+        content: |
+          "When I lose 10 kg of fat, I exhale about 8.4 kg of carbon as 28 kg CO₂,
+          and produce 11 kg of metabolic water."
+        explanation: |
+          Applies correct stoichiometry of fat oxidation.
+
+  - id: "A2_hydrogen_conservation"
+    one_liner: "氫守恆：水分變化主導短期體重波動"
+
+    statement_natural: |
+      Body hydrogen changes through water and macronutrient metabolism.
+      Since water is 11.1% hydrogen by mass, water balance dominates
+      short-term weight fluctuations.
+
+    statement_formal: |
+      ΔH_body = H_food + H_water - (H_urine + H_sweat + H_breath + H_feces)
+
+      where:
+        H_water = m_water × 0.111
+        H_macro = {carb: 0.067, fat: 0.103, protein: 0.07}
+
+    rationale: |
+      Hydrogen tracking explains the dramatic short-term weight changes
+      that confuse many dieters. A 2 kg overnight swing is water, not fat.
+
+    violations:
+      - description: "Misinterpreting rapid weight loss"
+        content: |
+          "I lost 3 kg in 3 days on keto — that's 3 kg of fat!"
+        explanation: |
+          3 kg fat = 27,000 kcal. Impossible in 3 days. Most is water from
+          glycogen depletion (glycogen binds 3-4g water per gram).
+
+    compliant:
+      - description: "Correct keto weight loss understanding"
+        content: |
+          "In my first week of keto, I lost 2.5 kg: about 0.5 kg was fat,
+          0.5 kg was glycogen, and 1.5 kg was water that was bound to glycogen."
+        explanation: |
+          Correctly partitions hydrogen loss between sources.
+
+  - id: "A3_oxygen_conservation"
+    one_liner: "氧守恆：呼吸交換追蹤代謝燃料"
+
+    statement_natural: |
+      Body oxygen flows through respiration and water metabolism.
+      The respiratory quotient (RQ = VCO₂/VO₂) indicates which fuel is burning.
+
+    statement_formal: |
+      ΔO_body = O_food + O_inhaled - (O_CO₂ + O_H₂O + O_urine)
+
+      RQ = VCO₂/VO₂
+      RQ = 1.0 → carbohydrate oxidation
+      RQ = 0.7 → fat oxidation
+
+    rationale: |
+      Oxygen tracking links respiration to metabolism, enabling inference
+      of fuel source from breath analysis.
+
+    violations:
+      - description: "Ignoring metabolic water production"
+        content: |
+          "Burning fat produces no water — it all comes out as CO₂."
+        explanation: |
+          Fat oxidation produces significant water: 100g fat → ~107g H₂O.
+
+    compliant:
+      - description: "Complete oxidation understanding"
+        content: |
+          "C₁₆H₃₂O₂ (palmitic acid) + 23 O₂ → 16 CO₂ + 16 H₂O"
+        explanation: |
+          Shows both CO₂ and water as oxidation products.
+
+  - id: "A4_nitrogen_conservation"
+    one_liner: "氮守恆：蛋白質/肌肉變化追蹤尿素排出"
+
+    statement_natural: |
+      Body nitrogen tracks protein synthesis and breakdown exclusively.
+      Positive nitrogen balance indicates muscle gain; negative indicates loss.
+      Nitrogen balance is the gold standard for muscle status.
+
+    statement_formal: |
+      ΔN_body = N_protein - (N_urea + N_ammonia + N_creatinine + N_feces)
+
+      where:
+        N_protein = m_protein × 0.16 (protein is ~16% nitrogen)
+        N_urea = m_urea × 0.467
+
+    rationale: |
+      Nitrogen is exclusive to proteins. Unlike carbon (in all macros),
+      nitrogen directly tracks the muscle/protein compartment.
+
+    violations:
+      - description: "Expecting muscle gain without nitrogen"
+        content: |
+          "I'm eating zero protein but gaining muscle from lifting weights."
+        explanation: |
+          Muscle is protein. No nitrogen in = no new muscle protein synthesis.
+
+    compliant:
+      - description: "Correct nitrogen balance assessment"
+        content: |
+          "Eating 150g protein (24g N), excreting 20g N in urine.
+          Net +4g N → approximately 25g muscle protein synthesis."
+        explanation: |
+          Applies nitrogen balance to estimate muscle change.
+
+  - id: "A5_sodium_conservation"
+    one_liner: "鈉守恆：鈉攝取控制細胞外水分"
+
+    statement_natural: |
+      Sodium balance controls extracellular water distribution.
+      The body maintains constant plasma sodium concentration (~140 mEq/L),
+      so sodium retention causes proportional water retention.
+
+    statement_formal: |
+      ΔNa_body = Na_food - (Na_urine + Na_sweat + Na_feces)
+
+      [Na⁺]_ECF ≈ 140 mEq/L (constant)
+      ∴ ΔV_ECF ∝ ΔNa_total
+      Δm_water ≈ 200 × Δm_Na (g water per g sodium)
+
+    rationale: |
+      This explains the dramatic weight changes after salty meals and
+      why "water weight" fluctuates so much day-to-day.
+
+    violations:
+      - description: "Blaming calories for sodium-induced weight gain"
+        content: |
+          "I gained 2 kg from eating pizza. I need to eat 1000 fewer calories
+          tomorrow to lose it."
+        explanation: |
+          The 2 kg is sodium-induced water, not fat. It will resolve as
+          sodium is excreted, regardless of tomorrow's calories.
+
+    compliant:
+      - description: "Correct sodium effect understanding"
+        content: |
+          "I ate 5g extra sodium yesterday. I'm retaining about 1 kg of water.
+          In 2-3 days of normal sodium intake, this will resolve naturally."
+        explanation: |
+          Correctly identifies cause and predicts resolution timeline.
+
+  - id: "A6_CO2_immediate_excretion"
+    one_liner: "CO₂ 即時排出：呼吸是代謝的即時窗口"
+
+    statement_natural: |
+      Unlike water or sodium, the body CANNOT store CO₂.
+      CO₂ is toxic at elevated levels and must be immediately excreted.
+      Therefore, CO₂ production rate ≈ CO₂ excretion rate (delay < 1 min).
+      This makes breath analysis a real-time window into metabolism.
+
+    statement_formal: |
+      d[CO₂]_body/dt ≈ 0  (no CO₂ storage capacity)
+
+      ∴ VCO₂_produced = VCO₂_exhaled  (instantaneous)
+
+      Combined with VO₂:
+        RQ = VCO₂/VO₂
+        ṁ_fat = 1.67 × (VO₂ - VCO₂)  [Frayn equation, L/min → g/min]
+
+      This enables real-time fat oxidation measurement.
+
+    rationale: |
+      CO₂ is a metabolic waste product that affects blood pH.
+      The body maintains tight pH control (7.35-7.45) via chemoreceptors.
+      Any CO₂ buildup triggers immediate respiratory response.
+
+      This is fundamentally different from water (can store kg) or
+      sodium (can retain for days). CO₂ has ZERO storage buffer.
+
+    physiological_basis:
+      toxicity: "Hypercapnia (high CO₂) causes acidosis, confusion, death"
+      regulation: "Central/peripheral chemoreceptors detect CO₂ within seconds"
+      response: "Ventilation rate adjusts within 1-2 breaths"
+      buffer: "Blood bicarbonate provides minutes of buffer, not hours"
+
+    contrast_with_other_outputs:
+      CO2:
+        storable: false
+        delay: "seconds"
+        measurement: "real-time metabolic rate"
+      H2O:
+        storable: true
+        capacity: "several kg"
+        delay: "hours to days"
+        measurement: "confounded by retention"
+      Na:
+        storable: true
+        capacity: "affects kg of water"
+        delay: "hours to days"
+        measurement: "confounded by water"
+      Urea:
+        storable: true
+        capacity: "limited"
+        delay: "hours"
+        measurement: "delayed protein signal"
+
+    implications:
+      - title: "Real-time fat loss tracking"
+        content: |
+          If we can measure VCO₂ and VO₂ continuously, we can calculate
+          fat oxidation rate in real-time, bypassing the water noise
+          that makes scale weight unreliable.
+
+      - title: "Exercise monitoring"
+        content: |
+          During exercise, RQ shifts from ~0.85 (rest) toward 0.7 (fat)
+          or 1.0 (intense/carb). This reveals fuel source in real-time.
+
+      - title: "Sleep metabolism"
+        content: |
+          Overnight RQ ≈ 0.7-0.8 indicates primarily fat oxidation.
+          This is why fasted morning weight reflects fat loss better.
+
+    practical_application:
+      current_technology:
+        - name: "Metabolic cart (indirect calorimetry)"
+          accuracy: "Gold standard"
+          limitation: "Lab setting, expensive"
+        - name: "Portable breath analyzers"
+          accuracy: "Moderate"
+          limitation: "Snapshot, not continuous"
+
+      future_potential: |
+        Wearable CO₂/O₂ sensors could enable:
+        - 24-hour metabolic tracking
+        - Real-time fat oxidation rate
+        - Personalized exercise zones
+        - Diet response monitoring
+
+        This would be 100x more accurate than scale weight
+        for tracking fat loss (no water noise).
+
+    calculation_example:
+      scenario: "Rest vs Exercise fat burning"
+      rest:
+        VO2: "0.25 L/min"
+        VCO2: "0.20 L/min"
+        RQ: 0.80
+        fat_oxidation: "1.67 × (0.25-0.20) = 0.08 g/min = 4.8 g/hr"
+      moderate_exercise:
+        VO2: "2.0 L/min"
+        VCO2: "1.7 L/min"
+        RQ: 0.85
+        fat_oxidation: "1.67 × (2.0-1.7) = 0.5 g/min = 30 g/hr"
+      insight: "Exercise increases fat burning 6x, visible in real-time via breath"
+
+    violations:
+      - description: "Thinking CO₂ accumulates like water"
+        content: |
+          "I'll hold my breath to keep the CO₂ inside and prevent weight loss."
+        explanation: |
+          CO₂ cannot be stored. It will be exhaled as soon as you breathe.
+          The body has no CO₂ reservoir, unlike water or sodium.
+
+      - description: "Ignoring breath as weight loss pathway"
+        content: |
+          "Breathing doesn't affect my weight - only eating and exercise matter."
+        explanation: |
+          Every gram of fat you lose exits as CO₂ through breath.
+          Breathing IS the fat loss mechanism, not a side effect.
+
+    compliant:
+      - description: "Understanding breath as metabolic window"
+        content: |
+          "By measuring my exhaled CO₂ and inhaled O₂ during exercise,
+          I calculated I burned 25g of fat in that hour (RQ = 0.78).
+          This is more accurate than estimating from heart rate."
+        explanation: |
+          Correctly uses indirect calorimetry principle for fat tracking.
+
+      - description: "Explaining why exercise accelerates fat loss"
+        content: |
+          "Exercise increases my breathing rate, which increases CO₂ output.
+          Since fat carbon must leave as CO₂, faster breathing = faster fat loss.
+          At rest I exhale ~200g CO₂/day; during a marathon, ~1000g CO₂."
+        explanation: |
+          Correctly links respiration rate to fat oxidation rate.
+
+    references:
+      - "Frayn KN. Calculation of substrate oxidation rates in vivo from gaseous exchange. J Appl Physiol. 1983."
+      - "Ferrannini E. The theoretical bases of indirect calorimetry. Metabolism. 1988."
+      - "Meerman R, Brown AJ. When somebody loses weight, where does the fat go? BMJ. 2014."
+
+# =============================================================================
+# LEVEL 2: MOLECULAR THEOREMS
+# =============================================================================
+
+theorems:
+  - id: "T1_macronutrient_composition"
+    derives_from: ["A1_carbon_conservation", "A2_hydrogen_conservation",
+                   "A3_oxygen_conservation", "A4_nitrogen_conservation"]
+    one_liner: "巨量營養素有固定的元素組成"
+
+    statement_natural: |
+      Each macronutrient has a fixed elemental composition that determines
+      its contribution to body weight change per gram consumed.
+
+    statement_formal: |
+      Composition matrix (g element / g macronutrient):
+
+      | Macro   | C     | H     | O     | N     |
+      |---------|-------|-------|-------|-------|
+      | Carb    | 0.400 | 0.067 | 0.533 | 0.000 |
+      | Fat     | 0.770 | 0.103 | 0.124 | 0.000 |
+      | Protein | 0.530 | 0.070 | 0.220 | 0.160 |
+      | Alcohol | 0.520 | 0.130 | 0.350 | 0.000 |
+
+    violations:
+      - description: "Treating all calories as equal for body composition"
+        content: |
+          "100 calories of sugar and 100 calories of protein have the same
+          effect on body composition."
+        explanation: |
+          Protein contributes nitrogen (for muscle), while sugar does not.
+          Their elemental fates differ fundamentally.
+
+    compliant:
+      - description: "Understanding macronutrient differences"
+        content: |
+          "Protein provides nitrogen for muscle synthesis that carbs cannot.
+          Fat is more carbon-dense, so excess fat is stored more efficiently."
+        explanation: |
+          Recognizes elemental differences between macronutrients.
+
+  - id: "T2_glycogen_water_binding"
+    derives_from: ["A2_hydrogen_conservation", "A3_oxygen_conservation"]
+    one_liner: "每克肝醣結合 3-4 克水"
+
+    statement_natural: |
+      Glycogen storage requires water binding at approximately 3-4g water
+      per gram glycogen. This explains rapid weight fluctuations when
+      carbohydrate intake changes.
+
+    statement_formal: |
+      ΔM_glycogen_total = ΔM_glycogen × (1 + k_water)
+      where k_water ≈ 3-4
+
+      Total glycogen capacity ≈ 500g
+      Total weight swing potential ≈ 500 × 4 = 2000g = 2 kg
+
+    violations:
+      - description: "Expecting linear fat loss in first week"
+        content: |
+          "I lost 3 kg in week 1 of my diet. If I continue, I'll lose
+          3 kg per week for the next 10 weeks."
+        explanation: |
+          Week 1 includes glycogen+water depletion (one-time). Subsequent
+          weeks will show slower, fat-only loss.
+
+    compliant:
+      - description: "Correct week 1 expectations"
+        content: |
+          "Week 1: lost 3 kg (1.5 kg water+glycogen, 0.5 kg fat)
+          Week 2+: expect 0.5 kg/week (mostly fat)"
+        explanation: |
+          Accounts for the one-time glycogen depletion effect.
+
+  - id: "T3_sodium_water_coupling"
+    derives_from: ["A2_hydrogen_conservation", "A5_sodium_conservation"]
+    one_liner: "1g 鈉 ≈ 200g 水分滯留"
+
+    statement_natural: |
+      Extracellular water volume is coupled to total body sodium through
+      osmotic equilibrium. The body maintains constant plasma sodium
+      concentration by adjusting water retention.
+
+    statement_formal: |
+      [Na⁺]_ECF ≈ 140 mEq/L (homeostatic target)
+      ΔV_ECF = ΔNa × (1000 mL / 140 mEq) ≈ ΔNa × 7 mL/mEq
+
+      In mass terms:
+      Δm_water ≈ 200 × Δm_Na (g/g)
+
+    violations:
+      - description: "Ignoring sodium when interpreting weight"
+        content: |
+          "My weight went up 1.5 kg after eating out. My diet isn't working."
+        explanation: |
+          Restaurant food is typically high in sodium. The 1.5 kg is likely
+          water that will resolve in 2-3 days.
+
+    compliant:
+      - description: "Accounting for sodium effects"
+        content: |
+          "I ate 4g extra sodium. Expecting ~0.8 kg water retention for 1-2 days."
+        explanation: |
+          Predicts and expects the sodium-water effect.
+
+# =============================================================================
+# LEVEL 3: COMPARTMENT THEOREMS
+# =============================================================================
+
+  - id: "T5_storage_hierarchy"
+    derives_from: ["T1_macronutrient_composition"]
+    one_liner: "肝醣優先儲存，脂肪是溢出"
+
+    statement_natural: |
+      When insulin is elevated, nutrients are stored in priority order:
+      1. Glycogen (if not full)
+      2. Fat (as overflow)
+
+      De novo lipogenesis (carbs → fat) only occurs when glycogen is full.
+
+    statement_formal: |
+      IF Glycogen < Glycogen_max THEN
+        Glucose → Glycogen (priority)
+      ELSE
+        Glucose → De Novo Lipogenesis (DNL)
+        DNL_efficiency ≈ 0.75 (25% energy loss)
+
+    violations:
+      - description: "Believing all carbs turn to fat"
+        content: |
+          "I can't eat any carbs because they all turn into fat."
+        explanation: |
+          Carbs first fill glycogen (500g capacity). Only massive overfeeding
+          with already-full glycogen leads to significant DNL.
+
+    compliant:
+      - description: "Understanding carb fate"
+        content: |
+          "If my glycogen is depleted from exercise, these carbs will refill
+          glycogen first, not become fat."
+        explanation: |
+          Correctly applies the storage hierarchy.
+
+  - id: "T6_time_scale_separation"
+    derives_from: ["A1_carbon_conservation", "A2_hydrogen_conservation",
+                   "A5_sodium_conservation"]
+    one_liner: "不同隔室有不同的時間常數"
+
+    statement_natural: |
+      Different body compartments change at different characteristic
+      time scales, allowing separation of signal components in weight data.
+
+    statement_formal: |
+      | Compartment   | Time Constant τ | Frequency  |
+      |---------------|-----------------|------------|
+      | Gut contents  | 0.5-2 days      | High       |
+      | Glycogen      | 1-2 days        | High       |
+      | ECF water     | 1-3 days        | Medium     |
+      | Fat           | 14-30 days      | Low        |
+      | Muscle        | 14-30 days      | Low        |
+      | Bone          | 60-365 days     | Very Low   |
+
+    violations:
+      - description: "Judging progress by daily weight"
+        content: |
+          "I gained 0.5 kg today. My diet isn't working."
+        explanation: |
+          Daily weight is dominated by water/glycogen (τ < 3 days).
+          Fat trends require 2+ weeks to emerge from noise.
+
+    compliant:
+      - description: "Using appropriate time scales"
+        content: |
+          "I track daily weight but only judge progress by the 2-week trend.
+          Daily fluctuations of ±1 kg are expected water/glycogen noise."
+        explanation: |
+          Correctly separates signal (fat) from noise (water).
+
+  - id: "T7_fat_compartment_hierarchy"
+    derives_from: ["A0_mass_conservation", "A1_carbon_conservation"]
+    one_liner: "所有脂肪都是 77% 碳，VCO₂ 涵蓋所有脂肪流失"
+
+    statement_natural: |
+      Body fat exists in distinct compartments (subcutaneous, visceral,
+      intramuscular, ectopic) with different metabolic properties and
+      health implications. All compartments share the same elemental
+      composition (~77% carbon).
+
+    statement_formal: |
+      Fat_total = Fat_subcutaneous + Fat_visceral + Fat_IMAT + Fat_ectopic
+
+      Compartment properties:
+      | Compartment    | % of Total | Health Risk | Mobilization |
+      |----------------|------------|-------------|--------------|
+      | Subcutaneous   | 80-90%     | Low         | Slow         |
+      | Visceral       | 10-20%     | Very High   | Fast         |
+      | IMAT           | Variable   | Medium      | Medium       |
+      | Ectopic        | Variable   | Very High   | Fast         |
+
+      Carbon perspective:
+      ∀ compartment ∈ {subcutaneous, visceral, IMAT, ectopic}:
+        composition(compartment) ≈ C₅₅H₁₀₄O₆
+        ρ_C(compartment) = 0.77
+
+      ∴ ΔFat_any → ΔC_out (as CO₂)
+      ∴ VCO₂ captures all fat compartment losses
+
+    violations:
+      - description: "Treating different fat types as having different chemistry"
+        content: |
+          "Visceral fat is harder to burn because it's a different substance."
+        explanation: |
+          All fat is triglyceride (~77% carbon). Visceral fat actually
+          mobilizes FASTER than subcutaneous. The chemistry is identical.
+
+    compliant:
+      - description: "Understanding compartment dynamics"
+        content: |
+          "My waist circumference decreased 5cm, indicating visceral fat
+          reduction. Subcutaneous fat is reducing more slowly, which is
+          expected since visceral fat is mobilized first."
+        explanation: |
+          Correctly distinguishes compartment dynamics while understanding
+          all fat ultimately exits as CO₂.
+
+  - id: "T8_nitrogen_balance_protection"
+    derives_from: ["A4_nitrogen_conservation"]
+    one_liner: "減重目標：ΔC < 0（減碳），ΔN ≈ 0（保肌）"
+
+    statement_natural: |
+      During weight loss, nitrogen balance should be maintained near zero
+      or positive to preserve muscle mass. Muscle is a protection target,
+      not a reduction target. Successful fat loss is characterized by
+      negative carbon balance with neutral nitrogen balance.
+
+    statement_formal: |
+      Weight loss goal:
+        ΔC < 0 (reduce carbon = fat loss)
+        ΔN ≈ 0 (maintain nitrogen = muscle preservation)
+
+      If ΔN < 0:
+        Muscle_loss = |ΔN| × 6.25 g protein
+        This is undesirable.
+
+      Strategies to maintain ΔN ≥ 0:
+        - Protein intake: 1.6-2.2 g/kg/day during deficit
+        - Resistance training: stimulates protein synthesis
+        - Moderate deficit: extreme deficits increase muscle loss
+
+    violations:
+      - description: "Extreme dieting causing muscle loss"
+        content: |
+          "I lost 10 kg in 2 weeks on a 500 kcal/day diet!"
+        explanation: |
+          Extreme deficit + likely low protein → significant ΔN < 0
+          → muscle wasting. Much of the "weight loss" is water and muscle.
+
+    compliant:
+      - description: "Balanced fat loss approach"
+        content: |
+          "I'm eating 1.8g protein/kg while in a 500 kcal deficit,
+          and doing resistance training 3x/week to preserve muscle."
+        explanation: |
+          Appropriate strategies to maintain ΔN ≈ 0 while achieving ΔC < 0.
+
+# =============================================================================
+# LEVEL 3.5: DEFINITIONS
+# =============================================================================
+
+definitions:
+  - id: "D1_weight_loss_target"
+    derives_from: ["T7_fat_compartment_hierarchy", "T8_nitrogen_balance_protection"]
+    one_liner: "減重目標 = 減脂（碳）+ 保肌（氮）"
+
+    statement_natural: |
+      Body components are classified by their role in weight management:
+      Primary targets (to be reduced): all fat compartments
+      Protection targets (to be preserved): muscle, bone, essential fat
+      Fluctuation components (not targets): water, glycogen, gut content
+
+    statement_formal: |
+      Primary targets (to be reduced):
+        T_primary = {Fat_visceral, Fat_ectopic, Fat_subcutaneous, Fat_IMAT}
+
+      Protection targets (to be preserved):
+        T_protect = {Muscle, Bone, Essential_fat}
+
+      Fluctuation components (not targets):
+        T_fluctuation = {Water, Glycogen, Gut_content}
+
+      Carbon-centric simplification:
+        T_primary ≡ {Carbon stored as fat}
+
+        Since all fat compartments are ~77% carbon:
+          Tracking ΔC_out (via VCO₂) captures all primary targets
+
+      Successful weight loss:
+        ΔC < 0  (carbon leaving via CO₂)
+        ΔN ≈ 0  (nitrogen maintained)
+        ΔNa → stable (no chronic water retention)
+
+    key_insight: |
+      From the carbon control perspective, we don't need to distinguish
+      between fat compartments for tracking purposes. All fat is ~77% carbon,
+      and all fat loss manifests as CO₂ exhalation. VCO₂ is the universal
+      metric for fat loss regardless of source compartment.
+
+# =============================================================================
+# LEVEL 4: OBSERVABILITY RULES
+# =============================================================================
+
+rules:
+  - id: "R1_weight_decomposition"
+    derives_from: ["T6_time_scale_separation"]
+    one_liner: "體重 = 慢變成分 + 快變成分 + 噪音"
+
+    statement_natural: |
+      Given sufficient time series data, weight can be decomposed into
+      slow-changing (fat/muscle) and fast-changing (water/glycogen) components.
+
+    statement_formal: |
+      W(t) = W_slow(t) + W_fast(t) + ε(t)
+
+      where:
+        W_slow = fat + muscle (τ > 2 weeks)
+        W_fast = glycogen + water (τ < 1 week)
+        ε = measurement noise
+
+      Methods: Kalman filtering, frequency decomposition
+
+    violations:
+      - description: "Not separating signal from noise"
+        content: |
+          "My weight went up 0.3 kg today, so I'm gaining fat."
+        explanation: |
+          0.3 kg is within daily water noise. Cannot conclude fat gain.
+
+    compliant:
+      - description: "Proper trend analysis"
+        content: |
+          "My 2-week moving average is down 0.8 kg. Despite daily fluctuations,
+          the fat loss trend is clear."
+        explanation: |
+          Uses time aggregation to extract low-frequency signal.
+
+  - id: "R2_input_inference"
+    derives_from: ["A1_carbon_conservation", "A2_hydrogen_conservation",
+                   "A5_sodium_conservation", "T1_macronutrient_composition"]
+    one_liner: "飲食/運動輸入可幫助推論隔室狀態"
+
+    statement_natural: |
+      Known dietary and activity inputs provide additional information
+      for inferring hidden compartment states beyond what weight alone reveals.
+
+    statement_formal: |
+      P(x(t) | y(1:t), u(1:t)) > P(x(t) | y(1:t))
+
+      where:
+        x = hidden state (fat, glycogen, water, ...)
+        y = observations (weight, BIA, ...)
+        u = inputs (diet, exercise, ...)
+
+      Input information increases state observability.
+
+    violations:
+      - description: "Ignoring available input information"
+        content: |
+          "I just look at my weight. What I ate yesterday doesn't matter."
+        explanation: |
+          Diet information helps explain and predict weight changes.
+          High sodium yesterday → expect water retention today.
+
+    compliant:
+      - description: "Integrating input information"
+        content: |
+          "I had a high-sodium meal yesterday and did intense exercise.
+          Today's +1 kg is likely water retention, and tomorrow I expect
+          a drop as sodium and inflammation subside."
+        explanation: |
+          Uses input history to interpret and predict weight changes.
+
+# =============================================================================
+# BAYESIAN PARAMETER ESTIMATION FRAMEWORK
+# =============================================================================
+# This section formalizes how population formulas (priors) are updated with
+# personal data to create individualized parameter estimates.
+
+bayesian_framework:
+  id: "B1_bayesian_personalization"
+  one_liner: "群體先驗 + 個人數據 → 個人化估計"
+  see_also: "complete_molecular_tracking.md#貝氏個人化參數估計框架"
+
+  overview: |
+    We use Bayesian methods to combine population-level prior estimates with
+    personal measurement data. This creates individualized parameter estimates
+    that improve over time as more data is collected.
+
+  components:
+
+    # ----- Population Priors -----
+    population_priors:
+      id: "PopulationPriors"
+      description: "群體公式作為先驗估計的起點"
+
+      parameters:
+        - name: "BMR (基礎代謝率)"
+          formula: "10 × weight + 6.25 × height - 5 × age ± 5 (male) / -161 (female)"
+          source: "Mifflin-St Jeor"
+          uncertainty: "± 15% (individual variation)"
+          theoretical_basis: "BMR ∝ weight because metabolically active tissue scales with mass"
+
+        - name: "Sleep Water Loss (睡眠水分流失)"
+          formula: "weight × 0.0004 kg/hr"
+          source: "Literature (insensible water loss)"
+          uncertainty: "± 30%"
+          components: ["Respiration (~60%)", "Skin evaporation (~40%)"]
+
+        - name: "Exercise Sweat Rate (運動汗水率)"
+          formula: "0.8 L/hr × intensity_factor × temperature_factor"
+          source: "ACSM Guidelines"
+          uncertainty: "± 40% (highest individual variation)"
+          note: "Requires direct measurement for personalization"
+
+        - name: "RQ Values (呼吸商)"
+          values:
+            carbohydrate: 1.0
+            fat: 0.7
+            protein: 0.82
+          source: "Chemical stoichiometry (not statistical)"
+          note: "These come from chemical equations, not population data"
+
+    # ----- Bayesian Estimate Structure -----
+    bayesian_estimate:
+      id: "BayesianEstimate"
+      description: "帶不確定性的參數估計"
+
+      fields:
+        - name: "mean"
+          type: "Double"
+          description: "Posterior mean (後驗均值)"
+
+        - name: "variance"
+          type: "Double"
+          description: "Posterior variance (後驗變異數)"
+
+        - name: "sampleSize"
+          type: "Int"
+          description: "Effective sample size (有效樣本數)"
+
+        - name: "source"
+          type: "Enum"
+          values: ["populationPrior", "personalData", "mixed"]
+          description: "Estimate source (估計來源)"
+
+      derived_properties:
+        - "sd = sqrt(variance)"
+        - "ci95 = (mean - 1.96×sd, mean + 1.96×sd)"
+        - "cv = sd / |mean|"
+
+      update_formula:
+        name: "Normal-Normal Conjugate Prior Update"
+        formal: |
+          prior_precision = 1 / σ²_prior
+          obs_precision = 1 / σ²_obs
+          posterior_precision = prior_precision + obs_precision
+          posterior_mean = (prior_precision × μ_prior + obs_precision × μ_obs) / posterior_precision
+          posterior_variance = 1 / posterior_precision
+
+    # ----- Personal Metabolic Profile -----
+    personal_metabolic_profile:
+      id: "PersonalMetabolicProfile"
+      description: "個人代謝檔案 - 累積的貝氏後驗估計"
+
+      estimates:
+        - name: "bmrEstimate"
+          unit: "kcal/day"
+          prior_source: "Mifflin-St Jeor"
+
+        - name: "sleepWaterLossRate"
+          unit: "kg/hr"
+          prior_source: "Literature value × weight"
+
+        - name: "basalMassLossRate"
+          unit: "kg/hr"
+          prior_source: "Derived from BMR"
+
+        - name: "sweatRateMultiplier"
+          unit: "× (relative to population)"
+          prior_source: "Default 1.0"
+
+        - name: "typicalRQ"
+          unit: "dimensionless"
+          prior_source: "0.85 (mixed diet)"
+
+      data_counts:
+        - "overnightMeasurementCount"
+        - "exerciseMeasurementCount"
+        - "mealMeasurementCount"
+
+    # ----- Reliability Levels -----
+    reliability_levels:
+      id: "ReliabilityLevel"
+      description: "估計可靠性隨數據累積提升"
+
+      levels:
+        - id: "purePopulationPrior"
+          name_zh: "純群體先驗"
+          data_count: "0"
+          description: "Using population formulas only, no personal data"
+          ui_progress: "0%"
+
+        - id: "priorDominated"
+          name_zh: "先驗主導"
+          data_count: "1-9"
+          description: "Mainly population prior with some personal influence"
+          ui_progress: "~25%"
+
+        - id: "partiallyPersonalized"
+          name_zh: "部分個人化"
+          data_count: "10-29"
+          description: "Balanced mixture of prior and personal data"
+          ui_progress: "~65%"
+
+        - id: "personalized"
+          name_zh: "完全個人化"
+          data_count: "30+"
+          description: "Mainly based on personal data"
+          ui_progress: "100%"
+
+    # ----- Data Sources and Updates -----
+    data_sources:
+      - type: "Overnight Data (睡眠數據)"
+        observation: "(before_sleep_weight - after_wake_weight) / sleep_hours"
+        updates:
+          - "sleepWaterLossRate (direct)"
+          - "bmrEstimate (indirect, higher uncertainty)"
+        frequency: "Daily"
+        value: "High - most reliable routine measurement"
+
+      - type: "Exercise Data (運動數據)"
+        observation: "(pre_exercise - post_exercise + water_consumed) / duration"
+        updates:
+          - "sweatRateMultiplier"
+        frequency: "Per workout"
+        value: "Medium - requires water intake tracking"
+
+      - type: "Meal Data (餐點數據)"
+        observation: "post_meal_weight vs expected (pre_meal + food_mass - basal_loss)"
+        updates:
+          - "basalMassLossRate"
+        frequency: "Per meal (if tracked)"
+        value: "Low - requires accurate food mass"
+
+    # ----- Kalman Filter Integration -----
+    kalman_integration:
+      id: "ProfileToKalman"
+      description: "從個人代謝檔案推導 Kalman Filter 參數"
+
+      derivations:
+        - kalman_param: "σ_η (observation noise)"
+          source: "sleepWaterLossRate.sd × 8hr × 3"
+          meaning: "Expected daily weight fluctuation from water"
+
+        - kalman_param: "σ_ε (process noise)"
+          source: "Fixed at ~0.05 kg/day"
+          meaning: "True fat change uncertainty"
+
+        - kalman_param: "P₀ (initial variance)"
+          source: "BMR estimate CV × current_weight"
+          meaning: "Initial state uncertainty"
+
+      closed_loop: |
+        User measurements → Bayesian update → PersonalMetabolicProfile
+        → Kalman parameters → Filtered weight & predictions → UI
+
+      adaptation:
+        new_user: "Population prior → Conservative Kalman params → Wide prediction bands"
+        experienced_user: "Personalized params → Precise Kalman params → Narrow prediction bands"
+
+  violations:
+    - description: "Using population formulas as ground truth"
+      content: |
+        "Your BMR is exactly 1600 kcal/day according to the Mifflin formula."
+      explanation: |
+        Population formulas have ±15-20% individual variation.
+        They should be priors, not final answers.
+
+    - description: "Ignoring personal measurement data"
+      content: |
+        "My overnight weight loss is consistently 0.6 kg, but I'll use the
+        formula estimate of 0.3 kg for calculations."
+      explanation: |
+        Personal data should update the prior. Consistent observations
+        should shift the estimate toward observed values.
+
+  compliant:
+    - description: "Proper Bayesian reasoning"
+      content: |
+        "The Mifflin formula predicts 1500 kcal/day for me, but my 20 overnight
+        measurements suggest closer to 1700 kcal/day. My current estimate is
+        1650 ± 150 kcal/day (mixed source, partially personalized)."
+      explanation: |
+        Correctly combines prior with personal data.
+        Reports uncertainty and source.
+
+    - description: "Understanding reliability progression"
+      content: |
+        "After 30 days of overnight tracking, my sleepWaterLossRate estimate
+        is now 'personalized'. The 95% CI has narrowed from ±0.02 to ±0.008 kg/hr."
+      explanation: |
+        Recognizes that more data reduces uncertainty and shifts
+        the estimate toward personal truth.
+
+# =============================================================================
+# STRUCTURAL CONSTRAINTS ON WEIGHT CURVES
+# =============================================================================
+# This section formalizes the mathematical structure of weight trajectories,
+# including event taxonomy and state-dependent rate functions.
+
+structural_constraints:
+  id: "S1_weight_curve_structure"
+  one_liner: "體重曲線有嚴格的數學結構"
+  see_also: "structural_constraints.md"
+
+  # ----- Event Taxonomy -----
+  event_taxonomy:
+    principle: |
+      Weight changes occur through well-defined events with different
+      mathematical properties. Events are classified by their atomicity,
+      duration, and effect on weight.
+
+    basic_events:
+      id: "BasicEvent"
+      description: "原子性、瞬時、不可分解的事件"
+      properties:
+        - "Atomic (不可分解)"
+        - "Instantaneous or point-like (瞬時或點狀)"
+        - "Single well-defined effect (單一明確效果)"
+
+      examples:
+        # Weight-increasing events (E⁺)
+        - id: "bite"
+          type: "E⁺"
+          effect: "Δw = +m (mass of bite)"
+          description: "Single intake of food/drink"
+
+        - id: "drink_sip"
+          type: "E⁺"
+          effect: "Δw = +m"
+          description: "Single drink intake"
+
+        # Weight-decreasing discrete events (E⁻_discrete)
+        - id: "urinate"
+          type: "E⁻_discrete"
+          effect: "Δw = -m"
+          description: "Single urination event"
+
+        - id: "defecate"
+          type: "E⁻_discrete"
+          effect: "Δw = -m"
+          description: "Single defecation event"
+
+        - id: "vomit"
+          type: "E⁻_discrete"
+          effect: "Δw = -m"
+          description: "Emesis event"
+
+        # State transition events
+        - id: "exercise_start"
+          type: "state_transition"
+          effect: "s → s' (activity: resting → active)"
+          description: "Begin exercise session"
+
+        - id: "exercise_end"
+          type: "state_transition"
+          effect: "s' → s''"
+          description: "End exercise session"
+
+        - id: "sleep_onset"
+          type: "state_transition"
+          effect: "s → s_sleep"
+          description: "Fall asleep"
+
+        - id: "wake"
+          type: "state_transition"
+          effect: "s_sleep → s_awake"
+          description: "Wake up"
+
+    complex_events:
+      id: "ComplexEvent"
+      description: "可分解為 Basic Events 序列的時間區間"
+      properties:
+        - "Decomposable into basic events"
+        - "Has duration [t_start, t_end]"
+        - "Contains state transitions and/or sustained rate changes"
+
+      decomposition_formula: |
+        ComplexEvent = start_event + [duration with modified r(s)] + end_event
+
+      examples:
+        - id: "Exercise"
+          decomposition: "exercise_start + [elevated r for duration] + exercise_end"
+          note: "Not an E⁻ event! It's a state transition that modifies r(s)"
+
+        - id: "Sleep"
+          decomposition: "sleep_onset + [sleep r(s) for duration] + wake"
+          typical_duration: "6-9 hours"
+
+        - id: "Meal"
+          decomposition: "first_bite + [multiple bites] + last_bite"
+          note: "Sum of discrete E⁺ events"
+
+        - id: "Fasting"
+          decomposition: "[last_intake(t₁), first_intake(t₂)]"
+          note: "Defined by absence of E⁺ events"
+
+    continuous_processes:
+      id: "ContinuousProcess"
+      description: "持續進行的背景流失"
+      properties:
+        - "Always active (always running)"
+        - "Rate varies with state s"
+        - "Mathematically: dw/dt = -r(s)"
+
+      examples:
+        - id: "respiration"
+          rate: "r_resp(s) = f(activity, RQ)"
+          output: "CO₂ + H₂O vapor"
+          note: "Primary pathway for fat loss (84% of fat leaves as CO₂)"
+
+        - id: "evaporation"
+          rate: "r_evap(s) = f(temperature, humidity, activity)"
+          output: "H₂O vapor through skin"
+
+        - id: "basal_metabolism"
+          rate: "r_basal ≈ BMR / 24 hr"
+          note: "Background energy expenditure"
+
+  # ----- State Model -----
+  state_model:
+    id: "StateModel"
+    principle: "Rate depends on state, state depends on time: r = r(s), s = s(t)"
+    see_also: "structural_constraints.md#State-Time 分離"
+
+    state_vector:
+      current:
+        - activity: "resting | light | moderate | intense"
+        - consciousness: "awake | sleeping"
+        - fed_state: "fed | fasted | prolonged_fasted"
+        - environment: "temperature, humidity"
+        - posture: "lying | sitting | standing | moving"
+
+      history:
+        - energy_balance_trend: "surplus | deficit | maintenance"
+        - deficit_duration: "days in caloric deficit"
+        note: |
+          History matters for metabolic adaptation!
+          r(s) depends on s.history, not just s.current.
+          This explains why prolonged dieting slows metabolism.
+
+    metabolic_adaptation:
+      description: "代謝適應：r 會根據歷史能量平衡調整"
+      mechanism: |
+        After prolonged caloric deficit:
+        - BMR decreases (beyond what weight loss predicts)
+        - Thermic effect of food decreases
+        - Non-exercise activity thermogenesis (NEAT) decreases
+        - Exercise efficiency increases (burn fewer calories)
+
+      formal: |
+        r(s) = r_base(s.current) × adaptation_factor(s.history)
+        where:
+          adaptation_factor < 1 when energy_balance_trend = deficit
+          adaptation_factor > 1 when energy_balance_trend = surplus (less so)
+
+      counterexample: |
+        "The Biggest Loser" study: contestants' BMR dropped 500+ kcal/day
+        below prediction, even years after the show. This is why
+        r(weight) alone is insufficient - we need r(s) with history.
+
+  # ----- Weight Curve Structure -----
+  weight_curve_axioms:
+    - id: "SC1_piecewise_monotonicity"
+      one_liner: "體重只通過飲食增加"
+      statement_natural: |
+        Between eating/drinking events, weight is monotonically non-increasing.
+        Weight can only increase through discrete intake events (E⁺).
+      statement_formal: |
+        ∀ interval [t₁, t₂] with no E⁺ events:
+          w(t₂) ≤ w(t₁)
+          dw/dt ≤ 0
+
+    - id: "SC2_intake_jumps"
+      one_liner: "進食造成離散跳躍"
+      statement_natural: |
+        Each intake event causes an instantaneous weight increase
+        equal to the mass ingested.
+      statement_formal: |
+        At time t of E⁺ event with mass m:
+          w(t⁺) = w(t⁻) + m
+          lim_{ε→0} [w(t+ε) - w(t-ε)] = m
+
+    - id: "SC3_continuous_loss"
+      one_liner: "背景流失持續進行"
+      statement_natural: |
+        Continuous processes (respiration, evaporation) cause ongoing
+        weight loss at a state-dependent rate.
+      statement_formal: |
+        dw/dt = -r(s(t)) during intervals with no discrete events
+        where r(s) > 0 always
+
+  violations:
+    - description: "Claiming weight gain without intake"
+      content: |
+        "I didn't eat anything but my weight went up by 500g."
+      explanation: |
+        By SC1, weight cannot increase without E⁺ events.
+        Possible causes: unrecorded intake, scale error, or
+        water retention from previous sodium intake.
+
+    - description: "Ignoring metabolic adaptation"
+      content: |
+        "I've been eating 1200 kcal/day for 6 months. I should lose
+        0.5 kg/week based on my BMR."
+      explanation: |
+        After prolonged deficit, r decreases due to metabolic adaptation.
+        The expected loss rate no longer applies.
+
+  compliant:
+    - description: "Correct weight curve understanding"
+      content: |
+        "My weight drops continuously between meals (respiration, evaporation),
+        jumps up with each meal, and the net daily change reflects
+        my true fat change plus water fluctuations."
+      explanation: |
+        Correctly identifies piecewise structure with jumps and decay.
+
+    - description: "Understanding metabolic adaptation"
+      content: |
+        "After 3 months of dieting, my weight loss has slowed even though
+        my intake hasn't changed. My body has adapted by reducing r(s).
+        I may need a diet break to reset my metabolism."
+      explanation: |
+        Recognizes history-dependent rate changes.
+
+# =============================================================================
+# FIVE-LEVEL BODY COMPOSITION MODEL
+# =============================================================================
+# Based on Wang et al. (1992) - the foundational framework for body composition.
+
+five_level_model:
+  id: "FL1_body_composition_hierarchy"
+  one_liner: "身體組成有五個層級，從原子到整體"
+  see_also: "structural_constraints.md#Body-Composition-Five-Level-Model"
+
+  reference:
+    authors: "Wang ZM, Pierson RN Jr, Heymsfield SB"
+    title: "The five-level model: a new approach to organizing body-composition research"
+    journal: "American Journal of Clinical Nutrition"
+    year: 1992
+    volume: "56(1)"
+    pages: "19-28"
+    pubmed: "1609756"
+    url: "https://pubmed.ncbi.nlm.nih.gov/1609756/"
+
+  principle: |
+    Body composition can be analyzed at five hierarchical levels, from atomic
+    to whole body. Each level is distinct but connected through quantitative
+    relationships. Chemistry at Level 1 constrains all higher levels.
+
+  levels:
+    - level: 1
+      name: "Atomic (原子層級)"
+      description: "Elemental composition"
+      compartments:
+        - element: "O"
+          fraction: "~60%"
+        - element: "C"
+          fraction: "~20%"
+        - element: "H"
+          fraction: "~10%"
+        - element: "N"
+          fraction: "~3%"
+        - element: "Na, Ca, P, K, S, Cl, Mg"
+          fraction: "~7%"
+      our_framework: "CHONNa tracking"
+      measurement: "Neutron activation, whole body counting"
+      time_constant: "N/A (instantaneous tracking)"
+
+    - level: 2
+      name: "Molecular (分子層級)"
+      description: "Major molecular components"
+      compartments:
+        - name: "Water"
+          fraction: "~60%"
+          elements: "H, O"
+        - name: "Lipids"
+          fraction: "~15-25%"
+          elements: "C, H, O"
+        - name: "Protein"
+          fraction: "~15-18%"
+          elements: "C, H, O, N"
+        - name: "Minerals"
+          fraction: "~5%"
+          elements: "Ca, P, etc."
+        - name: "Glycogen"
+          fraction: "~0.5%"
+          elements: "C, H, O"
+      our_framework: "Macronutrient tracking"
+      measurement: "DXA, BIA, densitometry"
+      time_constant: "hours to days"
+
+    - level: 3
+      name: "Cellular (細胞層級)"
+      description: "Cell types and fluid compartments"
+      compartments:
+        - name: "BCM (Body Cell Mass)"
+          description: "Metabolically active cells"
+        - name: "ECF (Extracellular Fluid)"
+          description: "Plasma + interstitial fluid"
+        - name: "ECS (Extracellular Solids)"
+          description: "Bone, cartilage, collagen"
+        - name: "Fat"
+          description: "Adipocytes"
+      our_framework: "ICF/ECF water partitioning"
+      measurement: "Total body potassium, BIA"
+      time_constant: "days to weeks"
+
+    - level: 4
+      name: "Tissue-Organ (組織器官層級)"
+      description: "Major tissue systems"
+      compartments:
+        - name: "Adipose Tissue"
+          note: "Subcutaneous + Visceral"
+        - name: "Skeletal Muscle"
+          note: "~40% of body mass"
+        - name: "Bone"
+          note: "~15% of body mass"
+        - name: "Organs"
+          note: "Liver, brain, heart, etc."
+        - name: "Other"
+          note: "Blood, skin, etc."
+      our_framework: "Fat vs. lean mass"
+      measurement: "MRI, CT"
+      time_constant: "weeks to months"
+
+    - level: 5
+      name: "Whole Body (整體層級)"
+      description: "What scales measure"
+      compartments:
+        - name: "Height"
+        - name: "Weight"
+        - name: "BMI"
+        - name: "Waist circumference"
+      our_framework: "Daily weight tracking"
+      measurement: "Scale, tape measure"
+      time_constant: "All time scales combined"
+      note: "This is where we observe; Levels 1-4 must be inferred"
+
+  compartment_models:
+    description: "Simplified models for practical estimation"
+    models:
+      - name: "2C Model"
+        compartments: ["Fat Mass", "Fat-Free Mass"]
+        method: "Densitometry, BIA"
+        limitation: "Assumes constant FFM hydration (73.2%)"
+
+      - name: "3C Model"
+        compartments: ["Fat Mass", "Total Body Water", "Residual"]
+        method: "Densitometry + D₂O dilution"
+        advantage: "Accounts for hydration variation"
+
+      - name: "4C Model"
+        compartments: ["Fat", "Water", "Protein", "Mineral"]
+        method: "Densitometry + D₂O + DXA"
+        advantage: "Gold standard for body composition"
+
+      - name: "5C Model (Ours)"
+        compartments: ["Fat", "Water", "Glycogen", "Protein", "Mineral"]
+        method: "Kalman filter on weight + inputs"
+        advantage: "Tracks glycogen separately"
+
+  level_connections:
+    principle: |
+      Chemistry at Level 1 determines what's possible at Levels 2-5.
+      Mass conservation at the atomic level explains all weight changes.
+    examples:
+      - "C atoms in fat (L2) must be exhaled as CO₂ (L1) to lose fat"
+      - "N balance (L1) determines muscle protein change (L2)"
+      - "Na balance (L1) determines ECF volume (L3)"
+
+  violations:
+    - description: "Ignoring level constraints"
+      content: |
+        "I can lose fat without breathing more because I'm taking
+        a special supplement."
+      explanation: |
+        Fat carbon must leave as CO₂ (L1 constraint). No supplement
+        can bypass atomic-level mass conservation.
+
+    - description: "Confusing levels"
+      content: |
+        "My scale says I lost 2 kg of fat this week."
+      explanation: |
+        Scales measure L5 (total weight), not L2 (fat mass).
+        2 kg scale change includes water (L2) and gut contents.
+
+  compliant:
+    - description: "Understanding level hierarchy"
+      content: |
+        "My scale weight (L5) dropped 1.5 kg. Based on my deficit,
+        about 0.3 kg was fat (L2), and the rest was glycogen-bound
+        water (L2). The fat left as CO₂ through breathing (L1)."
+      explanation: |
+        Correctly traces weight change through multiple levels.
+
+# =============================================================================
+# MASS LOSS PATHWAYS
+# =============================================================================
+# Comprehensive inventory of all routes by which mass leaves the body.
+
+mass_loss_pathways:
+  id: "MLP_comprehensive_inventory"
+  one_liner: "質量離開身體的所有途徑"
+  see_also: "structural_constraints.md#Complete-Mass-Loss-Pathway-Inventory"
+
+  principle: |
+    By mass conservation, all weight loss must exit through specific pathways.
+    Understanding these pathways explains *how* weight is lost, not just *that*
+    it's lost. The key insight: 84% of fat leaves through breath as CO₂!
+
+  categories:
+    # ----- Water Loss (~85% of daily mass loss) -----
+    - category: "Water Loss (水分流失)"
+      fraction: "~85% of daily mass loss"
+      pathways:
+        - id: "respiratory_water"
+          name: "呼氣水蒸氣"
+          rate: "300-500 mL/day"
+          mechanism: "Saturated exhaled air"
+          note: "Higher in dry/cold environments"
+
+        - id: "insensible_skin"
+          name: "皮膚蒸發 (非汗)"
+          rate: "300-600 mL/day"
+          mechanism: "Passive evaporation through epidermis"
+          note: "Not sweat glands"
+
+        - id: "sweat"
+          name: "汗水"
+          rate: "0.5-2.0 L/hr during exercise"
+          mechanism: "Active sweat gland secretion"
+          composition: "99% water, 0.5% NaCl"
+
+        - id: "urine"
+          name: "尿液"
+          rate: "1-2 L/day"
+          mechanism: "Kidney filtration"
+          composition: "95% water, urea, creatinine, Na, K"
+          discrete_event: true
+
+    # ----- Gas Loss -----
+    - category: "Gas Loss (氣體流失)"
+      fraction: "~10-15% (but critical for fat loss!)"
+      pathways:
+        - id: "CO2_exhalation"
+          name: "二氧化碳呼出"
+          rate: "~200-250 g/day at rest, up to 1 kg/day with exercise"
+          mechanism: "Cellular respiration → blood transport → alveolar exchange"
+          critical_insight: |
+            84% of fat mass leaves the body as CO₂!
+            Fat (C₅₅H₁₀₄O₆) → 55 CO₂ + 52 H₂O
+            This is THE primary fat loss pathway.
+          reference: "Meerman & Brown (2014) BMJ"
+
+        - id: "other_gases"
+          name: "其他氣體"
+          rate: "Variable"
+          examples: ["Methane (flatulence)", "Volatile organic compounds"]
+          contribution: "Negligible for weight"
+
+    # ----- Solid Loss -----
+    - category: "Solid Loss (固體流失)"
+      fraction: "~5%"
+      pathways:
+        - id: "feces"
+          name: "糞便"
+          rate: "100-250 g/day"
+          composition: "75% water, 25% solids (fiber, bacteria, cells)"
+          discrete_event: true
+
+        - id: "vomit"
+          name: "嘔吐"
+          rate: "Event-based"
+          discrete_event: true
+
+        - id: "hair_nails"
+          name: "毛髮/指甲"
+          rate: "~1 g/day"
+          contribution: "Negligible"
+
+        - id: "skin_cells"
+          name: "皮膚細胞脫落"
+          rate: "~1-2 g/day"
+          contribution: "Negligible"
+
+    # ----- Special Cases -----
+    - category: "Special Cases (特殊情況)"
+      pathways:
+        - id: "blood_donation"
+          name: "捐血"
+          amount: "~450 mL = ~470 g"
+          discrete_event: true
+          recovery: "Plasma in hours, cells in weeks"
+
+        - id: "surgery"
+          name: "手術移除"
+          examples: ["Liposuction", "Tumor removal", "Organ donation"]
+          discrete_event: true
+
+        - id: "lactation"
+          name: "哺乳"
+          rate: "~750 mL/day"
+          composition: "Water, fat, protein, lactose"
+          note: "Significant for nursing mothers"
+
+  key_insights:
+    - insight: "Fat leaves through breath"
+      formal: "Fat → 84% CO₂ (exhaled) + 16% H₂O"
+      implication: |
+        The lungs are the primary excretory organ for fat!
+        This is why breathing increases during exercise.
+
+    - insight: "Sweat is NOT fat"
+      formal: "Sweat = 99% H₂O + 0.5% NaCl + trace urea"
+      implication: |
+        Sweating loses water weight, not fat.
+        The weight returns when you rehydrate.
+
+    - insight: "Most daily loss is water"
+      formal: "~85% of mass flux is H₂O cycling"
+      implication: |
+        This explains why weight fluctuates so much day-to-day.
+        True fat loss is a small signal in a noisy water background.
+
+  violations:
+    - description: "Thinking fat leaves through sweat"
+      content: |
+        "I need to sweat more to burn more fat."
+      explanation: |
+        Sweat is 99% water. Fat leaves as CO₂ through breath.
+        Sweating helps with cooling, not fat loss.
+
+    - description: "Underestimating respiratory contribution"
+      content: |
+        "Breathing doesn't affect my weight."
+      explanation: |
+        You exhale ~200-250g of CO₂ per day at rest, more with exercise.
+        This is the primary pathway for fat carbon leaving the body.
+
+  compliant:
+    - description: "Understanding CO₂ as fat loss pathway"
+      content: |
+        "When I lose 10 kg of fat, I exhale about 8.4 kg of it as CO₂
+        (28 kg of CO₂ total, since CO₂ includes oxygen from air),
+        and produce 11 kg of metabolic water."
+      explanation: |
+        Correctly applies stoichiometry of fat oxidation.
+
+    - description: "Distinguishing water loss from fat loss"
+      content: |
+        "My post-run weight is down 1.5 kg from sweating. This is
+        water that I'll replace by drinking. My actual fat loss
+        from the run was maybe 50-100g based on calories burned."
+      explanation: |
+        Correctly separates transient water loss from fat oxidation.
+
+# =============================================================================
+# ELEMENT PATHWAYS (元素路徑追蹤)
+# =============================================================================
+# Tracks the fate of each CHONNa element from intake to excretion.
+# Complementary view to mass_loss_pathways (organized by element, not route).
+
+element_pathways:
+  id: "EP_chonna_tracking"
+  one_liner: "每個原子從哪裡來，到哪裡去？"
+  see_also: "element_pathways.md"
+
+  principle: |
+    By atomic conservation, every atom that enters the body must either:
+    (1) be stored (Δm > 0), (2) be excreted (Δm < 0), or (3) be in balance.
+    Tracking elements reveals the fundamental chemistry of weight change.
+
+  # ===== CARBON =====
+  carbon:
+    symbol: "C"
+    chinese: "碳"
+    role: "減重的核心 — 脂肪的碳必須從肺呼出"
+
+    input:
+      sources:
+        - source: "碳水化合物"
+          c_fraction: 0.40
+          example: "C₆H₁₂O₆ (葡萄糖): 72/180 = 40%"
+        - source: "脂肪"
+          c_fraction: 0.77
+          example: "C₅₅H₁₀₄O₆: 660/860 ≈ 77%"
+        - source: "蛋白質"
+          c_fraction: 0.53
+          example: "平均胺基酸組成"
+
+    output:
+      primary:
+        - pathway: "CO₂ 呼出"
+          fraction: "85-90%"
+          organ: "肺"
+          mechanism: "呼吸作用: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O"
+          critical: true
+          note: "這是脂肪離開身體的主要途徑！"
+
+      secondary:
+        - pathway: "尿素 CO(NH₂)₂"
+          fraction: "5-7%"
+          organ: "腎"
+          mechanism: "蛋白質代謝脫氨後碳骨架"
+        - pathway: "揮發性有機物 (VOCs)"
+          fraction: "1-3%"
+          organ: "肺"
+          examples: ["丙酮 (生酮時增加)", "異戊二烯"]
+        - pathway: "糞便"
+          fraction: "3%"
+          contents: ["未消化纖維", "腸道細菌", "膽汁色素"]
+        - pathway: "腸道氣體"
+          fraction: "<1%"
+          contents: ["CH₄ (甲烷)", "CO₂"]
+
+    state_variations:
+      - state: "正常混合飲食"
+        CO2_pct: 88
+        ketone_pct: 1
+        urea_pct: 7
+      - state: "生酮飲食"
+        CO2_pct: 80
+        ketone_pct: 8
+        urea_pct: 7
+      - state: "高蛋白飲食"
+        CO2_pct: 82
+        ketone_pct: 1
+        urea_pct: 12
+      - state: "禁食"
+        CO2_pct: 75
+        ketone_pct: 12
+        urea_pct: 8
+
+    key_insight: |
+      無論什麼狀態，肺是碳的主要出口 (75-90%)。
+      這就是為什麼運動加速減重 — 它增加 CO₂ 產出率。
+
+  # ===== HYDROGEN =====
+  hydrogen:
+    symbol: "H"
+    chinese: "氫"
+    role: "主要以 H₂O 形式離開身體"
+
+    input:
+      sources:
+        - source: "飲水 H₂O"
+          h_fraction: 0.112
+          note: "主要來源: 2-3 L/天"
+        - source: "食物中的水"
+          note: "食物含水量 60-90%"
+        - source: "碳水化合物"
+          h_fraction: 0.067
+        - source: "脂肪"
+          h_fraction: 0.12
+        - source: "蛋白質"
+          h_fraction: 0.07
+        - source: "代謝水"
+          mechanism: "呼吸作用產生: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O"
+
+    output:
+      pathways:
+        - pathway: "尿液"
+          fraction: "60%"
+          form: "H₂O"
+          rate: "1.5-2 L/天"
+          primary: true
+        - pathway: "皮膚 (汗水 + 蒸發)"
+          fraction: "20%"
+          form: "H₂O"
+          rate: "變化大 (0-數 L)"
+        - pathway: "呼吸水蒸氣"
+          fraction: "15%"
+          form: "H₂O"
+          rate: "300-500 mL/天"
+        - pathway: "糞便含水"
+          fraction: "5%"
+          form: "H₂O"
+          rate: "100-200 mL/天"
+        - pathway: "腸道氣體"
+          fraction: "<0.1%"
+          form: "H₂"
+          note: "腸道厭氧發酵產生"
+
+    key_insight: |
+      氫的進出主要由水平衡決定，與能量代謝關係較小。
+      大部分 H 以 H₂O 形式從腎臟排出。
+
+  # ===== OXYGEN =====
+  oxygen:
+    symbol: "O"
+    chinese: "氧"
+    role: "吸入 O₂ 與食物中的 O 結合後呼出"
+
+    input:
+      sources:
+        - source: "呼吸吸入 O₂"
+          note: "主要來源！~500 L O₂/天 ≈ 700 g O₂/天"
+          primary: true
+        - source: "飲水 H₂O"
+          o_fraction: 0.888
+        - source: "碳水化合物"
+          o_fraction: 0.533
+        - source: "脂肪"
+          o_fraction: 0.11
+        - source: "蛋白質"
+          o_fraction: 0.23
+
+    output:
+      pathways:
+        - pathway: "CO₂ 呼出"
+          form: "CO₂"
+          o_in_co2: "72.7% (32/44)"
+          rate: "~800g CO₂/天，含 ~580g O"
+          primary: true
+        - pathway: "H₂O 呼出"
+          form: "H₂O"
+          note: "代謝水 + 蒸發"
+        - pathway: "尿液"
+          form: "H₂O, 尿素"
+        - pathway: "汗水"
+          form: "H₂O"
+
+    special_note: |
+      吸入 O₂ vs 呼出 CO₂ 的質量差:
+      - 吸入 O₂: 32 g/mol
+      - 呼出 CO₂: 44 g/mol (含 32g O + 12g C)
+
+      淨效果: 呼出質量 > 吸入質量
+      因為 CO₂ 帶走了食物中的 C！
+      (Meerman & Brown 2014 的核心發現)
+
+  # ===== NITROGEN =====
+  nitrogen:
+    symbol: "N"
+    chinese: "氮"
+    role: "蛋白質代謝指標，只存在於蛋白質中"
+
+    input:
+      sources:
+        - source: "蛋白質"
+          n_fraction: 0.16
+          note: "唯一來源！胺基酸的 -NH₂ 基團"
+          typical_intake: "50-100g 蛋白質/天 → 8-16g N"
+
+    output:
+      pathways:
+        - pathway: "尿素 CO(NH₂)₂"
+          fraction: "80-85%"
+          organ: "腎"
+          n_in_urea: "46.7% (28/60)"
+          mechanism: "肝臟尿素循環: 2NH₃ + CO₂ → CO(NH₂)₂ + H₂O"
+          rate: "20-30g 尿素/天 = 9-14g N"
+          primary: true
+        - pathway: "尿酸 C₅H₄N₄O₃"
+          fraction: "2-3%"
+          note: "嘌呤代謝終產物"
+        - pathway: "肌酐 C₄H₇N₃O"
+          fraction: "1-2%"
+          note: "肌肉肌酸代謝"
+        - pathway: "氨 NH₃/NH₄⁺"
+          fraction: "2-5%"
+          note: "直接排出 (調節酸鹼平衡)"
+        - pathway: "汗液 (尿素 + 氨)"
+          fraction: "5-8%"
+        - pathway: "糞便"
+          fraction: "3-5%"
+          note: "未吸收蛋白質 + 腸道細菌"
+
+    nitrogen_balance:
+      definition: "N 平衡 = N_intake - N_output"
+      states:
+        - state: "正氮平衡 (+)"
+          meaning: "肌肉合成 > 分解"
+          context: "增肌"
+        - state: "負氮平衡 (-)"
+          meaning: "肌肉分解 > 合成"
+          context: "減重時風險"
+        - state: "零氮平衡 (0)"
+          meaning: "維持肌肉量"
+
+    clinical_use: "尿素氮測量可評估蛋白質代謝狀態"
+
+  # ===== SODIUM =====
+  sodium:
+    symbol: "Na"
+    chinese: "鈉"
+    role: "調節水分滯留的關鍵元素"
+
+    input:
+      sources:
+        - source: "食鹽 NaCl"
+          na_fraction: 0.393
+          note: "主要來源 (23/58.5)"
+        - source: "加工食品"
+          note: "隱藏的鈉"
+        - source: "天然食物"
+          note: "少量"
+        - source: "運動飲料"
+          note: "補充用"
+      typical_intake: "2-5 g Na/天 (= 5-12 g 鹽)"
+      recommended_limit: "2.3 g Na/天"
+
+    output:
+      pathways:
+        - pathway: "尿液"
+          fraction: "90-95%"
+          organ: "腎"
+          regulation: "醛固酮 (Aldosterone) 調控"
+          primary: true
+        - pathway: "汗液"
+          fraction: "5-10%"
+          concentration: "0.5-2 g Na/L"
+          note: "激烈運動可流失 1-3 g Na"
+        - pathway: "糞便"
+          fraction: "<1%"
+
+    water_retention_effect:
+      formula: "1 g Na 過量 ≈ 200-400 mL 水分滯留 ≈ 0.2-0.4 kg 體重"
+      mechanism: |
+        Na⁺ 增加 → 血漿滲透壓↑ → 口渴 + ADH↑ → 水分保留
+        Na⁺ 減少 → 血漿滲透壓↓ → 水分排出
+      practical_note: "這就是為什麼吃鹹食後體重會暫時增加！"
+
+  # ===== SUMMARY TABLE =====
+  summary:
+    by_primary_exit:
+      - element: "C"
+        primary_organ: "肺"
+        primary_fraction: "88%"
+        primary_form: "CO₂"
+      - element: "H"
+        primary_organ: "腎"
+        primary_fraction: "60%"
+        primary_form: "H₂O"
+      - element: "O"
+        primary_organ: "肺"
+        primary_fraction: "主要"
+        primary_form: "CO₂, H₂O"
+      - element: "N"
+        primary_organ: "腎"
+        primary_fraction: "85%"
+        primary_form: "尿素"
+      - element: "Na"
+        primary_organ: "腎"
+        primary_fraction: "93%"
+        primary_form: "Na⁺ 離子"
+
+    conservation_equations: |
+      對每個元素 X ∈ {C, H, O, N, Na}:
+
+      dX/dt = X_in - X_out
+
+      其中:
+      X_in  = Σ (食物中 X) + (吸入氣體中 X，若適用)
+      X_out = X_breath + X_urine + X_sweat + X_feces + X_other
+
+  # ===== PRACTICAL APPLICATION =====
+  practical_applications:
+    - title: "減掉 1 kg 脂肪需要呼出多少 CO₂？"
+      calculation: |
+        脂肪組成: C₅₅H₁₀₄O₆ (約 860 g/mol)
+        1 kg 脂肪含:
+        - 770 g C → 需呼出 2.8 kg CO₂ (770 × 44/12)
+        - 120 g H → 產生 1.1 kg H₂O (120 × 18/2)
+
+        結論: 減 1 kg 脂肪 ≈ 呼出 2.8 kg CO₂ + 排出 1.1 kg H₂O
+      reference: "Meerman & Brown (2014)"
+
+    - title: "為什麼運動加速減重？"
+      explanation: |
+        運動增加 CO₂ 產出率:
+        - 休息: ~200-250 mL CO₂/min
+        - 中度運動: ~1000-1500 mL CO₂/min
+        - 激烈運動: ~3000-4000 mL CO₂/min
+
+        運動 1 小時 (中度):
+        - 額外呼出 ~60 L CO₂ ≈ 120 g CO₂
+        - 其中 C ≈ 33 g
+        - 相當於燃燒 ~43 g 脂肪
+      insight: "碳必須從肺出去 — 這是減重的物理瓶頸"
+
+# =============================================================================
+# REFERENCES
+# =============================================================================
+
+references:
+  foundational_papers:
+    - id: "Wang1992"
+      authors: "Wang ZM, Pierson RN Jr, Heymsfield SB"
+      title: "The five-level model: a new approach to organizing body-composition research"
+      journal: "American Journal of Clinical Nutrition"
+      year: 1992
+      volume: "56(1)"
+      pages: "19-28"
+      pubmed: "1609756"
+      url: "https://pubmed.ncbi.nlm.nih.gov/1609756/"
+      relevance: "Foundational framework for body composition analysis"
+
+    - id: "Meerman2014"
+      authors: "Meerman R, Brown AJ"
+      title: "When somebody loses weight, where does the fat go?"
+      journal: "BMJ"
+      year: 2014
+      volume: "349"
+      pages: "g7257"
+      pubmed: "25516540"
+      url: "https://pubmed.ncbi.nlm.nih.gov/25516540/"
+      relevance: "84% of fat leaves as CO₂ through breath"
+
+  metabolic_equations:
+    - id: "MifflinStJeor1990"
+      authors: "Mifflin MD, St Jeor ST, Hill LA, Scott BJ, Daugherty SA, Koh YO"
+      title: "A new predictive equation for resting energy expenditure in healthy individuals"
+      journal: "American Journal of Clinical Nutrition"
+      year: 1990
+      volume: "51(2)"
+      pages: "241-247"
+      relevance: "BMR prediction formula used as Bayesian prior"
+
+  metabolic_adaptation:
+    - id: "Fothergill2016"
+      authors: "Fothergill E, Guo J, Howard L, et al."
+      title: "Persistent metabolic adaptation 6 years after The Biggest Loser competition"
+      journal: "Obesity"
+      year: 2016
+      volume: "24(8)"
+      pages: "1612-1619"
+      pubmed: "27136388"
+      relevance: "Evidence for long-term metabolic adaptation (s.history effects)"

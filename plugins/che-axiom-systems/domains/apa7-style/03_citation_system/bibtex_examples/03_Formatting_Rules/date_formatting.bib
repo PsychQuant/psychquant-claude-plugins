@@ -1,0 +1,195 @@
+% ================================================
+% Date Formatting Examples (APA 9.14, Various Sections)
+% APA 7th Edition Date Formatting Rules
+% ================================================
+% 
+% This file contains examples for date formatting in references:
+% - Standard year formats (2020)
+% - Month and year formats (2020-03)
+% - Specific date formats (2020-03-15)
+% - Date ranges (2020-03-15/2020-03-20)
+% - Season formats (2020-21 for Spring)
+% - In press and no date handling
+% - Original date citations (reprints)
+% 
+% Usage: Date formatting is crucial for proper APA citations.
+% Use DATE field for publication dates, ORIGDATE for original publication dates.
+% Season codes: 21=Spring, 22=Summer, 23=Fall/Autumn, 24=Winter
+% ================================================
+
+% (APA 9.14) - Season date formatting
+@ARTICLE{9.14:1,
+ AUTHOR       = {Arthur Test},
+ TITLE        = {Test Title},
+ JOURNALTITLE = {Seasonal Journal},
+ VOLUME       = {33},
+ NUMBER       = {2},
+ DATE         = {2012-22}
+}
+
+@ARTICLE{9.14:2,
+ AUTHOR       = {Arthur Test},
+ TITLE        = {Test Title 2},
+ JOURNALTITLE = {Seasonal Journal},
+ VOLUME       = {34},
+ NUMBER       = {3},
+ DATE         = {2012-22/2012-23}
+}
+
+% Standard year format
+@BOOK{date1,
+  AUTHOR = {A. Author},
+  TITLE  = {Standard Year Format},
+  DATE   = {2020}
+}
+
+% Month and year format
+@BOOK{date2,
+  AUTHOR = {B. Author},
+  TITLE  = {Month and Year Format},
+  DATE   = {2020-03}
+}
+
+% Specific date format
+@BOOK{date3,
+  AUTHOR = {C. Author},
+  TITLE  = {Specific Date Format},
+  DATE   = {2020-03-15}
+}
+
+% Date range - same year, different months
+@BOOK{date4,
+  AUTHOR = {D. Author},
+  TITLE  = {Date Range Different Months},
+  DATE   = {2020-03/2020-05}
+}
+
+% Date range - same month, different days
+@BOOK{date5,
+  AUTHOR = {E. Author},
+  TITLE  = {Date Range Same Month},
+  DATE   = {2020-03-15/2020-03-20}
+}
+
+% Date range - different years
+@BOOK{date6,
+  AUTHOR = {F. Author},
+  TITLE  = {Date Range Different Years},
+  DATE   = {2019-12/2020-02}
+}
+
+% In press publication
+@BOOK{date7,
+  AUTHOR   = {G. Author},
+  TITLE    = {In Press Publication},
+  PUBSTATE = {inpress}
+}
+
+% No date publication
+@BOOK{date8,
+  AUTHOR = {H. Author},
+  TITLE  = {No Date Publication}
+}
+
+% Reprinted work with original date
+@BOOK{date9,
+  AUTHOR   = {I. Author},
+  TITLE    = {Reprinted Work},
+  ORIGDATE = {1950},
+  DATE     = {2020}
+}
+
+% Translated work with original date
+@BOOK{date10,
+  AUTHOR   = {J. Author},
+  TITLE    = {Translated Work},
+  ORIGDATE = {1925},
+  DATE     = {2018}
+}
+
+% Season codes examples
+% Spring
+@ARTICLE{season1,
+  AUTHOR       = {K. Author},
+  TITLE        = {Spring Publication},
+  JOURNALTITLE = {Seasonal Review},
+  DATE         = {2020-21}
+}
+
+% Summer
+@ARTICLE{season2,
+  AUTHOR       = {L. Author},
+  TITLE        = {Summer Publication},
+  JOURNALTITLE = {Seasonal Review},
+  DATE         = {2020-22}
+}
+
+% Fall/Autumn
+@ARTICLE{season3,
+  AUTHOR       = {M. Author},
+  TITLE        = {Fall Publication},
+  JOURNALTITLE = {Seasonal Review},
+  DATE         = {2020-23}
+}
+
+% Winter
+@ARTICLE{season4,
+  AUTHOR       = {N. Author},
+  TITLE        = {Winter Publication},
+  JOURNALTITLE = {Seasonal Review},
+  DATE         = {2020-24}
+}
+
+% Multiple season range
+@ARTICLE{season5,
+  AUTHOR       = {O. Author},
+  TITLE        = {Multi-season Publication},
+  JOURNALTITLE = {Seasonal Review},
+  DATE         = {2020-22/2020-23}
+}
+
+% Ancient/historical dates with approximation
+@BOOK{ancient1,
+  AUTHOR   = {Aristotle},
+  TITLE    = {Ancient Work},
+  ORIGDATE = {-0350~},
+  DATE     = {1999}
+}
+
+% Medieval work
+@BOOK{ancient2,
+  AUTHOR   = {Anonymous},
+  TITLE    = {Medieval Manuscript},
+  ORIGDATE = {1200~},
+  DATE     = {2015}
+}
+
+% Circa dates
+@BOOK{circa1,
+  AUTHOR   = {P. Author},
+  TITLE    = {Circa Publication},
+  DATE     = {1995~}
+}
+
+% Multiple volume work spanning years
+@BOOK{multivolume1,
+  AUTHOR = {Q. Author},
+  TITLE  = {Multi-volume Work},
+  DATE   = {2015/2020}
+}
+
+% Ongoing series
+@BOOK{ongoing1,
+  AUTHOR = {R. Author},
+  TITLE  = {Ongoing Series},
+  DATE   = {2018/}
+}
+
+% Advance online publication
+@ARTICLE{advance1,
+  AUTHOR       = {S. Author},
+  TITLE        = {Advance Online Publication},
+  JOURNALTITLE = {Online Journal},
+  PUBSTATE     = {pubonline},
+  DATE         = {2020-05-15}
+}

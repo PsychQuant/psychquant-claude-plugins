@@ -1,0 +1,8 @@
+Update version string in:
+* doc .tex (including revision history)
+* apa.cbx
+* apa.bbx
+* apa.dbx
+* *.lbx
+* ./install.sh all (will generate 2 PDFs for packaging)
+* ./mkrelease.sh

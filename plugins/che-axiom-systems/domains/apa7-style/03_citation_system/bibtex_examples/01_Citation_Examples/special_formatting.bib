@@ -1,0 +1,157 @@
+% ================================================
+% Special Formatting Cases
+% APA 7th Edition Sections 8.14-8.16
+% ================================================
+% 
+% This file contains examples for special citation formatting:
+% - Anonymous works
+% - Works without authors
+% - Reprinted/translated works
+% - Classical works with original dates
+% - Ancient works with approximate dates
+% - In press publications
+% 
+% Usage: These examples show how to handle special cases that require
+% different formatting or additional date information
+% ================================================
+
+% (APA 8.12) - Publication states and same author works
+@BOOK{8.12c,
+  AUTHOR         = {A. Westinghouse},
+  TITLE          = {Title},
+  DATE           = {2017}
+}
+
+@BOOK{8.12p,
+  AUTHOR         = {A. Augustine},
+  TITLE          = {Title1},
+  DATE           = {2017}
+}
+
+@BOOK{8.12r,
+  AUTHOR         = {A. Pérez},
+  TITLE          = {Title1},
+  DATE           = {2014}
+}
+
+% Same author, multiple works with different publication states
+@BOOK{8.12h,
+  AUTHOR         = {A. Zhou},
+  TITLE          = {Title1},
+  PUBSTATE       = {inpress}
+}
+
+@BOOK{8.12i,
+  AUTHOR         = {A. Zhou},
+  TITLE          = {Title1}
+}
+
+@BOOK{8.12j,
+  AUTHOR         = {A. Zhou},
+  TITLE          = {Title1},
+  DATE           = {2000}
+}
+
+@BOOK{8.12k,
+  AUTHOR         = {A. Zhou},
+  TITLE          = {Title1},
+  DATE           = {2016}
+}
+
+% PUBSTATE is not used when there is a DATE
+@BOOK{8.12s,
+  AUTHOR         = {Steven Smidge},
+  TITLE          = {Something 1},
+  DATE           = {2000},
+  PUBSTATE       = {inpress}
+}
+
+@BOOK{8.12t,
+  AUTHOR         = {Steven Smidge},
+  TITLE          = {Something 2},
+  PUBSTATE       = {inpress}
+}
+
+@BOOK{8.12u,
+  AUTHOR         = {Steven Smidge},
+  TITLE          = {Something 3},
+  PUBSTATE       = {inpress}
+}
+
+% (APA 8.13) - Classical and ancient works
+@BOOK{8.13h,
+  TITLE          = {King James Bible},
+  ORIGDATE       = {1769},
+  DATE           = {2017}
+}
+
+% Note the special date specification for BC and circa - see biblatex manual
+@BOOK{8.13i,
+  AUTHOR         = {Aristotle},
+  TITLE          = {Ethics},
+  ORIGDATE       = {-0349~},
+  DATE           = {1994}
+}
+
+@BOOK{8.13j,
+  AUTHOR         = {W. Shakespeare},
+  ORIGDATE       = {1623},
+  DATE           = {1995}
+}
+
+% (APA 8.14) - Anonymous and untitled works
+@BOOK{8.14a,
+  TITLE          = {Interpersonal Skills and Other Desperate Phrases Designed to Sound Scientific},
+  SHORTTITLE     = {Interpersonal Skills},
+  DATE           = {2019}
+}
+
+@ARTICLE{8.14b,
+  TITLE          = {Understanding Sensory Memory},
+  DATE           = {2018}
+}
+
+@BOOK{8.14c,
+  AUTHOR         = {Anonymous},
+  TITLE          = {Title},
+  DATE           = {2017}
+}
+
+% (APA 8.15) - Reprinted/translated works
+@BOOK{8.15a,
+  AUTHOR         = {S. Freud},
+  TITLE          = {Title},
+  ORIGDATE       = {1900},
+  DATE           = {1953}
+}
+
+@BOOK{8.15b,
+  AUTHOR         = {J. Piaget},
+  TITLE          = {Title},
+  ORIGDATE       = {1966},
+  DATE           = {2000}
+}
+
+% Testing date ranges
+@BOOK{daterange1,
+  AUTHOR        = {Freddy Furnishings},
+  TITLE         = {Authorship Provisions in Augment},
+  DATE          = {1984-02-01/1984-02-27},
+}
+
+@BOOK{daterange2,
+  AUTHOR        = {Graham Granary},
+  TITLE         = {Authorship Provisions in Augment},
+  DATE          = {1984-02-27/1984-03-01},
+}
+
+% Testing citation with complete dates including non-academic sources
+@ARTICLE{Ludwig2014,
+  ENTRYSUBTYPE  = {nonacademic},
+  AUTHOR        = {Ludwig, Jan},
+  TITLE         = {Wenn nichts mehr geht},
+  URL           = {http://www.zeit.de/campus/2014/06/pruefungsergebnis-klage},
+  JOURNALTITLE  = {Zeit Campus},
+  DATE          = {2014-10-08},
+  LANGUAGE      = {de}
+}

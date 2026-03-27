@@ -1,0 +1,85 @@
+% ================================================
+% Basic Author Formatting Examples (APA 9.8)
+% APA 7th Edition Chapter 9 - Basic Author Name Formats
+% ================================================
+% 
+% This file contains examples for basic author name formatting:
+% - Single author format
+% - Multiple author formats (2, 3, 20+ authors)
+% - Corporate authors
+% - Authors with suffixes
+% - Username annotations for social media
+% 
+% Usage: These examples show fundamental author name structures
+% in BibTeX for proper APA reference generation.
+% ================================================
+
+% (APA 9.8) - Basic author formatting
+@BOOK{9.8:1,
+  AUTHOR = {A. A. Author and B. B. Author},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:2,
+  AUTHOR = {{American Psychological Association} and {National Institutes of Health}},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:3,
+  AUTHOR = {A. A. Author and B. B. Author and C. C. Author},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:4,
+  AUTHOR = {First and Second and Third and Fourth and Fifth and Sixth and
+            Seventh and Eighth and Ninth and Tenth and Eleventh and Twelfth and
+            Thirteenth and Fourteenth and Fifteenth and Sixteenth and
+            Seventeenth and Eighteenth and Nineteenth and Twentieth},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:5,
+  AUTHOR = {First and Second and Third and Fourth and Fifth and Sixth and
+            Seventh and Eighth and Ninth and Tenth and Eleventh and Twelfth and
+            Thirteenth and Fourteenth and Fifteenth and Sixteenth and
+            Seventeenth and Eighteenth and Nineteenth and Twentieth and
+            Twentyfirst and Twentysecond},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:6,
+  AUTHOR = {Xu, Ai-Jun},
+  DATE   = {2014}
+}
+
+% protect the hyphenated lower-case initial from being detected
+@BOOK{9.8:7,
+  AUTHOR = {Raboso, {Lee-ann}},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:8,
+  AUTHOR = {Author, Jr., A. A. and B. B. Author},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:9,
+  AUTHOR = {K. Meyers},
+  WITH   = {W. T. Long},
+  TITLE  = {Withering Worrying},
+  DATE   = {2014}
+}
+
+@BOOK{9.8:10,
+  AUTHOR = {Plato},
+  DATE   = {2014}
+}
+
+% using the biber string annotation feature for usernames. This allows
+% usernames to be attached to any name in a name list. Must call a username
+% annotation "username"
+@BOOK{9.8:11,
+  AUTHOR             = {U. Author},
+  AUTHOR+an:username = {1="@ausername"},
+  DATE               = {2014}
+}

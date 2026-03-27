@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/kiki830621/axiomatization-apa7-style/schemas/decision_tree.schema.json",
+  "title": "APA 7 Decision Tree Schema",
+  "description": "Schema for machine-readable decision trees in the APA 7 axiomatization system",
+  "type": "object",
+  "required": ["decision_tree"],
+  "properties": {
+    "decision_tree": {
+      "type": "object",
+      "required": ["name", "version", "root", "nodes"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Human-readable name of the decision tree"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+$",
+          "description": "Semantic version (e.g., 1.0)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the decision tree's purpose"
+        },
+        "root": {
+          "type": "string",
+          "description": "ID of the starting node"
+        },
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/node"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["decision", "result", "action"],
+          "description": "Type of node"
+        },
+        "question": {
+          "type": "string",
+          "description": "Decision question (required for decision nodes)"
+        },
+        "yes": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/inline_result" }
+          ],
+          "description": "Next node ID or inline result for 'yes' branch"
+        },
+        "no": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/definitions/inline_result" }
+          ],
+          "description": "Next node ID or inline result for 'no' branch"
+        },
+        "result": {
+          "type": "string",
+          "description": "Final result value (for result nodes)"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to perform (for action nodes)"
+        },
+        "axioms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Related axiom IDs"
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Evidence or verification methods"
+        },
+        "description": {
+          "type": "string",
+          "description": "Additional context for this node"
+        }
+      }
+    },
+    "inline_result": {
+      "type": "object",
+      "required": ["result"],
+      "properties": {
+        "result": {
+          "type": "string"
+        },
+        "axioms": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,374 @@
+\ProvidesFile{naustrian-apa.lbx}[2023/03/20\space v9.17\space APA biblatex localisation]
+\InheritBibliographyExtras{naustrian}
+
+% Following DGPs guidlines for German/Austrian
+% http://homepage.univie.ac.at/harald.werneck/Richtlinien_zur_Manuskriptgestaltung.pdf
+
+\NewBibliographyString{publication}
+\NewBibliographyString{jourarticle}
+\NewBibliographyString{revisededition}
+\NewBibliographyString{typechair}
+\NewBibliographyString{typechairs}
+\NewBibliographyString{typevolume}
+\NewBibliographyString{typevolumes}
+\NewBibliographyString{typeseries}
+\NewBibliographyString{typeseriess}
+\NewBibliographyString{typevolseries}
+\NewBibliographyString{typevolseriess}
+\NewBibliographyString{on}
+\NewBibliographyString{retrieved}
+\NewBibliographyString{available}
+\NewBibliographyString{from}
+\NewBibliographyString{archivedat}
+\NewBibliographyString{origyear}
+\NewBibliographyString{reviewof}
+\NewBibliographyString{with}
+\NewBibliographyString{supplement}
+\NewBibliographyString{commenton}
+\NewBibliographyString{manunpub}
+\NewBibliographyString{maninprep}
+\NewBibliographyString{mansub}
+\NewBibliographyString{producer}
+\NewBibliographyString{producers}
+\NewBibliographyString{execproducer}
+\NewBibliographyString{execproducers}
+\NewBibliographyString{execdirector}
+\NewBibliographyString{execdirectors}
+\NewBibliographyString{director}
+\NewBibliographyString{directors}
+\NewBibliographyString{writer}
+\NewBibliographyString{writers}
+\NewBibliographyString{host}
+\NewBibliographyString{hosts}
+\NewBibliographyString{guestexpert}
+\NewBibliographyString{guestexperts}
+\NewBibliographyString{narrator}
+\NewBibliographyString{narrators}
+\NewBibliographyString{film}
+\NewBibliographyString{tvseries}
+\NewBibliographyString{tvepisode}
+\NewBibliographyString{video}
+\NewBibliographyString{song}
+\NewBibliographyString{album}
+\NewBibliographyString{podcast}
+\NewBibliographyString{podcastepisode}
+\NewBibliographyString{interview}
+\NewBibliographyString{speech}
+\NewBibliographyString{lithograph}
+\NewBibliographyString{map}
+\NewBibliographyString{lecturenotes}
+\NewBibliographyString{powerpoint}
+\NewBibliographyString{photograph}
+\NewBibliographyString{photographs}
+\NewBibliographyString{present}
+\NewBibliographyString{painting}
+\NewBibliographyString{article}
+\NewBibliographyString{unitednations}
+\NewBibliographyString{charter}
+\NewBibliographyString{ofthe}
+\NewBibliographyString{tothe}
+\NewBibliographyString{proposed}
+\NewBibliographyString{repealed}
+\NewBibliographyString{execorder}
+\NewBibliographyString{senate}
+\NewBibliographyString{resolution}
+\NewBibliographyString{houseofrepresentatives}
+\NewBibliographyString{report}
+\NewBibliographyString{us}
+\NewBibliographyString{southcarolina}
+\NewBibliographyString{constitution}
+\NewBibliographyString{amendment}
+\NewBibliographyString{alabama}
+\NewBibliographyString{alaska}
+\NewBibliographyString{arizona}
+\NewBibliographyString{arkansas}
+\NewBibliographyString{california}
+\NewBibliographyString{colorado}
+\NewBibliographyString{connecticut}
+\NewBibliographyString{delaware}
+\NewBibliographyString{florida}
+\NewBibliographyString{georgia}
+\NewBibliographyString{hawaii}
+\NewBibliographyString{idaho}
+\NewBibliographyString{illinois}
+\NewBibliographyString{indiana}
+\NewBibliographyString{iowa}
+\NewBibliographyString{kansas}
+\NewBibliographyString{kentucky}
+\NewBibliographyString{louisiana}
+\NewBibliographyString{maine}
+\NewBibliographyString{maryland}
+\NewBibliographyString{massachusetts}
+\NewBibliographyString{michigan}
+\NewBibliographyString{minnesota}
+\NewBibliographyString{mississippi}
+\NewBibliographyString{missouri}
+\NewBibliographyString{montana}
+\NewBibliographyString{nebraska}
+\NewBibliographyString{nevada}
+\NewBibliographyString{newhampshire}
+\NewBibliographyString{newjersey}
+\NewBibliographyString{newmexico}
+\NewBibliographyString{newyork}
+\NewBibliographyString{northcarolina}
+\NewBibliographyString{northdakota}
+\NewBibliographyString{ohio}
+\NewBibliographyString{oklahoma}
+\NewBibliographyString{oregon}
+\NewBibliographyString{pennsylvania}
+\NewBibliographyString{rhodeisland}
+\NewBibliographyString{southcarolina}
+\NewBibliographyString{southdakota}
+\NewBibliographyString{tennessee}
+\NewBibliographyString{texas}
+\NewBibliographyString{utah}
+\NewBibliographyString{vermont}
+\NewBibliographyString{virginia}
+\NewBibliographyString{washington}
+\NewBibliographyString{westvirginia}
+\NewBibliographyString{wisconsin}
+\NewBibliographyString{wyoming}
+
+\DeclareBibliographyStrings{%
+  inherit          = {naustrian},
+  inpress          = {{\midsentence{}im Druck}{\midsentence{}im Druck}}, % adding \midsentence is a fix as this is supposed to begin lower case in every instance (in citations as well as references) according to the DGP's Richtlinien zur Manuskriptgestaltung (German APA)
+  jourarticle      = {{Artikel}{Artikel}},
+  tothe            = {{zur}{zur}},
+  ofthe            = {{der}{der}},
+  unitednations    = {{United\space Nations}{U\adddot N\adddot}},
+  charter          = {{Charter}{Charter}}, % Let's not translate everything and just capitalize some terms or else we run into problems because we would have to merge some existing definitions (e.g., the two terms "U.N." and "Charter" would actually need to be merged to "U.N.-Charta" for a proper translation).
+  proposed         = {{vorgeschlagen}{vorgeschlagen}},
+  repealed         = {{ist\space weggefallen\space in}{weggefallen}},
+  execorder        = {{Executive\space Order}{Exec\adddot\space Order}},
+  senate           = {{Senate}{S\adddot}},
+  resolution       = {{Resolution}{Res\adddot}},
+  houseofrepresentatives = {{House\space of\space Representatives}{H\adddot R\adddot}},
+  report           = {{Report}{Rep\adddot}},
+  us               = {{U\adddot S\adddot}{U\adddot S\adddot}},
+  southcarolina    = {{South\space Carolina}{S\adddot C\adddot}},
+  constitution     = {{Constitution}{Const\adddot}},
+  section          = {{Paragraph}{§}},
+  amendment        = {{Zusatzartikel}{Zusatzart\adddot}},
+  article          = {{Artikel}{Art\adddot}},
+  painting         = {{Gem\"alde}{Gem\"alde}},
+  present          = {{Gegenwart}{Gegenwart}},
+  song             = {{Song}{Song}},
+  album            = {{Album}{Album}},
+  map              = {{Landkarte}{Landkarte}},
+  photograph       = {{Foto}{Foto}},
+  photographs      = {{Fotos}{Fotos}},
+  powerpoint       = {{Power\hyphenate{}Point\hyphen{}Folien}{Power\hyphenate{}Point\hyphen{}Folien}},
+%  lecturenotes     = {{lecturenotes}{lecturenotes}},%FIXME
+  podcast          = {{Audiopodcast}{Audiopodcast}},
+  podcastepisode   = {{Audiopodcastepisode}{Audiopodcastepisode}},
+  interview        = {{Interview}{Interview}},
+  speech           = {{Sprachaufzeichnung}{Sprachaufzeichnung}},
+  lithograph       = {{Lithografie}{Lith\adddot}},
+  video            = {{Video}{Video}},
+  film             = {{Film}{Film}},
+  tvseries         = {{Fernsehserie}{Fernsehserie}},
+  tvepisode        = {{Fernsehserienepisode}{Fernsehserienepisode}},
+  narrator         = {{Erz\"ahler\addslash\nbhyphen{}in}{Erz\"ahler\addslash\nbhyphen{}in}},
+  narrators        = {{erz\"ahlende Personen}{erz\"ahlende Personen}},
+  producer         = {{Produz\adddot}{Produz\adddot}},
+  producers        = {{Produz\adddot}{Produz\adddot}},
+  execproducer     = {{ausf\adddot\space Produz\adddot}{ausf\adddot\space Produz\adddot}},
+  execproducers    = {{ausf\adddot\space Produz\adddot}{ausf\adddot\space Produz\adddot}},
+  execdirector     = {{ausf\adddot\space Reg\adddot}{ausf\adddot\space Reg\adddot}},
+  execdirectors    = {{ausf\adddot\space Reg\adddot}{ausf\adddot\space Reg\adddot}},
+  director         = {{Reg\adddot}{Reg\adddot}},
+  directors        = {{Reg\adddot}{Reg\adddot}}
+  writer           = {{Autor\addslash\nbhyphen{}in}{Autor\addslash\nbhyphen{}in}},
+%  writers          = {{writers}{writers}},%FIXME
+  host             = {{Gastgeber\addslash\nbhyphen{}in}{Gastgeber\addslash\nbhyphen{}in}},
+%  hosts            = {{hosts}{hosts}},%FIXME
+  guestexpert      = {{geladener\space Experte\space /\space geladene\space Expertin}{geladener\space Experte\space /\space geladene\space Expertin}},
+%  guestexperts     = {{Guest\space Experts}{Guest\space Experts}},%FIXME
+  with             = {{mit}{mit}},
+  manunpub         = {{unver\"offentlichtes\space Manuskript}{unver\"offentlichtes\space Manuskript}},
+  maninprep        = {{Manuskript\space in\space Vorbereitung}{Manuskript\space in\space Vorbereitung}},
+  mansub           = {{Manuskript\space eingereicht\space zur\space Publikation}{Manuskript\space eingereicht\space zur\space Publikation}},
+  supplement       = {{Supplement}{Suppl\adddot}},
+%  part             = {{part}{pt\adddot}},%FIXME
+  andothers        = {{et\addabbrvspace al\adddot}{et\addabbrvspace al\adddot}},
+  revisededition   = {{\"uberarbeitete\space Auf\noligature lage}{\"uberarb\adddotspace Aufl\adddot}},
+%  commenton        = {{comment\space on}{comment\space on}},%FIXME
+  page             = {{Seite}{{}S\adddot}},
+  pages            = {{Seiten}{{}S\adddot}},
+  on               = {{am}{am}},
+  retrieved        = {{Zugriff\space am}{Zugriff\space am}},
+  available        = {{erh\"altlich}{erh\"altlich}},
+  from             = {{unter}{unter}},
+  archivedat       = {{archiviert\space unter}{archiviert\space unter}},
+  reviewof         = {{Resprechung\space des}{Resprechung\space des}}, % "Rezension" isn't wrong, but according to DGP's Richtlinien zur Manuskriptgestaltung this is supposed to be called "Besprechung"
+  paragraph        = {{Absatz}{Abs.\adddot}},
+  paragraphs       = {{Abs\"atze}{Abs.\adddot}},
+  origyear         = {{Original\space erschienen}{Original\space erschienen}},
+  typechair        = {{Leitung}{Leitung}},
+  typechairs       = {{Leitung}{Leitung}},
+  typevolume       = {{Bandherausgeber}{Bandhrsg\adddot}},
+  typevolumes      = {{Bandherausgeber}{Bandhrsg\adddot}},
+  typeseries       = {{Reihenherausgeber}{Reihenhrsg\adddot}},
+  typeseriess      = {{Reihenherausgeber}{Reihenhrsg\adddot}},
+  typevolseries    = {{Reihen\hyphen und\space Bandherausgeber}{Reihen\hyphen\space\& Bandhrsg\adddot}},
+  typevolseriess   = {{Reihen\hyphen und\space Bandherausgeber}{Reihen\hyphen\space\& Bandhrsg\adddot}},
+%  annodomini       = {{A\adddot\addabthinspace D\adddot}{A\adddot\addabthinspace D\adddot}},
+%  beforechrist     = {{B\adddot\addabthinspace C\adddot}{B\adddot\addabthinspace C\adddot}},
+%  commonera        = {{C\adddot E\adddot}{C\adddot E\adddot}},
+%  beforecommonera  = {{B\adddot C\adddot E\adddot}{B\adddot C\adddot E\adddot}},
+%  publication   = {{Publication}{Publication}},
+  alabama       = {{Alabama}{{A\adddot L\adddot}}},
+  alaska        = {{Alaska}{{A\adddot K\adddot}}},
+  arizona       = {{Arizona}{{A\adddot Z\adddot}}},
+  arkansas      = {{Arkansas}{{A\adddot R\adddot}}},
+  california    = {{California}{{C\adddot A\adddot}}},
+  colorado      = {{Colorado}{{C\adddot O\adddot}}},
+  connecticut   = {{Connecticut}{{C\adddot T\adddot}}},
+  delaware      = {{Delaware}{{D\adddot E\adddot}}},
+  florida       = {{Florida}{{F\adddot L\adddot}}},
+  georgia       = {{Georgia}{{G\adddot A\adddot}}},
+  hawaii        = {{Hawaii}{{H\adddot I\adddot}}},
+  idaho         = {{Idaho}{{I\adddot D\adddot}}},
+  illinois      = {{Illinois}{{I\adddot L\adddot}}},
+  indiana       = {{Indiana}{{I\adddot N\adddot}}},
+  iowa          = {{Iowa}{{I\adddot A\adddot}}},
+  kansas        = {{Kansas}{{K\adddot S\adddot}}},
+  kentucky      = {{Kentucky}{{K\adddot Y\adddot}}},
+  louisiana     = {{Louisiana}{{L\adddot A\adddot}}},
+  maine         = {{Maine}{{M\adddot E\adddot}}},
+  maryland      = {{Maryland}{{M\adddot D\adddot}}},
+  massachusetts = {{Massachusetts}{{M\adddot A\adddot}}},
+  michigan      = {{Michigan}{{M\adddot I\adddot}}},
+  minnesota     = {{Minnesota}{{M\adddot N\adddot}}},
+  mississippi   = {{Mississippi}{{M\adddot S\adddot}}},
+  missouri      = {{Missouri}{{M\adddot O\adddot}}},
+  montana       = {{Montana}{{M\adddot T\adddot}}},
+  nebraska      = {{Nebraska}{{N\adddot E\adddot}}},
+  nevada        = {{Nevada}{{N\adddot V\adddot}}},
+  newhampshire  = {{New Hampshire}{{N\adddot H\adddot}}},
+  newjersey     = {{New Jersey}{{N\adddot J\adddot}}},
+  newmexico     = {{New Mexico}{{N\adddot M\adddot}}},
+  newyork       = {{New York}{{N\adddot Y\adddot}}},
+  northcarolina = {{North Carolina}{{N\adddot C\adddot}}},
+  northdakota   = {{North Dakota}{{N\adddot D\adddot}}},
+  ohio          = {{Ohio}{{O\adddot H\adddot}}},
+  oklahoma      = {{Oklahoma}{{O\adddot K\adddot}}},
+  oregon        = {{Oregon}{{O\adddot R\adddot}}},
+  pennsylvania  = {{Pennsylvania}{{P\adddot A\adddot}}},
+  rhodeisland   = {{Rhode Island}{{R\adddot I\adddot}}},
+  southcarolina = {{South Carolina}{{S\adddot C\adddot}}},
+  southdakota   = {{South Dakota}{{S\adddot D\adddot}}},
+  tennessee     = {{Tennessee}{{T\adddot N\adddot}}},
+  texas         = {{Texas}{{T\adddot X\adddot}}},
+  utah          = {{Utah}{{U\adddot T\adddot}}},
+  vermont       = {{Vermont}{{V\adddot T\adddot}}},
+  virginia      = {{Virginia}{{V\adddot A\adddot}}},
+  washington    = {{Washington}{{W\adddot A\adddot}}},
+  westvirginia  = {{West Virginia}{{W\adddot V\adddot}}},
+  wisconsin     = {{Wisconsin}{{W\adddot I\adddot}}},
+  wyoming       = {{Wyoming}{{W\adddot Y\adddot}}}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Drop end* when they are the same as *
+% You must use \printdate to get here otherwise it will be ignored
+
+\DeclareBibliographyExtras{%
+  \renewcommand{\apashortdash}{~}%
+  \def\urldatecomma{\addspace}%
+  \protected\def\mkbibdateapalong#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}%
+       \ifboolexpr{test {\iffieldundef{#4}} and test {\iffieldundef{#3}}}
+         {}
+         {\addcomma\space}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\mkbibordinal{\thefield{#4}}%
+       \iffieldundef{#3}
+         {}
+         {\addspace}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongextra#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}\printfield{extradate}%
+       \ifboolexpr{test {\iffieldundef{#4}} and test {\iffieldundef{#3}}}
+         {}
+         {\addcomma\space}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\mkbibordinal{\thefield{#4}}%
+       \iffieldundef{#3}
+         {}
+         {\addspace}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongmdy#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\mkbibordinal{\thefield{#4}}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}%
+        {}%
+        {\addspace}%
+       \mkbibmonth{\thefield{#3}}}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldundef{#3}%
+        {}%
+        {\addspace}%
+       \iffieldbibstring{#1}{\bibstring{\thefield{#1}}}{\thefield{#1}}}}}
+
+\UndeclareBibliographyExtras{%
+  \restorecommand\mkdaterangeapalong
+  \restorecommand\mkdaterangeapalongextra
+}
+
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\endinput

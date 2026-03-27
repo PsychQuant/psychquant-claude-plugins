@@ -1,0 +1,278 @@
+# ASBE Test Output: Code Review Standards
+# Created by AI following only README.md and writing_style_asbe.yaml
+# Purpose: Verify ASBE documentation is sufficient for correct output
+
+meta:
+  domain: "Code Review Standards"
+  version: "1.0.0"
+  author: "AI Test"
+  created: "2024-12-30"
+  description: |
+    ASBE specification for effective code review practices.
+    Test output to validate ASBE documentation completeness.
+
+axioms:
+  - id: "A1_correctness"
+    name: "Correctness Axiom"
+    one_liner: "Code must do what it claims to do"
+
+    statement_natural: |
+      The primary purpose of code review is to verify that
+      the code correctly implements its intended functionality
+      without introducing bugs or regressions.
+
+    statement_formal: |
+      ∀code ∈ PullRequest,
+        Review(code) → Verify(Behavior(code) = Specification(code))
+        Priority(correctness) > Priority(style)
+
+    rationale: |
+      All other review concerns are secondary to correctness.
+      Beautiful code that doesn't work is worthless.
+
+    violations:
+      - description: "Style-focused review ignoring logic error"
+        content: |
+          Reviewer: "Line 42 should use camelCase instead of snake_case."
+          [Meanwhile, line 45 has an off-by-one error that causes data loss]
+        explanation: |
+          Prioritizes cosmetic issues over functional bugs.
+          The off-by-one error should be caught first.
+
+    compliant:
+      - description: "Correctness-first review"
+        content: |
+          Reviewer: "Line 45 iterates to `length` but should stop at
+          `length - 1`. This will cause an IndexOutOfBounds exception.
+          Also, minor: line 42 naming could follow our convention."
+        explanation: |
+          Identifies the critical bug first, then mentions style.
+          Correct prioritization of review concerns.
+
+  - id: "A2_readability"
+    name: "Readability Axiom"
+    one_liner: "Code is read more than written"
+
+    statement_natural: |
+      Code should be optimized for reading comprehension by future
+      maintainers, not for writing convenience by the original author.
+
+    statement_formal: |
+      ∀code,
+        Optimize(code, ReadTime(future_maintainer))
+        ReadTime >> WriteTime  // Read frequency exceeds write frequency
+
+    rationale: |
+      Code is written once but read many times. The total time
+      spent reading code vastly exceeds time spent writing it.
+
+    violations:
+      - description: "Clever but obscure one-liner"
+        content: |
+          return x?.[y]?.reduce((a,b)=>({...a,[b.k]:b.v}),{})||{}
+        explanation: |
+          Saves the author typing but costs every future reader
+          significant cognitive effort to understand.
+
+    compliant:
+      - description: "Clear multi-line equivalent"
+        content: |
+          if (!x || !x[y]) {
+            return {};
+          }
+          const result = {};
+          for (const item of x[y]) {
+            result[item.key] = item.value;
+          }
+          return result;
+        explanation: |
+          More lines but immediately understandable.
+          Future maintainers can modify with confidence.
+
+  - id: "A3_locality"
+    name: "Change Locality Axiom"
+    one_liner: "Related changes belong together"
+
+    statement_natural: |
+      A pull request should contain a single logical change.
+      Unrelated changes should be in separate pull requests.
+
+    statement_formal: |
+      ∀pr ∈ PullRequest, ∃! purpose(pr)
+        ∀file ∈ Changes(pr), Relates(file, purpose(pr))
+
+    rationale: |
+      Mixed changes are hard to review, hard to revert,
+      and create confusing git history.
+
+    violations:
+      - description: "PR mixing feature and refactor"
+        content: |
+          PR Title: "Add user authentication"
+          Files changed:
+          - auth/login.js (new feature)
+          - utils/string.js (unrelated refactor)
+          - config/database.js (unrelated config change)
+        explanation: |
+          Three unrelated changes. If auth has a bug, reverting
+          also loses the refactor. Review burden multiplied.
+
+    compliant:
+      - description: "Single-purpose PR"
+        content: |
+          PR Title: "Add user authentication"
+          Files changed:
+          - auth/login.js
+          - auth/session.js
+          - auth/middleware.js
+          - tests/auth.test.js
+        explanation: |
+          All files relate to authentication.
+          Easy to review, easy to revert if needed.
+
+theorems:
+  - id: "T1_comment_why"
+    name: "Comment Why Theorem"
+    one_liner: "Comments explain why, not what"
+    derives_from: ["A2_readability"]
+
+    statement_natural: |
+      Comments should explain the reasoning behind code decisions,
+      not describe what the code literally does.
+
+    statement_formal: |
+      ∀comment c adjacent to code block b,
+        Content(c) = Rationale(b)
+        Content(c) ≠ Paraphrase(b)
+
+    rationale: |
+      From A2 (readability): What the code does should be clear from
+      reading it. Why it does it that way may not be obvious.
+
+    violations:
+      - description: "Comment restating code"
+        content: |
+          // increment counter by 1
+          counter += 1;
+        explanation: |
+          The comment adds no information. Reader already knows
+          what `+= 1` does. Wastes attention.
+
+    compliant:
+      - description: "Comment explaining non-obvious reason"
+        content: |
+          // Use += 1 instead of ++ to avoid automatic semicolon insertion
+          // issues in minified builds (see issue #423)
+          counter += 1;
+        explanation: |
+          Explains WHY this form was chosen, with reference
+          to the historical issue that motivated it.
+
+  - id: "T2_test_coverage"
+    name: "Test Coverage Theorem"
+    one_liner: "New code needs new tests"
+    derives_from: ["A1_correctness"]
+
+    statement_natural: |
+      Every new feature or bug fix should include tests that
+      verify the correct behavior and prevent regression.
+
+    statement_formal: |
+      ∀change c where Type(c) ∈ {Feature, BugFix},
+        ∃ tests t where Covers(t, c)
+        |tests_added| ≥ 1
+
+    rationale: |
+      From A1 (correctness): Correctness must be verifiable.
+      Tests are the mechanism for ongoing verification.
+
+    violations:
+      - description: "Feature without tests"
+        content: |
+          PR Description: "Adds password reset functionality"
+          Files changed:
+          - auth/reset.js
+          - routes/reset.js
+          [No test files modified]
+        explanation: |
+          New feature but no tests. Correctness cannot be
+          verified now or protected against future changes.
+
+    compliant:
+      - description: "Feature with comprehensive tests"
+        content: |
+          PR Description: "Adds password reset functionality"
+          Files changed:
+          - auth/reset.js
+          - routes/reset.js
+          - tests/auth/reset.test.js (+85 lines)
+        explanation: |
+          Tests accompany the feature. Correctness verified
+          and protected against regression.
+
+rules:
+  - id: "R1_pr_size"
+    name: "PR Size Rule"
+    one_liner: "Keep PRs under 400 lines"
+    derives_from: ["A3_locality", "A2_readability"]
+
+    statement_natural: |
+      Pull requests should generally be under 400 lines of changes.
+      Larger PRs should be split into smaller, reviewable chunks.
+
+    statement_formal: |
+      ∀pr ∈ PullRequest,
+        |LinesChanged(pr)| ≤ 400
+        Exception: Generated files, migrations
+
+    violations:
+      - description: "Massive PR"
+        content: |
+          PR: "Refactor authentication system"
+          +2,847 lines, -1,203 lines across 45 files
+        explanation: |
+          Too large to review effectively. Reviewers will
+          skim or rubber-stamp. Bugs will slip through.
+
+    compliant:
+      - description: "Right-sized PR"
+        content: |
+          PR: "Extract AuthService from UserController"
+          +187 lines, -34 lines across 4 files
+        explanation: |
+          Reviewable in one sitting. Each change can be
+          carefully examined. Meaningful feedback possible.
+
+  - id: "R2_approval_before_merge"
+    name: "Approval Gate Rule"
+    one_liner: "No merge without approval"
+    derives_from: ["A1_correctness"]
+
+    statement_natural: |
+      Code must receive at least one approval from a qualified
+      reviewer before being merged to the main branch.
+
+    statement_formal: |
+      ∀pr ∈ PullRequest,
+        CanMerge(pr) → |Approvals(pr)| ≥ 1
+        Approver(pr) ≠ Author(pr)
+
+    violations:
+      - description: "Self-merged PR"
+        content: |
+          Author: alice
+          Reviewers: (none)
+          Merged by: alice
+        explanation: |
+          No independent verification. Author's blind spots
+          remain unchecked. Defeats the purpose of review.
+
+    compliant:
+      - description: "Properly reviewed and merged"
+        content: |
+          Author: alice
+          Approved by: bob
+          Merged by: alice
+        explanation: |
+          Independent reviewer verified the changes.
+          Two sets of eyes caught potential issues.

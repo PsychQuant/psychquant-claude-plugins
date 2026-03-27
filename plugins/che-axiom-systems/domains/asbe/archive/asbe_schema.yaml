@@ -1,0 +1,177 @@
+# ASBE YAML Schema
+# Version: 1.0.0
+# This schema defines the structure of ASBE specification files
+
+---
+# Root structure of an ASBE specification
+specification:
+  type: object
+  required:
+    - meta
+    - axioms
+  properties:
+
+    meta:
+      type: object
+      description: Metadata about this specification
+      required:
+        - domain
+        - version
+      properties:
+        domain:
+          type: string
+          description: The domain being axiomatized
+          example: "Writing Style"
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+\\.\\d+$"
+          example: "1.0.0"
+        author:
+          type: string
+        created:
+          type: string
+          format: date
+        description:
+          type: string
+
+    axioms:
+      type: array
+      minItems: 1
+      description: Foundational axioms (no derivation required)
+      items:
+        $ref: "#/definitions/rule"
+
+    theorems:
+      type: array
+      description: Rules derived from axioms
+      items:
+        $ref: "#/definitions/rule"
+
+    corollaries:
+      type: array
+      description: Rules derived from theorems
+      items:
+        $ref: "#/definitions/rule"
+
+    rules:
+      type: array
+      description: Operational rules derived from any above
+      items:
+        $ref: "#/definitions/rule"
+
+definitions:
+
+  rule:
+    type: object
+    required:
+      - id
+      - statement_natural
+      - statement_formal
+      - violations
+      - compliant
+    properties:
+
+      id:
+        type: string
+        description: Unique identifier
+        pattern: "^[A-Z]\\d+(_[a-z_]+)?$"
+        examples:
+          - "A1"
+          - "A2_clarity"
+          - "T1_known_new"
+          - "R5_paragraph_length"
+
+      name:
+        type: string
+        description: Human-readable name
+        example: "Clarity Axiom"
+
+      one_liner:
+        type: string
+        maxLength: 100
+        description: Brief summary for quick reference
+        example: "Writing exists to transfer ideas to readers"
+
+      statement_natural:
+        type: string
+        description: Natural language statement of the rule
+        example: |
+          The purpose of writing is to transfer ideas
+          from the writer to the reader.
+
+      statement_formal:
+        type: string
+        description: Formal notation (logic, set theory, etc.)
+        example: |
+          ∀text ∈ Writing, Purpose(text) = Transfer(idea, writer → reader)
+
+      rationale:
+        type: string
+        description: Why this rule exists or matters
+
+      derives_from:
+        type: array
+        items:
+          type: string
+        description: IDs of parent rules (empty for axioms)
+        example: ["A1", "A3"]
+
+      violations:
+        type: array
+        minItems: 1
+        description: Examples that violate this rule
+        items:
+          $ref: "#/definitions/example"
+
+      compliant:
+        type: array
+        minItems: 1
+        description: Examples that satisfy this rule
+        items:
+          $ref: "#/definitions/example"
+
+      tags:
+        type: array
+        items:
+          type: string
+        description: Optional categorization tags
+        example: ["clarity", "sentence-level"]
+
+  example:
+    type: object
+    required:
+      - description
+      - content
+    properties:
+
+      description:
+        type: string
+        description: What this example demonstrates
+        example: "Jargon-heavy sentence that obscures meaning"
+
+      content:
+        type: string
+        description: The actual example text
+        example: |
+          The paradigmatic shift necessitates a
+          reconceptualization of our methodological approach.
+
+      context:
+        type: string
+        description: Optional situational context
+        example: "Academic paper introduction"
+
+      explanation:
+        type: string
+        description: Why this is a violation/compliant case
+        example: |
+          Uses unnecessary jargon ("paradigmatic shift",
+          "reconceptualization") when simpler words would suffice.
+
+# YAML anchors for reuse
+common_tags: &common_tags
+  - clarity
+  - precision
+  - conciseness
+  - flow
+  - structure

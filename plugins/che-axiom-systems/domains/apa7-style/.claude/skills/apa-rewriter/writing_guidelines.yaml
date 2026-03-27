@@ -1,0 +1,498 @@
+# APA 7 Writing Guidelines - ASBE Format
+# Source: archive/original_md_axioms/detailed_rules.md
+# Practical rules derived from writing_style.yaml axioms
+
+meta:
+  domain: "APA 7 Practical Writing Guidelines"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "2024-12-30"
+  source: "APA Publication Manual, 7th Edition"
+  description: |
+    Practical writing guidelines derived from core axioms.
+    Covers tense, voice, pronouns, conciseness, and bias-free language.
+
+# This file contains operational RULES derived from writing_style.yaml axioms
+# See writing_style.yaml for foundational axioms
+
+rules:
+  # ========================================
+  # TENSE RULES (derived from A5, A6)
+  # ========================================
+
+  - id: "R_T1_literature_review_tense"
+    name: "Literature Review Tense"
+    one_liner: "Past or present perfect for literature review"
+    derives_from: ["A6_tense_selection"]
+
+    statement_natural: |
+      In literature reviews, use past tense for specific findings
+      and present perfect for established knowledge or ongoing relevance.
+
+    statement_formal: |
+      Section = LiteratureReview →
+        SpecificFinding → SimplePast
+        OngoingRelevance → PresentPerfect
+
+    violations:
+      - description: "Present tense for past study"
+        content: |
+          Smith (2020) finds that anxiety affects performance.
+        explanation: |
+          Smith's finding was made in the past.
+          Should be "found" (past) or "has found" (present perfect).
+
+    compliant:
+      - description: "Correct literature review tenses"
+        content: |
+          Smith (2020) found that anxiety affects performance.
+          Research has consistently shown that this effect is robust.
+        explanation: |
+          "Found" for specific past finding.
+          "Has shown" for ongoing body of evidence.
+
+  - id: "R_T2_method_past_tense"
+    name: "Method Section Past Tense"
+    one_liner: "Use past tense in Method section"
+    derives_from: ["A6_tense_selection"]
+
+    statement_natural: |
+      The Method section describes completed procedures.
+      Use past tense throughout.
+
+    statement_formal: |
+      Section = Method → Tense = SimplePast
+
+    violations:
+      - description: "Present or future in Method"
+        content: |
+          First, we recruit participants from the university.
+          Then, the survey will be administered online.
+        explanation: |
+          Method describes what WAS done, not what IS or WILL BE done.
+
+    compliant:
+      - description: "Consistent past tense"
+        content: |
+          First, we recruited participants from the university.
+          Then, the survey was administered online.
+        explanation: |
+          Past tense correctly indicates completed procedures.
+
+  - id: "R_T3_results_past_tense"
+    name: "Results Section Past Tense"
+    one_liner: "Use past tense in Results section"
+    derives_from: ["A6_tense_selection"]
+
+    statement_natural: |
+      The Results section reports what was found.
+      Use past tense for findings.
+
+    statement_formal: |
+      Section = Results → Tense = SimplePast
+
+    violations:
+      - description: "Present tense for findings"
+        content: |
+          Table 1 shows that the mean score is 4.2.
+          The correlation is significant at p < .05.
+        explanation: |
+          Findings were obtained in the past.
+          Use past tense.
+
+    compliant:
+      - description: "Past tense for findings"
+        content: |
+          Table 1 shows that the mean score was 4.2.
+          The correlation was significant at p < .05.
+        explanation: |
+          "Was" correctly indicates past findings.
+          Note: "shows" is acceptable for table references.
+
+  - id: "R_T4_discussion_mixed_tense"
+    name: "Discussion Section Tense"
+    one_liner: "Present for interpretation, past for results"
+    derives_from: ["A6_tense_selection"]
+
+    statement_natural: |
+      In Discussion, use past tense when referring to results
+      and present tense for interpretation and implications.
+
+    statement_formal: |
+      Section = Discussion →
+        ReferencingResults → Past
+        Interpretation → Present
+        Implications → Present | Future
+
+    violations:
+      - description: "All past tense in Discussion"
+        content: |
+          The results showed that anxiety affected performance.
+          This suggested that interventions were needed.
+        explanation: |
+          Interpretation ("This suggests...") should be present tense
+          because the implication is ongoing.
+
+    compliant:
+      - description: "Appropriate mixed tenses"
+        content: |
+          The results showed that anxiety affected performance.
+          This finding suggests that interventions are needed.
+        explanation: |
+          "Showed/affected" (past) for results.
+          "Suggests/are" (present) for interpretation.
+
+  # ========================================
+  # VOICE RULES (derived from A4)
+  # ========================================
+
+  - id: "R_V1_actor_important"
+    name: "Active Voice When Actor Matters"
+    one_liner: "Use active voice when actor is important"
+    derives_from: ["A4_active_voice"]
+
+    statement_natural: |
+      When the actor is known and important to the action,
+      use active voice to clearly identify who did what.
+
+    statement_formal: |
+      Important(Actor) ∧ Known(Actor) → UseActive
+
+    violations:
+      - description: "Passive hiding important actor"
+        content: |
+          The intervention was implemented in the schools.
+          The data were collected over six months.
+        explanation: |
+          Who implemented? Who collected? Passive obscures
+          important information about research conduct.
+
+    compliant:
+      - description: "Active revealing actor"
+        content: |
+          The research team implemented the intervention in schools.
+          Trained research assistants collected data over six months.
+        explanation: |
+          Clear who did what. Accountability is explicit.
+
+  - id: "R_V2_passive_when_appropriate"
+    name: "Passive Voice When Appropriate"
+    one_liner: "Use passive when actor is unknown or irrelevant"
+    derives_from: ["A4_active_voice"]
+
+    statement_natural: |
+      Passive voice is appropriate when the actor is unknown,
+      irrelevant, or when the receiver of the action should be emphasized.
+
+    statement_formal: |
+      Unknown(Actor) ∨ Irrelevant(Actor) ∨ Emphasize(Receiver) →
+        Passive is acceptable
+
+    violations:
+      - description: "Forced active with irrelevant actor"
+        content: |
+          Someone printed the manuscript in 1452.
+        explanation: |
+          The identity of the printer may be unknown or irrelevant.
+          Passive might be more appropriate.
+
+    compliant:
+      - description: "Appropriate passive"
+        content: |
+          The manuscript was printed in 1452.
+        explanation: |
+          Focus is on the manuscript and date, not the printer.
+          Passive is appropriate here.
+
+  # ========================================
+  # PRONOUN RULES (derived from A1)
+  # ========================================
+
+  - id: "R_P1_first_person_research"
+    name: "First Person for Own Research"
+    one_liner: "Use 'we' when describing own research"
+    derives_from: ["A1_clarity", "A4_active_voice"]
+
+    statement_natural: |
+      Use first person (I/we) when describing your own research actions.
+      This is clearer than passive voice and more direct.
+
+    statement_formal: |
+      Action = OwnResearch → FirstPerson permitted
+
+    violations:
+      - description: "Passive avoiding first person"
+        content: |
+          It was hypothesized that anxiety would affect performance.
+          The data were analyzed using regression.
+        explanation: |
+          Old style. APA 7 recommends first person for clarity.
+
+    compliant:
+      - description: "Clear first person"
+        content: |
+          We hypothesized that anxiety would affect performance.
+          We analyzed the data using regression.
+        explanation: |
+          "We" is clear and takes responsibility for the work.
+
+  - id: "R_P2_singular_they"
+    name: "Singular They for Unknown Gender"
+    one_liner: "Use 'they' for unspecified individuals"
+    derives_from: ["A1_clarity"]
+
+    statement_natural: |
+      Use singular "they" when referring to a person of unknown
+      or unspecified gender. This is now APA standard.
+
+    statement_formal: |
+      GenderUnknown(referent) → Use "they/them/their"
+
+    violations:
+      - description: "Outdated gendered language"
+        content: |
+          Each participant completed his or her questionnaire.
+          A researcher should check his data carefully.
+        explanation: |
+          "His or her" is cumbersome.
+          "His" alone excludes half the population.
+
+    compliant:
+      - description: "Inclusive singular they"
+        content: |
+          Each participant completed their questionnaire.
+          A researcher should check their data carefully.
+        explanation: |
+          "Their" is gender-inclusive and APA-approved.
+
+  # ========================================
+  # CONCISENESS RULES (derived from A3)
+  # ========================================
+
+  - id: "R_C1_redundancy_elimination"
+    name: "Eliminate Redundancies"
+    one_liner: "Remove words that add no meaning"
+    derives_from: ["A3_economy"]
+
+    statement_natural: |
+      Remove redundant modifiers and phrases that add no meaning.
+      Common redundancies include "absolutely essential," "completely
+      eliminate," and "future plans."
+
+    statement_formal: |
+      Redundant(modifier) → Remove(modifier)
+      Common patterns:
+        "absolutely essential" → "essential"
+        "completely eliminate" → "eliminate"
+        "future plans" → "plans"
+
+    violations:
+      - description: "Redundant modifier"
+        content: |
+          The results were absolutely essential for the study.
+          We will completely eliminate all sources of error.
+        explanation: |
+          "Absolutely" and "completely" add nothing to "essential"
+          and "eliminate" which are already absolute concepts.
+
+    compliant:
+      - description: "Clean expression"
+        content: |
+          The results were essential for the study.
+          We will eliminate all sources of error.
+        explanation: |
+          Same meaning, fewer words.
+
+  - id: "R_C2_wordy_phrases"
+    name: "Replace Wordy Phrases"
+    one_liner: "Use concise alternatives to wordy phrases"
+    derives_from: ["A3_economy"]
+
+    statement_natural: |
+      Replace wordy phrases with concise equivalents.
+      "Due to the fact that" → "because"
+      "In order to" → "to"
+      "At the present time" → "now"
+
+    statement_formal: |
+      WordyPhrase(p) → Replace(p, ConcisorEquivalent(p))
+
+    violations:
+      - description: "Wordy phrases"
+        content: |
+          Due to the fact that the sample was small, in order to
+          increase power, at the present time we are collecting
+          more data.
+        explanation: |
+          Three wordy phrases: "due to the fact that," "in order to,"
+          "at the present time."
+
+    compliant:
+      - description: "Concise alternatives"
+        content: |
+          Because the sample was small, to increase power,
+          we are now collecting more data.
+        explanation: |
+          "Because," "to," "now" - same meaning, half the words.
+
+  - id: "R_C3_nominalization_reduction"
+    name: "Reduce Nominalizations"
+    one_liner: "Use verbs instead of noun forms"
+    derives_from: ["A3_economy"]
+
+    statement_natural: |
+      Replace nominalizations (noun forms of verbs) with the
+      original verb. "Make a decision" → "decide"
+
+    statement_formal: |
+      Nominalization(n) → Replace(n, VerbForm(n))
+      "make a decision" → "decide"
+      "conduct an investigation" → "investigate"
+      "give consideration to" → "consider"
+
+    violations:
+      - description: "Nominalized verbs"
+        content: |
+          We made a decision to conduct an investigation
+          and give consideration to the results.
+        explanation: |
+          Three nominalizations making the sentence wordy and weak.
+
+    compliant:
+      - description: "Direct verbs"
+        content: |
+          We decided to investigate and consider the results.
+        explanation: |
+          Verbs are more direct and concise than their noun forms.
+
+  # ========================================
+  # BIAS-FREE LANGUAGE RULES
+  # ========================================
+
+  - id: "R_B1_people_first"
+    name: "People-First Language"
+    one_liner: "Person before condition"
+    derives_from: ["A1_clarity"]
+
+    statement_natural: |
+      Use people-first language by default: "person with disability"
+      not "disabled person." Exception: when a group prefers
+      identity-first language (e.g., "autistic person").
+
+    statement_formal: |
+      Default: "person with [condition]"
+      Exception: GroupPrefers(IdentityFirst) → use identity-first
+
+    violations:
+      - description: "Condition-first language"
+        content: |
+          The schizophrenics in the study showed...
+          Diabetic patients were recruited...
+        explanation: |
+          Reduces people to their conditions.
+          Should emphasize personhood first.
+
+    compliant:
+      - description: "People-first language"
+        content: |
+          The participants with schizophrenia showed...
+          Patients with diabetes were recruited...
+        explanation: |
+          Person emphasized before condition.
+
+  - id: "R_B2_gender_inclusive"
+    name: "Gender-Inclusive Language"
+    one_liner: "Avoid gendered terms for generic references"
+    derives_from: ["A1_clarity"]
+
+    statement_natural: |
+      Use gender-neutral terms for generic references.
+      "Mankind" → "humankind." "Policeman" → "police officer."
+
+    statement_formal: |
+      Generic(reference) ∧ ¬GenderRelevant(context) →
+        Use gender-neutral term
+
+    violations:
+      - description: "Gendered generic terms"
+        content: |
+          Mankind has long struggled with this problem.
+          The chairman called the meeting to order.
+        explanation: |
+          "Mankind" and "chairman" unnecessarily gender
+          concepts that have no gender relevance.
+
+    compliant:
+      - description: "Gender-neutral terms"
+        content: |
+          Humankind has long struggled with this problem.
+          The chair called the meeting to order.
+        explanation: |
+          Inclusive language that doesn't exclude anyone.
+
+  # ========================================
+  # ANTHROPOMORPHISM RULES
+  # ========================================
+
+  - id: "R_A1_no_anthropomorphism"
+    name: "Avoid Anthropomorphism"
+    one_liner: "Don't attribute human actions to studies or tables"
+    derives_from: ["A2_precision"]
+
+    statement_natural: |
+      Do not attribute human actions (thinking, believing, arguing)
+      to inanimate objects like studies, theories, or tables.
+
+    statement_formal: |
+      Subject ∈ {Study, Table, Theory, Model} →
+        ¬Use(HumanActionVerb)
+
+    violations:
+      - description: "Study as human agent"
+        content: |
+          This study argues that anxiety affects performance.
+          The theory believes that learning is constructive.
+        explanation: |
+          Studies don't argue; researchers do.
+          Theories don't believe; they propose or posit.
+
+    compliant:
+      - description: "Proper attribution"
+        content: |
+          In this study, we argue that anxiety affects performance.
+          According to the theory, learning is constructive.
+        explanation: |
+          Human actions attributed to humans (researchers).
+          Theories "propose" or "posit" but don't "believe."
+
+  - id: "R_A2_table_references"
+    name: "Table Reference Language"
+    one_liner: "Tables present or display, not show or demonstrate"
+    derives_from: ["A2_precision"]
+
+    statement_natural: |
+      When referring to tables, use verbs like "presents" or "displays"
+      rather than verbs implying agency like "shows" or "demonstrates."
+
+    statement_formal: |
+      Subject = Table →
+        Use("presents", "displays", "contains", "lists")
+        Avoid("shows", "demonstrates", "proves", "argues")
+
+    violations:
+      - description: "Table with agency"
+        content: |
+          Table 1 shows that the hypothesis was correct.
+          Table 2 demonstrates the effect of the intervention.
+        explanation: |
+          Tables are passive displays of data.
+          "Shows" and "demonstrates" imply active agency.
+
+    compliant:
+      - description: "Appropriate table language"
+        content: |
+          Table 1 presents the mean scores by condition.
+          As displayed in Table 2, the effect was significant.
+        explanation: |
+          "Presents" and "displayed" are neutral.
+          Alternative: "As shown in Table 1..." is also acceptable.

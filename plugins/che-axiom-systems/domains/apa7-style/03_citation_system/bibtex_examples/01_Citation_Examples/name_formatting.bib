@@ -1,0 +1,123 @@
+% ================================================
+% Name Formatting Examples
+% APA 7th Edition Section 8.17 and Special Cases
+% ================================================
+% 
+% This file contains examples for special name formatting:
+% - International names with special characters
+% - Names with prefixes (von, de, etc.)
+% - Names with suffixes (Jr., III, etc.)
+% - Hyphenated names
+% - Name order variations
+% 
+% Usage: These examples show how to properly format different types
+% of author names in BibTeX for correct APA citation generation
+% ================================================
+
+% (APA 8.13) - Various name formats
+@BOOK{8.13b,
+  AUTHOR         = {A. Shimamura},
+  TITLE          = {Title},
+  DATE           = {2017}
+}
+
+@BOOK{8.13c,
+  AUTHOR         = {A. Armstrong},
+  TITLE          = {Title},
+  DATE           = {2015}
+}
+
+@BOOK{8.13d,
+  AUTHOR         = {A. Shadid},
+  TITLE          = {Title},
+  DATE           = {2020}
+}
+
+@BOOK{8.13e,
+  AUTHOR         = {A. Kovačič and B. Horvat},
+  TITLE          = {Title},
+  DATE           = {2019}
+}
+
+@BOOK{8.13f,
+  AUTHOR         = {A. Thompson},
+  TITLE          = {Title},
+  DATE           = {2020}
+}
+
+% (APA 8.17) - International and special character names
+@BOOK{8.17a,
+  AUTHOR         = {Luna, A},
+  TITLE          = {Title},
+  DATE           = {2020}
+}
+
+@BOOK{8.17b,
+  AUTHOR         = {Sales, A and D'Agostino, B},
+  TITLE          = {Title},
+  DATE           = {2020}
+}
+
+@BOOK{8.17c,
+  AUTHOR         = {Martin, A and Someone B and Someoneelse C},
+  TITLE          = {Title},
+  DATE           = {2020}
+}
+
+@BOOK{8.17f,
+  AUTHOR         = {A. Jöreskog and B. Sörbon},
+  TITLE          = {Title},
+  DATE           = {2007}
+}
+
+@BOOK{8.17g,
+  AUTHOR         = {A. Eifert and B. Yildiz},
+  TITLE          = {Title},
+  DATE           = {2018}
+}
+
+% Prefix tests (useprefix settings)
+@BOOK{pretest,
+  AUTHOR      = {Luis von Mises},
+  TITLE       = {A Title},
+  DATE        = {2000}
+}
+
+@MISC{nopretest,
+  OPTIONS     = {useprefix=false},
+  AUTHOR      = {Luis von Mises},
+  TITLE       = {Another Title},
+  DATE        = {2001}
+}
+
+% Prefix + suffix combinations
+@BOOK{presufftest,
+  EDITOR      = {von Greaves, Jr., Percy L.},
+  TITLE       = {A test of prefix 2},
+  DATE        = {1969},
+}
+
+@MISC{nopresufftest,
+  OPTIONS     = {useprefix=false},
+  AUTHOR      = {von Greaves, Jr., Percy L.},
+  TITLE       = {A test of noprefix 2},
+  DATE        = {2001}
+}
+
+@BOOK{presufftest2,
+  AUTHOR      = {von Greaves, Jr., Percy L.},
+  TITLE       = {A test of noprefix 2},
+  DATE        = {2001}
+}
+
+% Testing fullcite formatting with complex names
+@ARTICLE{FC1,
+  AUTHOR         = {Arthur Amorous and Brian Belligerent and Clive Clandestine},
+  TITLE          = {Names Which Inspire Envy},
+  SUBTITLE       = {The Fashions of Nominal Imprudence},
+  JOURNALTITLE   = {Journal of International Interest},
+  VOLUME         = {87},
+  NUMBER         = {12},
+  PAGES          = {1423--1458},
+  DATE           = {1923}
+}
