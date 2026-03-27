@@ -26,7 +26,9 @@ macOS native browser automation CLI using Safari + AppleScript. **Core advantage
 | Vue/React sites where `fill` doesn't trigger reactivity | **safari-browser** (JS events dispatched) |
 | Headless / CI / public sites | agent-browser |
 | Cross-platform needed | agent-browser |
-| Need accessibility tree / snapshot refs | agent-browser |
+| Sites that block headless browsers (banks, social media) | **safari-browser** (real browser, no bot detection) |
+| AI + human collaboration (user watches and takes over) | **safari-browser** (shared Safari window) |
+| Need CDP accessibility tree | agent-browser (safari-browser has JS-based snapshot) |
 
 ## Core Workflow
 
@@ -34,9 +36,14 @@ macOS native browser automation CLI using Safari + AppleScript. **Core advantage
 # Navigate
 safari-browser open "https://example.com"
 
-# Interact with elements using CSS selectors
-safari-browser click "button.submit"
-safari-browser fill "input#email" "user@example.com"
+# Discover elements (like agent-browser snapshot)
+safari-browser snapshot              # @e1 input[type="email"], @e2 button "Submit"
+safari-browser snapshot -c           # compact (hide invisible elements)
+safari-browser snapshot --json       # structured JSON output
+
+# Interact using @refs or CSS selectors
+safari-browser click @e2
+safari-browser fill @e1 "user@example.com"
 safari-browser press Enter
 
 # Get information
@@ -73,6 +80,7 @@ safari-browser uncheck <selector>
 safari-browser scroll <dir> [pixels]        # up/down/left/right, default 500px
 safari-browser scrollintoview <selector>
 safari-browser highlight <selector>         # red outline for debug
+safari-browser drag <src> <dst>            # drag and drop (JS events)
 ```
 
 ### Keyboard
@@ -120,16 +128,29 @@ safari-browser is enabled <selector>
 safari-browser is checked <selector>
 ```
 
-### Screenshot & Upload
+### Snapshot (Element Discovery)
+```bash
+safari-browser snapshot                     # scan interactive elements → @e1, @e2...
+safari-browser snapshot -c                  # compact (exclude hidden elements)
+safari-browser snapshot -d 3                # limit DOM depth
+safari-browser snapshot -s "form.login"     # scope to CSS selector
+safari-browser snapshot --json              # JSON array output
+```
+
+All selector-accepting commands support `@eN` refs from the last snapshot.
+
+### Screenshot, PDF & Upload
 ```bash
 safari-browser screenshot [path]            # default: screenshot.png
 safari-browser screenshot --full path       # full page
+safari-browser pdf [path]                   # export as PDF (System Events)
 safari-browser upload <selector> <file>     # via System Events file dialog
 ```
 
 ### Tab Management
 ```bash
 safari-browser tabs                         # list all tabs
+safari-browser tabs --json                  # JSON array output
 safari-browser tab <n>                      # switch to tab n
 safari-browser tab new                      # new tab
 ```
@@ -144,7 +165,8 @@ safari-browser wait --timeout <ms>          # custom timeout (default 30s)
 
 ### Storage
 ```bash
-safari-browser cookies get [name]
+safari-browser cookies get [name]           # get all or by name
+safari-browser cookies get --json           # JSON object output
 safari-browser cookies set <name> <value>
 safari-browser cookies clear
 safari-browser storage local get <key>
@@ -154,10 +176,16 @@ safari-browser storage local clear
 safari-browser storage session get/set/remove/clear
 ```
 
+### Settings
+```bash
+safari-browser set media dark               # force dark mode
+safari-browser set media light              # force light mode
+```
+
 ### Debug
 ```bash
-safari-browser console --start              # start capturing console.log
-safari-browser console                      # read captured messages
+safari-browser console --start              # capture all levels (log/warn/error/info/debug)
+safari-browser console                      # read captured messages ([warn], [error] prefixed)
 safari-browser console --clear
 safari-browser errors --start               # capture JS errors
 safari-browser errors
@@ -204,5 +232,5 @@ safari-browser wait 5000   # wait for upload to complete
 - **Not headless** — Safari always has a visible window
 - **JS returns strings only** — use `JSON.stringify()` for objects
 - **No network interception** — Safari has no API for this
-- **No accessibility tree** — no `snapshot` / `@ref` system, use CSS selectors directly
+- **JS-based snapshot** — `snapshot` uses DOM scanning (not CDP accessibility tree), 90% as effective
 - **upload requires Accessibility permission** — System Preferences → Privacy → Accessibility
