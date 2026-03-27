@@ -289,6 +289,16 @@
       "category": "productivity"
     },
     {
+      "name": "safari-browser",
+      "version": "1.0.0",
+      "description": "macOS native browser automation via Safari + AppleScript — permanent login, 32 commands covering navigation, interaction, screenshot, upload, storage, and debug",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/safari-browser",
+      "category": "productivity"
+    },
+    {
       "name": "che-axiom-systems",
       "version": "1.0.0",
       "description": "Axiomatization Systems — 跨領域形式化公理體系的建立、驗證與查詢。基於 ASBE 方法論。axiom-create、axiom-validate、axiom-lookup",
