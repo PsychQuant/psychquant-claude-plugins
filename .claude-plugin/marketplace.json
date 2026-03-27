@@ -290,7 +290,7 @@
     },
     {
       "name": "safari-browser",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "description": "macOS native browser automation via Safari + AppleScript — permanent login, 36 commands with snapshot/@ref, PDF export, JSON output, drag, dark/light mode",
       "author": {
         "name": "Che Cheng"
