@@ -1,0 +1,8 @@
+{
+  "name": "safari-browser",
+  "description": "macOS native browser automation via Safari + AppleScript — permanent login, no auth management needed",
+  "version": "1.0.0",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
