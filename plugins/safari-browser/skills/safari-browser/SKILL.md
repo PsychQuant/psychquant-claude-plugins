@@ -105,7 +105,11 @@ safari-browser find placeholder "Search" fill "query"
 safari-browser js "document.title"
 safari-browser js --file script.js
 safari-browser js "JSON.stringify(localStorage)"
+safari-browser js --large "document.body.innerText"    # chunked read for large output
+safari-browser js --output /tmp/page.txt "document.body.innerText"  # write to file
 ```
+
+**Large output handling**: Safari's `do JavaScript` silently drops results >~1MB. Use `--large` to force chunked read, or `--output` to write to file. The CLI auto-retries with chunked read when it detects empty output.
 
 ### Page & Element Info
 ```bash
