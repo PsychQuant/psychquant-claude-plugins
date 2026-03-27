@@ -1,0 +1,122 @@
+# Compliance Verification Process Decision Tree
+# Based on: 02_jars_standards/jars_visual_framework.md Section 2.2
+
+decision_tree:
+  name: "JARS Compliance Verification"
+  version: "1.0"
+  description: "Step-by-step process for verifying article compliance with JARS standards"
+  root: "determine_type"
+
+  nodes:
+    determine_type:
+      type: "action"
+      action: "Determine article type using article_type.yaml"
+      description: "First step: identify whether article is Quant/Qual/Mixed"
+      yes: "load_standards"
+
+    load_standards:
+      type: "action"
+      action: "Load applicable standards: Universal + Type-specific"
+      description: "Combine universal axioms (U1-U4) with type-specific axioms"
+      yes: "check_universal"
+
+    check_universal:
+      type: "decision"
+      question: "Does article meet all Universal Requirements (U1-U4)?"
+      description: "Check title, abstract, ethics, transparency"
+      evidence:
+        - "U1: Title contains study type, main topic, ≤12 words"
+        - "U2: Abstract has objective, method, results, conclusions"
+        - "U3: IRB approval, informed consent documented"
+        - "U4: Funding and conflicts disclosed"
+      yes: "check_type_specific"
+      no: "universal_noncompliant"
+
+    universal_noncompliant:
+      type: "result"
+      result: "Non-compliant: Universal Requirements"
+      description: "Article fails basic JARS requirements"
+      axioms: ["U1", "U2", "U3", "U4"]
+
+    check_type_specific:
+      type: "decision"
+      question: "Does article meet all Type-Specific Requirements?"
+      description: "Check requirements based on article type"
+      yes: "fully_compliant"
+      no: "type_noncompliant"
+
+    fully_compliant:
+      type: "result"
+      result: "Fully Compliant"
+      description: "Article meets all applicable JARS standards"
+
+    type_noncompliant:
+      type: "result"
+      result: "Non-compliant: Type-Specific Requirements"
+      description: "Article meets universal but fails type-specific requirements"
+
+# Subroutines for type-specific checks
+subroutines:
+  check_quantitative:
+    description: "Verify JARS-Quant requirements"
+    axioms: ["Q1", "Q2", "Q3", "Q4", "Q5"]
+    checks:
+      Q1_participants:
+        - "Demographics reported (age, gender, relevant characteristics)"
+        - "Sampling method described"
+        - "Sample size with justification"
+      Q2_measures:
+        - "Reliability evidence (α, ICC)"
+        - "Validity evidence provided"
+        - "Scoring procedures described"
+      Q3_design:
+        - "Power analysis reported"
+        - "Planned analyses specified"
+      Q4_results:
+        - "Test statistics reported (t, F, χ²)"
+        - "Degrees of freedom included"
+        - "Exact p-values given"
+        - "Effect sizes calculated (d, η², r)"
+        - "95% confidence intervals provided"
+      Q5_discussion:
+        - "Limitations acknowledged"
+        - "Implications discussed"
+
+  check_qualitative:
+    description: "Verify JARS-Qual requirements"
+    axioms: ["QL1", "QL2", "QL3", "QL4", "QL5"]
+    checks:
+      QL1_researcher:
+        - "Researcher background described"
+        - "Theoretical perspective stated"
+        - "Relationship to participants explained"
+      QL2_context:
+        - "Setting described"
+        - "Cultural factors noted"
+        - "Time period specified"
+      QL3_data:
+        - "Collection method detailed"
+        - "Duration of data collection"
+        - "Saturation criteria stated"
+      QL4_analysis:
+        - "Coding process described"
+        - "Theme development explained"
+      QL5_trustworthiness:
+        - "Strategies documented (member checking, triangulation, etc.)"
+
+  check_mixed:
+    description: "Verify JARS-Mixed requirements"
+    axioms: ["M1", "M2", "M3", "M4", "M5"]
+    checks:
+      M1_design:
+        - "Mixed methods type specified (convergent/explanatory/exploratory)"
+        - "Rationale for mixing provided"
+      M2_integration:
+        - "Integration points identified"
+        - "Component influence shown"
+      M3_display:
+        - "Joint display of results provided"
+      M4_quality:
+        - "Both Quant and Qual standards met"
+      M5_integration_quality:
+        - "Coherence of integration demonstrated"

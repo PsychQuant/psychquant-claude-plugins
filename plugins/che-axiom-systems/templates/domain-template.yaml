@@ -1,0 +1,65 @@
+# ASBE Domain Template
+# Copy this file to start a new axiomatization domain.
+# See foundations/asbe-methodology.md for the full methodology.
+
+meta:
+  domain: "Your Domain Name"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "YYYY-MM-DD"
+  description: |
+    One-paragraph description of what this domain axiomatizes.
+
+# Primitive terms — undefined concepts that form the foundation
+primitives:
+  - term: "Term1"
+    intuition: "What this term means intuitively"
+  - term: "Term2"
+    intuition: "What this term means intuitively"
+
+axioms:
+  - id: "A1_xxx"
+    name: "Axiom Name"
+    one_liner: "Brief summary (max 100 chars)"
+
+    statement_natural: |
+      Plain language description of the rule.
+
+    statement_formal: |
+      ∀x ∈ Domain, Property(x) → Conclusion(x)
+
+    rationale: |
+      Why this axiom matters.
+
+    violations:
+      - description: "What's wrong with this"
+        content: |
+          The actual bad example.
+        explanation: "Why it violates the rule"
+
+    compliant:
+      - description: "What's right about this"
+        content: |
+          The actual good example.
+        explanation: "Why it satisfies the rule"
+
+theorems:
+  - id: "T1_xxx"
+    name: "Theorem Name"
+    derives_from: ["A1_xxx"]
+
+    statement_natural: |
+      ...
+
+    statement_formal: |
+      ...
+
+    violations:
+      - description: "..."
+        content: |
+          ...
+
+    compliant:
+      - description: "..."
+        content: |
+          ...

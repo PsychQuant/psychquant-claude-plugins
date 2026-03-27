@@ -1,0 +1,342 @@
+# APA 7 Transformation Rules
+# Explicit "X → Y" patterns for AI text rewriting
+#
+# Format:
+#   pattern: The text pattern to match
+#   replacement: What to replace it with (null = delete)
+#   category: Type of transformation
+#   context: (optional) When this rule applies
+#   note: (optional) Explanation
+
+metadata:
+  version: "1.0"
+  created: "2025-12-30"
+  purpose: "Provide explicit transformation rules for APA-compliant rewriting"
+
+transformations:
+
+  # ============================================
+  # REDUNDANCY ELIMINATION
+  # ============================================
+  redundancy:
+    - pattern: "due to the fact that"
+      replacement: "because"
+      note: "Concise cause expression"
+
+    - pattern: "in order to"
+      replacement: "to"
+      note: "Simplify purpose clauses"
+
+    - pattern: "at this point in time"
+      replacement: "now"
+      note: "Temporal conciseness"
+
+    - pattern: "each and every"
+      replacement: "each"
+      note: "Remove redundant pairing"
+
+    - pattern: "first and foremost"
+      replacement: "first"
+      note: "Remove redundant emphasis"
+
+    - pattern: "absolutely essential"
+      replacement: "essential"
+      note: "Remove redundant intensifier"
+
+    - pattern: "completely eliminate"
+      replacement: "eliminate"
+      note: "Eliminate is already complete"
+
+    - pattern: "future plans"
+      replacement: "plans"
+      note: "Plans are inherently future"
+
+    - pattern: "end result"
+      replacement: "result"
+      note: "Result implies end"
+
+    - pattern: "basic fundamentals"
+      replacement: "fundamentals"
+      note: "Fundamentals are basic"
+
+  # Safeguards: DO NOT treat the following as redundancy
+  redundancy_exceptions:
+    - category: "Cross-references and backward references"
+      description: |
+        Phrases like "as the example above illustrates" or "as discussed in Section 2"
+        serve a structural function: they connect the current argument to prior material.
+        These are NOT redundant even though they could be deleted without changing
+        the literal propositional content of the sentence.
+      preserve:
+        - "as X illustrates"
+        - "as X shows"
+        - "as noted above"
+        - "as discussed in"
+        - "recall that"
+      rationale: |
+        Removing cross-references breaks the logical thread of the argument.
+        The reader loses the connection between the current point and the evidence
+        or example that motivates it.
+
+    - category: "Contrastive or restrictive modifiers"
+      description: |
+        Modifiers that restrict scope or create contrast carry semantic content
+        even when the sentence is grammatical without them.
+      examples:
+        - "'at any finite test length' is not redundant in 'does not imply it is the best SE estimator at any finite test length' because it restricts the claim's scope"
+        - "'in practice' is not redundant in 'higher-order differences that can matter in practice' because it specifies the domain of relevance"
+
+    - category: "Discourse markers that signal argument structure"
+      description: |
+        Words like 'however', 'therefore', 'consequently' mark the logical
+        relationship between sentences. Deleting them may shorten the text
+        but obscures the argument's structure.
+      instruction: "Only remove when the logical relationship is already obvious from content"
+
+  # ============================================
+  # ANTHROPOMORPHISM CORRECTIONS
+  # ============================================
+  anthropomorphism:
+    - pattern: "The study found"
+      replacement: "We found"
+      context: "own_research"
+      alternative: "The researchers found"
+      note: "Studies cannot find; humans do"
+
+    - pattern: "The paper argues"
+      replacement: "We argue"
+      context: "own_research"
+      alternative: "The authors argue"
+      note: "Papers cannot argue"
+
+    - pattern: "The table shows"
+      replacement: "Table X presents"
+      alternative: "As shown in Table X"
+      note: "Tables display, not show"
+
+    - pattern: "The theory suggests"
+      replacement: "According to the theory"
+      alternative: "The theory posits"
+      note: "Theories don't have agency"
+
+    - pattern: "The research examined"
+      replacement: "The researchers examined"
+      context: "citing_others"
+      alternative: "We examined"
+      note: "Research doesn't examine"
+
+    - pattern: "This research aims"
+      replacement: "We aim"
+      context: "own_research"
+      note: "Research doesn't have aims"
+
+    - pattern: "The data suggest"
+      replacement: "These data indicate"
+      note: "Data don't suggest (also note: data is plural)"
+
+  # ============================================
+  # EMPTY PHRASE DELETION
+  # ============================================
+  empty_phrases:
+    - pattern: "It is important to note that"
+      replacement: null
+      note: "Delete entirely; start with main point"
+
+    - pattern: "It should be noted that"
+      replacement: null
+      note: "Delete entirely"
+
+    - pattern: "It is worth mentioning that"
+      replacement: null
+      note: "If worth mentioning, just mention it"
+
+    - pattern: "As a matter of fact"
+      replacement: null
+      note: "Delete entirely"
+
+    - pattern: "For all intents and purposes"
+      replacement: null
+      note: "Delete entirely"
+
+    - pattern: "In actual fact"
+      replacement: null
+      note: "Delete entirely"
+
+    - pattern: "It goes without saying"
+      replacement: null
+      note: "If so, don't say it"
+
+    - pattern: "The fact that"
+      replacement: null
+      note: "Delete and state directly"
+
+  # ============================================
+  # INFORMAL → FORMAL EXPRESSIONS
+  # ============================================
+  informal_to_formal:
+    - pattern: "a lot of"
+      replacement: "many"
+      alternative: "much"
+      note: "Countable: many; uncountable: much"
+
+    - pattern: "lots of"
+      replacement: "many"
+      alternative: "numerous"
+      note: "Too informal for academic writing"
+
+    - pattern: "kind of"
+      replacement: null
+      note: "Be precise; delete hedging"
+
+    - pattern: "sort of"
+      replacement: null
+      note: "Be precise; delete hedging"
+
+    - pattern: "pretty much"
+      replacement: null
+      note: "Be exact; delete hedging"
+
+    - pattern: "get"
+      replacement: "obtain"
+      alternatives: ["receive", "acquire"]
+      context: "verb_main"
+      note: "Use more formal verbs"
+
+    - pattern: "big"
+      replacement: "large"
+      alternatives: ["substantial", "considerable"]
+      note: "Use precise measurements when possible"
+
+  # ============================================
+  # COLON REPLACEMENTS
+  # ============================================
+  colon_avoidance:
+    - pattern: ": X, Y, and Z"
+      replacement: ", including X, Y, and Z"
+      note: "APA prefers complete sentences over colon lists"
+      example:
+        before: "Three factors were identified: ability, outcome, and learning."
+        after: "Three factors were identified, including ability, outcome, and learning factors."
+
+  # ============================================
+  # GENDER-INCLUSIVE LANGUAGE
+  # ============================================
+  gender_inclusive:
+    - pattern: "mankind"
+      replacement: "humankind"
+      alternative: "humanity"
+
+    - pattern: "manpower"
+      replacement: "workforce"
+      alternative: "personnel"
+
+    - pattern: "chairman"
+      replacement: "chair"
+      alternative: "chairperson"
+
+    - pattern: "policeman"
+      replacement: "police officer"
+
+    - pattern: "fireman"
+      replacement: "firefighter"
+
+    - pattern: "businessman"
+      replacement: "business person"
+      alternative: "executive"
+
+    - pattern: "man-made"
+      replacement: "artificial"
+      alternative: "synthetic"
+
+  # ============================================
+  # TENSE CORRECTIONS (Context-Dependent)
+  # ============================================
+  tense_method_section:
+    - pattern: "we recruit participants"
+      replacement: "we recruited participants"
+      context: "method_section"
+      note: "Method section uses past tense"
+
+    - pattern: "participants complete"
+      replacement: "participants completed"
+      context: "method_section"
+      note: "Method section uses past tense"
+
+    - pattern: "the study uses"
+      replacement: "the study used"
+      context: "method_section"
+      note: "Method section uses past tense"
+
+  # ============================================
+  # HEDGING (Context-Dependent)
+  # ============================================
+  hedging_correlational:
+    - pattern: "X causes Y"
+      replacement: "X was associated with Y"
+      context: "correlational_study"
+      note: "Cannot claim causation in correlational studies"
+
+    - pattern: "X leads to Y"
+      replacement: "X was related to Y"
+      context: "correlational_study"
+      note: "Avoid causal implications"
+
+    - pattern: "X results in Y"
+      replacement: "X was associated with Y"
+      context: "correlational_study"
+      note: "Avoid causal implications"
+
+  # ============================================
+  # AI-FEEL REDUCTION
+  # ============================================
+  ai_feel_reduction:
+    - pattern: "em-dash parenthetical (X---Y---Z)"
+      replacement: "comma clause, separate sentence, or parentheses"
+      note: "AI overuses em-dashes. Restructure the sentence."
+      example:
+        before: "The method---widely adopted in practice---outperforms alternatives."
+        after: "The method, widely adopted in practice, outperforms alternatives."
+
+    - pattern: "both X and Y"
+      replacement: "X and Y"
+      context: "when the pairing is not surprising or contrastive"
+      note: "'Both' is often unnecessary padding"
+      example:
+        before: "This matters both theoretically and practically."
+        after: "This matters theoretically and practically."
+
+    - pattern: "not only X but also Y"
+      replacement: "X and Y"
+      context: "when the two items are naturally expected together"
+      note: "Reserve 'not only...but also' for genuinely surprising pairings"
+
+    - pattern: "Moreover, / Furthermore, / Additionally,"
+      replacement: null
+      note: "Delete when the additive relationship is already clear from content. Use at most once per paragraph."
+
+    - pattern: "Building on this, / With this in mind, / In light of this,"
+      replacement: null
+      note: "Generic AI transition. Start the new idea directly."
+
+    - pattern: "It is worth noting that"
+      replacement: null
+      note: "Delete; state the point directly"
+
+    - pattern: "This raises an important question"
+      replacement: null
+      note: "Just state or ask the question"
+
+    - pattern: "particularly important / especially relevant"
+      replacement: null
+      note: "Let the content demonstrate importance"
+
+# ============================================
+# USAGE NOTES
+# ============================================
+usage_notes:
+  - "Apply rules in order: redundancy → anthropomorphism → empty phrases → informal → AI-feel → special"
+  - "Before deleting any phrase, check redundancy_exceptions to ensure it is not a functional cross-reference or discourse marker"
+  - "Context-dependent rules only apply when context is identified"
+  - "null replacement means delete the pattern entirely"
+  - "When multiple alternatives exist, choose based on sentence context"
+  - "These rules complement, not replace, full axiom definitions in 01_core_axioms/"

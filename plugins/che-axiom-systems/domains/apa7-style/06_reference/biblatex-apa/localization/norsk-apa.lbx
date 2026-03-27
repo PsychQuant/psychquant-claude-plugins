@@ -1,0 +1,209 @@
+\ProvidesFile{norsk-apa.lbx}[2023/03/20\space v9.17\space APA biblatex localisation]
+\InheritBibliographyExtras{norsk}
+
+\NewBibliographyString{publication}
+\NewBibliographyString{revisededition}
+\NewBibliographyString{typechair}
+\NewBibliographyString{typechairs}
+\NewBibliographyString{typevolume}
+\NewBibliographyString{typevolumes}
+\NewBibliographyString{typeseries}
+\NewBibliographyString{typeseriess}
+\NewBibliographyString{typevolseries}
+\NewBibliographyString{typevolseriess}
+\NewBibliographyString{on}
+\NewBibliographyString{retrieved}
+\NewBibliographyString{available}
+\NewBibliographyString{from}
+\NewBibliographyString{archivedat}
+\NewBibliographyString{origyear}
+\NewBibliographyString{reviewof}
+\NewBibliographyString{with}
+\NewBibliographyString{supplement}
+\NewBibliographyString{commenton}
+\NewBibliographyString{manunpub}
+\NewBibliographyString{maninprep}
+\NewBibliographyString{mansub}
+\NewBibliographyString{producer}
+\NewBibliographyString{producers}
+\NewBibliographyString{execproducer}
+\NewBibliographyString{execproducers}
+\NewBibliographyString{execdirector}
+\NewBibliographyString{execdirectors}
+\NewBibliographyString{director}
+\NewBibliographyString{directors}
+\NewBibliographyString{writer}
+\NewBibliographyString{writers}
+\NewBibliographyString{host}
+\NewBibliographyString{hosts}
+\NewBibliographyString{guestexpert}
+\NewBibliographyString{guestexperts}
+\NewBibliographyString{narrator}
+\NewBibliographyString{narrators}
+\NewBibliographyString{film}
+\NewBibliographyString{tvseries}
+\NewBibliographyString{tvepisode}
+\NewBibliographyString{video}
+\NewBibliographyString{song}
+\NewBibliographyString{album}
+\NewBibliographyString{podcast}
+\NewBibliographyString{podcastepisode}
+\NewBibliographyString{interview}
+\NewBibliographyString{speech}
+\NewBibliographyString{lithograph}
+\NewBibliographyString{map}
+\NewBibliographyString{lecturenotes}
+\NewBibliographyString{powerpoint}
+\NewBibliographyString{photograph}
+\NewBibliographyString{photographs}
+\NewBibliographyString{present}
+\NewBibliographyString{painting}
+\NewBibliographyString{article}
+\NewBibliographyString{unitednations}
+\NewBibliographyString{charter}
+\NewBibliographyString{ofthe}
+\NewBibliographyString{tothe}
+
+\DeclareBibliographyStrings{%
+  inherit          = {norsk},
+%  jourarticle      = {{article}{article}},%FIXME
+  producer         = {{produsent}{produsent}},
+  execproducer     = {{ut{\o}vende produsent}{ut{\o}vende produsent}},
+  director         = {{regiss{\o}r}{regi\adddot}},
+  writer           = {{manus}{manus}},
+%  writers          = {{writers}{writers}},%FIXME
+  with             = {{med}{med}},
+  revisededition   = {{revidert\space utgave}{rev\adddotspace utg\adddot}},
+%  commenton        = {{comment\space on}{comment\space on}},%FIXME
+  page             = {{side}{{}s\adddot}},
+  pages            = {{sider}{{}s\adddot}},
+  on               = {{p{\aa}}{p{\aa}}},
+  retrieved        = {{hentet}{hentet}},
+  available        = {{tilgjengelig}{tilgjengelig}},
+  from             = {{fra}{fra}},
+  archivedat       = {{arkivert\space ved}{arkivert\space ved}},
+  reviewof         = {{anmeldelse\space av}{anmeldelse\space av}},
+%  paragraph        = {{paragraph}{para\adddot}},%FIXME
+%  paragraphs       = {{paragraphs}{paras\adddot}},%FIXME
+  mathesis         = {{Masteroppgave}{Masteroppgave}},
+  phdthesis        = {{Doktoravhandling}{Doktoravhandling}},
+  origyear         = {{opprinnelig\space publisert}{opprinnelig\space publisert}},
+  typechair        = {{ordstyrer}{ordstyrer}},
+  typechairs       = {{ordstyrere}{ordstyrere}},
+  typevolume       = {{bindredakt{\o}r}{bindred\adddot}},
+  typevolumes      = {{bindredakt{\o}rer}{bindred\adddot}},
+  typeseries       = {{serieredakt{\o}r}{seriered\adddot}},
+  typeseriess      = {{serieredakt{\o}rer}{seriered\adddot}},
+  typevolseries    = {{serie- og bindredakt{\o}r}{serie- og bindred\adddot}},
+  typevolseriess   = {{serie- og bindredakt{\o}rer}{serie- og bindred\adddot}},
+%  annodomini       = {{A\adddot D\adddot}{A\adddot D\adddot}},
+%  beforechrist     = {{B\adddot C\adddot}{B\adddot C\adddot}},
+%  commonera        = {{C\adddot E\adddot}{C\adddot E\adddot}},
+%  beforecommonera  = {{B\adddot C\adddot E\adddot}{B\adddot C\adddot E\adddot}},
+%  publication   = {{Publication}{Publication}}
+}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Drop end* when they are the same as *
+% You must use \printdate to get here otherwise it will be ignored
+
+
+\DeclareBibliographyExtras{%
+  \def\urldatecomma{\addcomma\addspace}%
+  \protected\def\mkbibdateapalong#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\iffieldundef{#1}%
+        {}
+        {\addcomma\addspace}%
+       \stripzeros{\thefield{#4}}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}
+        {\iffieldundef{#1}
+          {}
+          {\addspace}}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongextra#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}\printfield{extradate}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\iffieldundef{#1}%
+        {}
+        {\addcomma\addspace}%
+       \stripzeros{\thefield{#4}}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}
+        {\iffieldundef{#1}
+          {}
+          {\addspace}}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongmdy#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\stripzeros{\thefield{#4}}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}%
+        {}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldundef{#3}%
+        {}%
+        {\addspace}%
+       \iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}}}}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\endinput

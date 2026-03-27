@@ -1,0 +1,51 @@
+# Article Type Determination Decision Tree
+# Based on: 02_jars_standards/jars_visual_framework.md Section 2.1
+
+decision_tree:
+  name: "Article Type Determination"
+  version: "1.0"
+  description: "Determines whether a research article should follow JARS-Quant, JARS-Qual, or JARS-Mixed standards"
+  root: "identify_method"
+
+  nodes:
+    identify_method:
+      type: "decision"
+      question: "Does the study use numbers, statistics, or quantitative measures?"
+      description: "Initial branching based on presence of quantitative elements"
+      yes: "check_pure_quantitative"
+      no: "check_qualitative_elements"
+
+    check_pure_quantitative:
+      type: "decision"
+      question: "Is it purely quantitative (no interpretation of themes, no qualitative data collection)?"
+      description: "Distinguish pure quantitative from mixed methods"
+      yes:
+        result: "JARS-Quant"
+        axioms: ["Q1", "Q2", "Q3", "Q4", "Q5"]
+      no:
+        result: "JARS-Mixed"
+        axioms: ["M1", "M2", "M3", "M4", "M5"]
+
+    check_qualitative_elements:
+      type: "decision"
+      question: "Does the study use interpretation, themes, or qualitative data collection methods?"
+      description: "Check for qualitative research characteristics"
+      yes: "check_pure_qualitative"
+      no: "unknown_type"
+
+    check_pure_qualitative:
+      type: "decision"
+      question: "Is it purely qualitative (no statistical analysis, no quantitative measures)?"
+      description: "Distinguish pure qualitative from mixed methods"
+      yes:
+        result: "JARS-Qual"
+        axioms: ["QL1", "QL2", "QL3", "QL4", "QL5"]
+      no:
+        result: "JARS-Mixed"
+        axioms: ["M1", "M2", "M3", "M4", "M5"]
+
+    unknown_type:
+      type: "result"
+      result: "Unknown/Theoretical"
+      description: "Article may be theoretical, review, or meta-analysis requiring different standards"
+      axioms: ["U1", "U2", "U3", "U4"]

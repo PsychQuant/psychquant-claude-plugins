@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/plk/biblatex-apa.git
+	branch = master
+	commit = 1abce6549a2b846ca3a928aa714138f49d9ead57
+	parent = f33b36c573e29684823575535e0a183e6afb6b92
+	method = merge
+	cmdver = 0.4.9

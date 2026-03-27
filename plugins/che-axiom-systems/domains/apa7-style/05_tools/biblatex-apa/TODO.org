@@ -1,0 +1,14 @@
+* DONE '%REMOVE' marker in .bbx
+* DONE 8.20e - p268 - uniquename=inits doesn't do this
+* DONE 8.20f--8.20j - only primary author with inits
+* DONE Remove \usebibmacro{apa:finpunct}, \usebibmacro{apa:pageref}?
+* DONE Document groupauthor as preferable
+* DONE Document KEYWORDS=nonacademic
+* DONE Document name roles via annotations for less common and mixed author roles, mandatory annotation names
+* DONE Combine all roles (9.10)
+* DONE 10.1.18 -> related comment on in line with reviews
+* DONE lbx have reference to old APA numbers
+* DONE %REF
+* DONE Document mention legal formats, citeinfo/citeorg/citedate or ORGANIZATION, appeal annotation
+* DONE Document v6 package and name
+* TODO Remove annotation \togglefalse{blx@bibliography} from .bbx, line 1307 after biblatex 3.15 out

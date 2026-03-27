@@ -1,0 +1,33 @@
+# System files
+.DS_Store
+.Rproj.user
+.Rhistory
+
+# IDE
+.vscode/
+.claude/*
+!.claude/skills/
+
+# Workspace files
+*.code-workspace
+
+# Copyrighted materials - DO NOT commit to public repo
+# Original PDF files
+06_reference/APA7manual.pdf
+06_reference/APA7manual_scan.pdf
+
+# Images extracted from copyrighted PDF
+06_reference/apa7_images/
+
+# Markdown conversions of copyrighted manual
+06_reference/APA7manual.md
+06_reference/APA7manual_ocr.md
+06_reference/APA7manual/
+
+# Marker conversion metadata
+06_reference/archive/
+
+# Old reference materials
+06_reference/APA7manual.txt
+06_reference/APA Style.html
+06_reference/APA Style_files/

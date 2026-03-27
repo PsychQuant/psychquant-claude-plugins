@@ -1,0 +1,236 @@
+# ASBE Example: Writing Style Specification
+# Demonstrates ASBE methodology applied to prose writing
+
+meta:
+  domain: "Writing Style"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "2024-12-30"
+  description: |
+    An ASBE specification for clear, effective prose writing.
+    Derived from APA 7th Edition principles.
+
+axioms:
+  - id: "A1_purpose"
+    name: "Purpose Axiom"
+    one_liner: "Writing exists to transfer ideas"
+
+    statement_natural: |
+      The fundamental purpose of writing is to transfer ideas
+      from the writer's mind to the reader's mind.
+
+    statement_formal: |
+      ∀text ∈ Writing,
+        Purpose(text) = Transfer(idea, writer → reader)
+        Success(text) ⟺ Understanding(reader, idea)
+
+    rationale: |
+      All other writing principles derive from this goal.
+      Techniques that aid transfer are good; those that
+      impede it are bad.
+
+    violations:
+      - description: "Writing that prioritizes style over understanding"
+        content: |
+          The epistemological ramifications of our paradigmatic
+          reconceptualization necessitate a hermeneutic
+          reevaluation of extant methodological frameworks.
+        explanation: |
+          Prioritizes impressive vocabulary over clear communication.
+          Reader cannot extract the intended meaning.
+
+    compliant:
+      - description: "Writing optimized for reader understanding"
+        content: |
+          Our new approach requires us to rethink how we
+          interpret our research methods.
+        explanation: |
+          Same meaning as violation example, but reader can
+          easily understand the message.
+
+  - id: "A2_reader_focus"
+    name: "Reader Focus Axiom"
+    one_liner: "Write for the reader, not yourself"
+
+    statement_natural: |
+      The reader's comprehension, not the writer's expression,
+      is the measure of writing quality.
+
+    statement_formal: |
+      Quality(text) = f(Comprehension(reader))
+      Quality(text) ≠ f(Expression(writer))
+
+    rationale: |
+      Writers naturally know what they mean. The challenge
+      is ensuring readers also know. Success is measured
+      at the receiving end.
+
+    violations:
+      - description: "Writer-centered explanation"
+        content: |
+          As I mentioned in my previous work (2019), the concept
+          I developed there applies here in the way I intended.
+        explanation: |
+          Assumes reader knows writer's previous work and intentions.
+          Reader-hostile assumption.
+
+    compliant:
+      - description: "Reader-centered explanation"
+        content: |
+          The concept of "cognitive load" refers to the mental
+          effort required to process information. When applied
+          to writing, it means...
+        explanation: |
+          Defines terms and provides context without assuming
+          prior knowledge.
+
+  - id: "A3_unity"
+    name: "Unity Axiom"
+    one_liner: "One idea per container"
+
+    statement_natural: |
+      Each structural unit (sentence, paragraph, section)
+      should express exactly one main idea.
+
+    statement_formal: |
+      ∀unit ∈ {Sentence, Paragraph, Section},
+        ∃! main_idea(unit)
+        ∀part ∈ unit, supports(part, main_idea(unit))
+
+    rationale: |
+      Multiple unrelated ideas in one container create cognitive
+      dissonance and impede understanding.
+
+    violations:
+      - description: "Paragraph with multiple unrelated ideas"
+        content: |
+          The budget meeting is scheduled for tomorrow.
+          I prefer coffee to tea. The new policy affects
+          all employees. It might rain this weekend.
+        explanation: |
+          Four sentences, four unrelated topics. Reader cannot
+          identify the paragraph's purpose.
+
+    compliant:
+      - description: "Paragraph with unified topic"
+        content: |
+          The budget meeting tomorrow will address three key issues.
+          First, we need to review the Q4 revenue projections.
+          Second, the hiring freeze requires immediate discussion.
+          Third, we must decide on funding for the expansion project.
+        explanation: |
+          All sentences support the main idea: "budget meeting topics."
+
+theorems:
+  - id: "T1_known_new"
+    name: "Known-New Contract"
+    one_liner: "Begin with old info, end with new"
+    derives_from: ["A1_purpose", "A2_reader_focus"]
+
+    statement_natural: |
+      Sentences should begin with information the reader
+      already knows (from context or previous sentences)
+      and end with new information.
+
+    statement_formal: |
+      ∀s₁, s₂ where Consecutive(s₁, s₂),
+        Begin(s₂) ⊆ Information(s₁) ∪ Context
+        End(s₂) = NewInfo(s₂)
+
+    rationale: |
+      From A1 (transfer) and A2 (reader focus): Transfer works
+      by connecting new information to existing knowledge.
+      Readers need a "hook" to attach new information.
+
+    violations:
+      - description: "New information at the beginning"
+        content: |
+          Mitochondrial dysfunction causes the symptoms.
+          The patient reported fatigue and weakness.
+        explanation: |
+          First sentence introduces "mitochondrial dysfunction"
+          cold. Reader has no context for this term.
+
+    compliant:
+      - description: "Known information bridges to new"
+        content: |
+          The patient reported fatigue and weakness.
+          These symptoms are caused by mitochondrial dysfunction.
+        explanation: |
+          "These symptoms" refers back to known info.
+          "Mitochondrial dysfunction" is the new info at the end.
+
+  - id: "T2_economy"
+    name: "Economy of Expression"
+    one_liner: "Use minimum words for maximum clarity"
+    derives_from: ["A1_purpose"]
+
+    statement_natural: |
+      Express ideas using the fewest words that preserve
+      the intended meaning and appropriate nuance.
+
+    statement_formal: |
+      Optimal(text) ⟺
+        ∀text' where Meaning(text') = Meaning(text),
+          |words(text)| ≤ |words(text')|
+
+    rationale: |
+      From A1: Extra words require extra processing without
+      adding to understanding. They reduce transfer efficiency.
+
+    violations:
+      - description: "Wordy expression"
+        content: |
+          In the event that you find yourself in a situation
+          where you need assistance, please do not hesitate
+          to reach out to contact us.
+        explanation: |
+          27 words to say what could be said in 6.
+
+    compliant:
+      - description: "Concise expression"
+        content: |
+          If you need help, contact us.
+        explanation: |
+          6 words. Same meaning. No loss of clarity or politeness.
+
+rules:
+  - id: "R1_paragraph_length"
+    name: "Paragraph Length Rule"
+    one_liner: "3-7 sentences per paragraph"
+    derives_from: ["A3_unity", "T2_economy"]
+
+    statement_natural: |
+      Keep paragraphs between 3 and 7 sentences.
+      Shorter feels incomplete; longer loses focus.
+
+    statement_formal: |
+      ∀p ∈ Paragraphs, 3 ≤ |Sentences(p)| ≤ 7
+
+    violations:
+      - description: "One-sentence paragraph"
+        content: |
+          The results were significant.
+        explanation: |
+          Single sentence cannot develop an idea adequately.
+          Feels abrupt and underdeveloped.
+
+      - description: "Overly long paragraph"
+        content: |
+          [Imagine 15 sentences here about multiple subtopics,
+          each bleeding into the next without clear organization...]
+        explanation: |
+          Reader loses track of the main point. Should be
+          split into 2-3 focused paragraphs.
+
+    compliant:
+      - description: "Well-proportioned paragraph"
+        content: |
+          The study found three significant results.
+          First, response times decreased by 15%.
+          Second, error rates dropped by half.
+          Third, user satisfaction improved markedly.
+          These findings suggest the new interface is effective.
+        explanation: |
+          5 sentences. Clear topic sentence, supporting details,
+          concluding synthesis.

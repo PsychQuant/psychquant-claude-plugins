@@ -1,0 +1,249 @@
+# APA 7 Forbidden Patterns
+# Words and phrases to avoid in academic writing
+#
+# Format:
+#   word/phrase: The term to avoid
+#   reason: Why it should be avoided
+#   alternative: What to use instead (null = delete)
+#   context_exception: When the term IS acceptable
+
+metadata:
+  version: "1.0"
+  created: "2025-12-30"
+  source: "Consolidated from words_to_avoid.md and APA 7 guidelines"
+  purpose: "Comprehensive list of patterns AI should flag and replace"
+
+# ============================================
+# EMPHASIS WORDS (Delete)
+# ============================================
+emphasis_words:
+  description: "Words that add emphasis but weaken academic writing. Let content provide emphasis."
+  action: "DELETE - do not replace with anything"
+
+  patterns:
+    - word: "importantly"
+      reason: "Importance should be evident from context"
+      alternative: null
+
+    - word: "notably"
+      reason: "Let the content speak for itself"
+      alternative: null
+
+    - word: "significantly"
+      reason: "Reserve for statistical contexts only"
+      context_exception: "statistical_reporting"
+      alternative: null
+
+    - word: "remarkably"
+      reason: "Too subjective for academic writing"
+      alternative: null
+
+    - word: "interestingly"
+      reason: "Subjective; unnecessary meta-commentary"
+      alternative: null
+
+    - word: "obviously"
+      reason: "Can be condescending; if obvious, no need to state"
+      alternative: null
+
+    - word: "clearly"
+      reason: "If clear, you don't need to say so"
+      alternative: null
+
+    - word: "indeed"
+      reason: "Often redundant"
+      alternative: null
+
+    - word: "actually"
+      reason: "Usually unnecessary"
+      alternative: null
+
+    - word: "really"
+      reason: "Too informal"
+      alternative: null
+
+    - word: "critically"
+      reason: "Overused; let content demonstrate importance"
+      alternative: null
+
+    - word: "fundamental"
+      reason: "Overly strong emphasis"
+      alternative: ["primary", "key"]
+
+# ============================================
+# VAGUE QUALIFIERS (Delete or Specify)
+# ============================================
+vague_qualifiers:
+  description: "Vague terms that should be replaced with specific measurements or deleted"
+  action: "DELETE or REPLACE with specific value"
+
+  patterns:
+    - word: "relatively"
+      reason: "Be specific about the comparison"
+      alternative: null
+      instruction: "State the actual comparison"
+
+    - word: "somewhat"
+      reason: "Too vague"
+      alternative: null
+
+    - word: "quite"
+      reason: "Usually unnecessary"
+      alternative: null
+
+    - word: "very"
+      reason: "Use a stronger single word instead"
+      alternative: null
+      instruction: "Replace 'very X' with a stronger adjective"
+
+    - word: "extremely"
+      reason: "Use a more precise term"
+      alternative: null
+
+    - word: "basically"
+      reason: "Too informal"
+      alternative: null
+
+    - word: "essentially"
+      reason: "Often redundant"
+      alternative: null
+
+    - word: "virtually"
+      reason: "Be more precise"
+      alternative: null
+
+    - word: "practically"
+      reason: "Too informal"
+      alternative: null
+
+    - word: "fairly"
+      reason: "Too vague"
+      alternative: null
+
+    - word: "nuanced"
+      reason: "Pretentious; be specific"
+      alternative: ["complex", "detailed"]
+
+# ============================================
+# PSYCHOLOGY-SPECIFIC FORBIDDEN TERMS
+# ============================================
+psychology_specific:
+  description: "Terms with specific problems in psychological research writing"
+  action: "REPLACE with alternatives"
+
+  patterns:
+    - word: "influence"
+      reason: "Implies causation in correlational studies"
+      alternative: ["association", "relationship", "variance explained"]
+      context_exception: "experimental_study_with_manipulation"
+
+    - word: "trigger"
+      reason: "Too strong and mechanical for psychological processes"
+      alternative: ["lead to", "result in", "contribute to"]
+
+    - word: "impact"
+      reason: "Often implies causation; overused"
+      alternative: ["effect", "association", "relationship"]
+      context_exception: "experimental_study_with_manipulation"
+
+    - word: "key insight"
+      reason: "Too subjective and presumptuous"
+      alternative: null
+      instruction: "State the finding directly without meta-commentary"
+
+    - word: "proves"
+      reason: "Science doesn't prove; it provides evidence"
+      alternative: ["suggests", "indicates", "supports", "demonstrates"]
+
+    - word: "normal"
+      reason: "Can be stigmatizing; often imprecise"
+      alternative: ["typical", "expected", "neurotypical"]
+      context_exception: "statistical_normal_distribution"
+
+# ============================================
+# STRUCTURAL PATTERNS TO AVOID
+# ============================================
+structural_patterns:
+  description: "Structural and formatting issues to flag"
+
+  patterns:
+    - pattern: "arbitrary bold headings within paragraphs"
+      reason: "APA discourages bold headings within continuous text"
+      instruction: "Use natural paragraph breaks and topic sentences"
+
+    - pattern: "rhetorical questions"
+      reason: "Avoid 'An important question arises: why...?' format"
+      instruction: "Use direct statements instead"
+      examples:
+        avoid: "An important question arises: why do students struggle?"
+        prefer: "Students may struggle because..."
+
+    - pattern: "making X central statements"
+      reason: "Avoid 'making X central to understanding Y'"
+      instruction: "Let evidence demonstrate importance"
+
+    - pattern: "historicizing statements"
+      reason: "Avoid 'establishing X as important for Y'"
+      instruction: "Present evidence directly"
+
+# ============================================
+# FORMATTING NOTES
+# ============================================
+formatting_notes:
+  colons:
+    description: "APA prefers complete sentences over colon-introduced lists"
+    avoid: "Three factors: ability, outcome, and learning."
+    prefer: "Three factors were identified, including ability, outcome, and learning."
+    connectors: ["including", "consisting of", "specifically", "namely"]
+
+  numbers:
+    description: "Number usage in APA 7"
+    rules:
+      - "Use numerals for 10 and above"
+      - "Use words for below 10 in general text"
+      - "Use numerals for scale items (7-point Likert scale)"
+      - "Use numerals in mathematical/statistical contexts"
+
+# ============================================
+# QUICK SCAN CHECKLIST
+# ============================================
+quick_scan:
+  description: "Fast check for common issues"
+
+  delete_immediately:
+    - "importantly"
+    - "notably"
+    - "interestingly"
+    - "obviously"
+    - "clearly"
+    - "It is important to note that"
+    - "It should be noted that"
+    - "As a matter of fact"
+
+  check_context:
+    - "significantly"  # OK if statistical
+    - "influence"      # OK if experimental
+    - "impact"         # OK if experimental
+    - "normal"         # OK if statistical distribution
+
+  replace_always:
+    - "due to the fact that" → "because"
+    - "in order to" → "to"
+    - "The study found" → "We found"
+    - "a lot of" → "many/much"
+
+# ============================================
+# USAGE INSTRUCTIONS
+# ============================================
+usage:
+  priority_order:
+    1: "Scan for delete_immediately patterns first"
+    2: "Check context-dependent terms"
+    3: "Apply replace_always transformations"
+    4: "Flag structural issues for manual review"
+
+  notes:
+    - "Context matters: 'significantly' in statistics is correct"
+    - "In experimental studies, 'influence' may be appropriate"
+    - "When unsure, prefer more conservative language"
+    - "These rules supplement, not replace, writer judgment"

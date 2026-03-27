@@ -1,0 +1,152 @@
+# Mixed Methods Section Decision Tree
+# Based on: 02_jars_standards/jars_visual_framework.md Section 3.4
+
+decision_tree:
+  name: "Mixed Methods Section Checklist"
+  version: "1.0"
+  description: "Decision tree for writing a compliant JARS-Mixed Method section"
+  root: "start_method"
+
+  nodes:
+    start_method:
+      type: "action"
+      action: "Begin Method section with Design Description"
+      yes: "specify_design_type"
+
+    # === DESIGN (M1) ===
+    specify_design_type:
+      type: "decision"
+      question: "Have you specified the mixed methods design type?"
+      axioms: ["M1"]
+      evidence:
+        - "Convergent (parallel collection, merged analysis)"
+        - "Explanatory sequential (QUANT → qual)"
+        - "Exploratory sequential (qual → QUANT)"
+        - "Embedded (one within the other)"
+      yes: "provide_rationale"
+      no: "add_design_type"
+
+    add_design_type:
+      type: "action"
+      action: "Specify design type (convergent, explanatory, exploratory, embedded)"
+      yes: "provide_rationale"
+
+    provide_rationale:
+      type: "decision"
+      question: "Have you provided rationale for mixing methods?"
+      axioms: ["M1"]
+      evidence:
+        - "Why single method insufficient"
+        - "What each method contributes"
+        - "How mixing enhances understanding"
+      yes: "start_quant_strand"
+      no: "add_rationale"
+
+    add_rationale:
+      type: "action"
+      action: "Add rationale for mixed methods approach"
+      yes: "start_quant_strand"
+
+    # === QUANTITATIVE STRAND ===
+    start_quant_strand:
+      type: "action"
+      action: "Describe quantitative strand (follow method_quant.yaml)"
+      description: "Include participants, measures, and procedure for quantitative component"
+      axioms: ["Q1", "Q2", "Q3"]
+      yes: "start_qual_strand"
+
+    # === QUALITATIVE STRAND ===
+    start_qual_strand:
+      type: "action"
+      action: "Describe qualitative strand (follow method_qual.yaml)"
+      description: "Include researcher positioning, context, and data collection for qualitative component"
+      axioms: ["QL1", "QL2", "QL3", "QL4"]
+      yes: "describe_integration"
+
+    # === INTEGRATION (M2) ===
+    describe_integration:
+      type: "decision"
+      question: "Have you identified integration points?"
+      axioms: ["M2"]
+      evidence:
+        - "When integration occurs (design, method, results)"
+        - "Where in the study integration happens"
+        - "Who is involved in integration"
+      yes: "show_influence"
+      no: "add_integration_points"
+
+    add_integration_points:
+      type: "action"
+      action: "Identify integration points"
+      yes: "show_influence"
+
+    show_influence:
+      type: "decision"
+      question: "Have you shown how components influenced each other?"
+      axioms: ["M2"]
+      evidence:
+        - "Quantitative informing qualitative"
+        - "Qualitative informing quantitative"
+        - "Joint interpretation"
+      yes: "plan_joint_display"
+      no: "add_influence"
+
+    add_influence:
+      type: "action"
+      action: "Describe mutual influence of components"
+      yes: "plan_joint_display"
+
+    # === DISPLAY (M3) ===
+    plan_joint_display:
+      type: "decision"
+      question: "Have you planned for joint display of results?"
+      axioms: ["M3"]
+      evidence:
+        - "Side-by-side comparison tables"
+        - "Joint display matrices"
+        - "Integrated figures"
+      yes: "verify_both_standards"
+      no: "add_display_plan"
+
+    add_display_plan:
+      type: "action"
+      action: "Plan joint display format"
+      yes: "verify_both_standards"
+
+    # === QUALITY (M4, M5) ===
+    verify_both_standards:
+      type: "decision"
+      question: "Does method section meet BOTH quant AND qual standards?"
+      axioms: ["M4"]
+      evidence:
+        - "All Q1-Q3 requirements for quantitative"
+        - "All QL1-QL4 requirements for qualitative"
+      yes: "ensure_coherence"
+      no: "revise_components"
+
+    revise_components:
+      type: "action"
+      action: "Revise to meet both Quant and Qual standards"
+      yes: "ensure_coherence"
+
+    ensure_coherence:
+      type: "decision"
+      question: "Is the integration coherent and meaningful?"
+      axioms: ["M5"]
+      evidence:
+        - "Clear connection between components"
+        - "Integration serves research questions"
+        - "Added value from mixing demonstrated"
+      yes: "method_complete"
+      no: "strengthen_coherence"
+
+    strengthen_coherence:
+      type: "action"
+      action: "Strengthen integration coherence"
+      yes: "method_complete"
+
+    method_complete:
+      type: "result"
+      result: "Mixed Methods Section Complete"
+      description: "Method section meets JARS-Mixed requirements (M1-M5)"
+      axioms: ["M1", "M2", "M3", "M4", "M5"]

@@ -1,0 +1,381 @@
+# JARS (Journal Article Reporting Standards) - ASBE Format
+# Source: archive/original_md_axioms/jars_axiomatization.md
+
+meta:
+  domain: "JARS Reporting Standards"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "2024-12-30"
+  source: "APA Publication Manual, 7th Edition, Chapter 3"
+  description: |
+    Axiomatization of Journal Article Reporting Standards (JARS).
+    Covers requirements for quantitative, qualitative, and mixed methods research.
+
+axioms:
+  - id: "A1_completeness"
+    name: "Completeness Axiom"
+    one_liner: "Every article must report according to standards"
+
+    statement_natural: |
+      Every scholarly article must report its research according to
+      applicable reporting standards. No research can be presented
+      without following some standard for transparency.
+
+    statement_formal: |
+      ∀a ∈ Article, ∃S ∈ Standards such that Reports(a, S)
+
+    rationale: |
+      Standards exist to ensure transparency, reproducibility,
+      and fair evaluation. Ad hoc reporting is insufficient.
+
+    violations:
+      - description: "Article missing key method details"
+        content: |
+          Method: We collected data and analyzed it.
+          Results: The hypothesis was supported.
+        explanation: |
+          No sample size, no procedure details, no analysis method.
+          Cannot evaluate the research quality.
+
+    compliant:
+      - description: "Complete method section"
+        content: |
+          Participants: 120 undergraduates (60 female, M_age = 20.3)
+          recruited from introductory psychology courses.
+          Procedure: Participants completed a 30-item anxiety scale
+          (Cronbach's α = .89) followed by a reaction time task.
+          Analysis: We used a 2×2 ANOVA with anxiety group and
+          condition as factors.
+        explanation: |
+          Sample described, procedure detailed, analysis specified.
+          Meets minimum reporting standards.
+
+  - id: "A2_type_determination"
+    name: "Research Type Determination"
+    one_liner: "Research must be classified as quantitative, qualitative, or mixed"
+
+    statement_natural: |
+      Every research study is either quantitative, qualitative, or
+      mixed methods. Pure quantitative and pure qualitative are
+      mutually exclusive. Mixed methods combines elements of both.
+
+    statement_formal: |
+      ∀r ∈ Research,
+        (Quant(r) ∨ Qual(r) ∨ Mixed(r)) ∧
+        ¬(Quant(r) ∧ Qual(r))  // pure types are exclusive
+
+    violations:
+      - description: "Unclear research type"
+        content: |
+          We examined the phenomenon using various approaches
+          and collected different types of data.
+        explanation: |
+          Reader cannot determine if this is quantitative,
+          qualitative, or mixed methods research.
+
+    compliant:
+      - description: "Clear type declaration"
+        content: |
+          This mixed methods study employed a sequential explanatory
+          design. Quantitative surveys (N = 200) were followed by
+          qualitative interviews (n = 20) to explain statistical findings.
+        explanation: |
+          Explicitly states research type and design.
+
+  - id: "A3_section_requirement"
+    name: "Section Requirement Axiom"
+    one_liner: "All articles must have required sections"
+
+    statement_natural: |
+      Every article must have all required sections: Title, Abstract,
+      Introduction, Method, Results, and Discussion. Each section
+      serves a specific communicative function.
+
+    statement_formal: |
+      ∀a ∈ Article,
+        HasSection(a, Title) ∧ HasSection(a, Abstract) ∧
+        HasSection(a, Introduction) ∧ HasSection(a, Method) ∧
+        HasSection(a, Results) ∧ HasSection(a, Discussion)
+
+    violations:
+      - description: "Missing method section"
+        content: |
+          [Introduction: Research question...]
+          [Results: We found significant effects...]
+          [Discussion: These results suggest...]
+        explanation: |
+          No method section. Reader cannot evaluate how
+          data was collected or analyzed.
+
+    compliant:
+      - description: "All sections present"
+        content: |
+          Title: Effects of Sleep on Memory
+          Abstract: This study examined...
+          Introduction: Memory consolidation...
+          Method: Participants, Procedure, Analysis...
+          Results: Table 1 shows...
+          Discussion: These findings support...
+        explanation: |
+          All required sections present and labeled.
+
+  - id: "A4_information_completeness"
+    name: "Information Completeness Axiom"
+    one_liner: "Required information must be reported"
+
+    statement_natural: |
+      If a standard requires specific information to be reported,
+      articles following that standard must include it.
+      Omissions must be explicitly justified.
+
+    statement_formal: |
+      ∀s ∈ Standard, ∀i ∈ RequiredInfo(s), ∀a ∈ Article,
+        Follows(a, s) → Reports(a, i) ∨ JustifiedOmission(a, i)
+
+    violations:
+      - description: "Missing required statistical info"
+        content: |
+          The difference between groups was significant.
+        explanation: |
+          Missing: test statistic, df, p-value, effect size.
+          JARS-Quant requires complete statistical reporting.
+
+    compliant:
+      - description: "Complete statistical reporting"
+        content: |
+          The experimental group (M = 4.2, SD = 0.9) scored
+          significantly higher than the control group (M = 3.1, SD = 0.8),
+          t(98) = 6.42, p < .001, d = 1.21.
+        explanation: |
+          Means, SDs, test statistic, df, p-value, and effect size reported.
+
+  - id: "A5_transparency"
+    name: "Transparency Axiom"
+    one_liner: "All describable methods must be reported"
+
+    statement_natural: |
+      All methods that can be described must be reported.
+      Research procedures should be transparent enough for
+      readers to evaluate and, ideally, replicate.
+
+    statement_formal: |
+      ∀a ∈ Article, ∀m ∈ Methods(a),
+        Describable(m) → Reported(m, a)
+
+    violations:
+      - description: "Opaque analysis method"
+        content: |
+          Data were analyzed using proprietary software with
+          custom algorithms that cannot be disclosed.
+        explanation: |
+          Method is not transparent. Reader cannot evaluate
+          or replicate the analysis.
+
+    compliant:
+      - description: "Transparent analysis"
+        content: |
+          Data were analyzed using R (version 4.2.1) with the
+          lme4 package for mixed-effects models. Full analysis
+          code is available at [OSF link].
+        explanation: |
+          Software specified, code available, fully transparent.
+
+  - id: "A6_replicability"
+    name: "Replicability Axiom"
+    one_liner: "Quantitative research must enable replication"
+
+    statement_natural: |
+      Quantitative research must provide sufficient detail for
+      replication. Another researcher should be able to conduct
+      the same study based on the reported method.
+
+    statement_formal: |
+      ∀a ∈ Article where Quant(Research(a)),
+        ∃d ∈ Description(a) such that Sufficient(d, Replication)
+
+    rationale: |
+      Science advances through replication. Studies that cannot
+      be replicated cannot be verified or built upon.
+
+    violations:
+      - description: "Insufficient detail for replication"
+        content: |
+          Participants completed several questionnaires.
+          We then analyzed the data.
+        explanation: |
+          Which questionnaires? What analysis? Cannot replicate.
+
+    compliant:
+      - description: "Replication-ready description"
+        content: |
+          Participants completed the State-Trait Anxiety Inventory
+          (STAI Form Y; Spielberger, 1983), followed by the
+          Beck Depression Inventory-II (BDI-II; Beck et al., 1996).
+          Scores were analyzed using Pearson correlations in SPSS v.28.
+        explanation: |
+          Specific instruments cited, analysis software specified.
+          Another researcher can replicate this procedure.
+
+theorems:
+  - id: "T1_mixed_methods_dual_standards"
+    name: "Mixed Methods Dual Standards"
+    one_liner: "Mixed methods must satisfy both quant and qual standards"
+    derives_from: ["A2_type_determination", "A4_information_completeness"]
+
+    statement_natural: |
+      Mixed methods articles must satisfy both quantitative and
+      qualitative reporting standards for their respective components.
+
+    statement_formal: |
+      ∀a ∈ Article where Mixed(Research(a)),
+        ∃ quant_component, qual_component such that
+          Follows(quant_component, JARS-Quant) ∧
+          Follows(qual_component, JARS-Qual)
+
+    violations:
+      - description: "Mixed methods missing qual standards"
+        content: |
+          We conducted surveys (N = 200) and interviews (n = 15).
+          Survey results showed... [detailed statistics].
+          Interview themes included "challenge" and "growth."
+        explanation: |
+          Quant component has statistics, but qual component
+          lacks researcher reflexivity, coding process, saturation.
+
+    compliant:
+      - description: "Complete mixed methods reporting"
+        content: |
+          Quantitative phase: [full JARS-Quant reporting]
+          Qualitative phase: [full JARS-Qual reporting including
+          researcher positionality, coding process, saturation]
+          Integration: Qual findings explain quant patterns.
+        explanation: |
+          Both components meet their respective standards.
+
+  - id: "T2_standard_hierarchy"
+    name: "Standard Hierarchy Theorem"
+    one_liner: "Standards form a hierarchy from general to specific"
+    derives_from: ["A3_section_requirement", "A2_type_determination"]
+
+    statement_natural: |
+      Reporting standards form a hierarchy: general standards apply
+      to all research, type-specific standards apply to quant/qual/mixed,
+      and design-specific standards apply to particular designs.
+
+    statement_formal: |
+      GeneralStandards ⊆ TypeStandards ⊆ DesignStandards
+      |GeneralStandards| < |TypeStandards| < |DesignStandards|
+
+    violations:
+      - description: "Meeting only general standards"
+        content: |
+          [Has all sections, but lacks randomization info for RCT]
+        explanation: |
+          Meets general standards but fails design-specific RCT standards
+          (CONSORT: allocation concealment, blinding, flow diagram).
+
+    compliant:
+      - description: "Meeting all applicable standards"
+        content: |
+          [All sections present]
+          [JARS-Quant statistics complete]
+          [CONSORT diagram included for RCT]
+          [Randomization and blinding described]
+        explanation: |
+          General, type-specific, and design-specific standards all met.
+
+  - id: "T3_common_core"
+    name: "Common Core Theorem"
+    one_liner: "Some standards apply to all research types"
+    derives_from: ["A3_section_requirement"]
+
+    statement_natural: |
+      The intersection of all JARS types is non-empty. Certain
+      requirements (title, abstract, ethical compliance) apply
+      regardless of research type.
+
+    statement_formal: |
+      JARS-Quant ∩ JARS-Qual ∩ JARS-Mixed ≠ ∅
+      CommonCore = {Title, Abstract, Ethics, ConflictOfInterest}
+
+    violations:
+      - description: "Missing common core element"
+        content: |
+          [Complete quant study but no ethics statement]
+        explanation: |
+          Ethics reporting is required for all types.
+          Missing IRB/ethics approval statement.
+
+    compliant:
+      - description: "All common elements present"
+        content: |
+          Ethics: This study was approved by the University IRB
+          (Protocol #2024-0123). All participants provided informed consent.
+          Conflicts: The authors declare no conflicts of interest.
+        explanation: |
+          Common core elements reported regardless of method type.
+
+rules:
+  - id: "R1_standard_selection"
+    name: "Standard Selection Rule"
+    one_liner: "Research type determines applicable standards"
+    derives_from: ["A2_type_determination", "A4_information_completeness"]
+
+    statement_natural: |
+      The research type determines which set of standards apply.
+      Authors must identify their research type and apply the
+      corresponding JARS checklist.
+
+    statement_formal: |
+      ResearchType(a) = t → ApplicableStandards(a) = JARS(t) ∪ GeneralStandards
+
+    violations:
+      - description: "Wrong standards applied"
+        content: |
+          [Qualitative interview study reporting power analysis]
+        explanation: |
+          Power analysis is for quantitative studies.
+          Qualitative studies report saturation instead.
+
+    compliant:
+      - description: "Correct standards for type"
+        content: |
+          [Qualitative study]: Saturation was reached after 15
+          interviews when no new themes emerged.
+          [Quantitative study]: Power analysis indicated N = 100
+          for detecting medium effects (d = 0.5) at α = .05.
+        explanation: |
+          Each type applies its appropriate standards.
+
+  - id: "R2_checklist_verification"
+    name: "Checklist Verification Rule"
+    one_liner: "Verify all checklist items before submission"
+    derives_from: ["A4_information_completeness"]
+
+    statement_natural: |
+      Authors should verify all items on the applicable JARS
+      checklist before submission. Editors and reviewers should
+      use the checklist for evaluation.
+
+    statement_formal: |
+      ∀s ∈ ApplicableStandards(a),
+        CheckAll(RequiredInfo(s), a) before Submit(a)
+
+    violations:
+      - description: "Submission without checklist review"
+        content: |
+          [Article submitted with multiple JARS violations]
+        explanation: |
+          Pre-submission checklist review would have caught omissions.
+
+    compliant:
+      - description: "Checklist-verified submission"
+        content: |
+          JARS-Quant Checklist:
+          ✓ Sample size and power
+          ✓ Measures with reliability
+          ✓ Complete statistics
+          ✓ Effect sizes
+          [All items verified before submission]
+        explanation: |
+          Systematic verification ensures completeness.

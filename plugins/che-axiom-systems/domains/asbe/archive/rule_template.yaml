@@ -1,0 +1,67 @@
+# ASBE Rule Template
+# Copy and modify this template when creating new rules
+
+---
+# Required fields marked with [R], optional with [O]
+
+- id: "PREFIX_number_descriptor"    # [R] A1, T2, C3, R4 etc.
+  name: "Human Readable Name"       # [O] For documentation
+  one_liner: "Brief summary"        # [O] Max 100 chars
+
+  # The rule in plain language [R]
+  statement_natural: |
+    Write a clear, complete statement of the rule
+    in natural language that any reader can understand.
+    Use multiple sentences if needed.
+
+  # The rule in formal notation [R]
+  statement_formal: |
+    ∀x ∈ Domain,
+      Precondition(x) → Postcondition(x)
+
+  # Why this rule exists [O]
+  rationale: |
+    Explain the motivation behind this rule.
+    What problem does it solve? Why is it important?
+
+  # Parent rules this derives from [R for non-axioms]
+  derives_from:
+    - "A1"  # List parent rule IDs
+    - "A2"
+
+  # Examples that VIOLATE this rule [R, min 1]
+  violations:
+    - description: "Brief label for this violation"
+      content: |
+        The actual example content that violates the rule.
+        This should be realistic and clearly problematic.
+      context: "Optional situational context"  # [O]
+      explanation: |
+        Explain why this example violates the rule.
+        Be specific about what aspect is wrong.
+
+    # Add more violation examples as needed
+    - description: "Another violation type"
+      content: "..."
+      explanation: "..."
+
+  # Examples that COMPLY with this rule [R, min 1]
+  compliant:
+    - description: "Brief label for this good example"
+      content: |
+        The actual example content that satisfies the rule.
+        This should demonstrate best practice.
+      context: "Optional situational context"  # [O]
+      explanation: |
+        Explain why this example complies with the rule.
+        Highlight what makes it good.
+
+    # Add more compliant examples as needed
+    - description: "Another compliant case"
+      content: "..."
+      explanation: "..."
+
+  # Optional categorization [O]
+  tags:
+    - "category1"
+    - "category2"

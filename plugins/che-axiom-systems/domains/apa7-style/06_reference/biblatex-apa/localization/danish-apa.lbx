@@ -1,0 +1,257 @@
+\ProvidesFile{danish-apa.lbx}[2023/03/20\space v9.17\space APA biblatex localisation]
+\InheritBibliographyExtras{danish}
+
+\NewBibliographyString{publication}
+\NewBibliographyString{jourarticle}
+\NewBibliographyString{revisededition}
+\NewBibliographyString{typechair}
+\NewBibliographyString{typechairs}
+\NewBibliographyString{typevolume}
+\NewBibliographyString{typevolumes}
+\NewBibliographyString{typeseries}
+\NewBibliographyString{typeseriess}
+\NewBibliographyString{typevolseries}
+\NewBibliographyString{typevolseriess}
+\NewBibliographyString{on}
+\NewBibliographyString{retrieved}
+\NewBibliographyString{available}
+\NewBibliographyString{from}
+\NewBibliographyString{archivedat}
+\NewBibliographyString{origyear}
+\NewBibliographyString{reviewof}
+\NewBibliographyString{with}
+\NewBibliographyString{supplement}
+\NewBibliographyString{commenton}
+\NewBibliographyString{manunpub}
+\NewBibliographyString{maninprep}
+\NewBibliographyString{mansub}
+\NewBibliographyString{producer}
+\NewBibliographyString{producers}
+\NewBibliographyString{execproducer}
+\NewBibliographyString{execproducers}
+\NewBibliographyString{execdirector}
+\NewBibliographyString{execdirectors}
+\NewBibliographyString{director}
+\NewBibliographyString{directors}
+\NewBibliographyString{writer}
+\NewBibliographyString{writers}
+\NewBibliographyString{host}
+\NewBibliographyString{hosts}
+\NewBibliographyString{guestexpert}
+\NewBibliographyString{guestexperts}
+\NewBibliographyString{narrator}
+\NewBibliographyString{narrators}
+\NewBibliographyString{film}
+\NewBibliographyString{tvseries}
+\NewBibliographyString{tvepisode}
+\NewBibliographyString{video}
+\NewBibliographyString{song}
+\NewBibliographyString{album}
+\NewBibliographyString{podcast}
+\NewBibliographyString{podcastepisode}
+\NewBibliographyString{interview}
+\NewBibliographyString{speech}
+\NewBibliographyString{lithograph}
+\NewBibliographyString{map}
+\NewBibliographyString{lecturenotes}
+\NewBibliographyString{powerpoint}
+\NewBibliographyString{photograph}
+\NewBibliographyString{photographs}
+\NewBibliographyString{present}
+\NewBibliographyString{painting}
+\NewBibliographyString{article}
+\NewBibliographyString{unitednations}
+\NewBibliographyString{charter}
+\NewBibliographyString{ofthe}
+\NewBibliographyString{tothe}
+
+\DeclareBibliographyStrings{%
+  inherit          = {danish},
+  jourarticle      = {{artikel}{artikel}},
+  tothe            = {{til}{til}},%FIXME - I am unsure of the context in which this would appear
+  ofthe            = {{af}{af}},%FIXME - I am unsure of the context in which this would appear
+  unitednations    = {{Forenede\space Nationer}{FN}},
+  charter          = {{pagt}{pagt}},
+  article          = {{artikel}{art\adddot}},
+  painting         = {{maleri}{maleri}},
+  present          = {{pr{\ae}sentation}{pr{\ae}sent\adddot}},
+  song             = {{sang}{sang}},
+  album            = {{album}{album}},
+  map              = {{landkort}{landkort}},
+  photograph       = {{fotografi}{fotografi}},
+  photographs      = {{fotografier}{fotografier}},
+  powerpoint       = {{PowerPoint-slides}{PowerPoint-slides}},
+  lecturenotes     = {{forel{\ae}sningsnoter}{forel{\ae}sningsnoter}},
+  podcast          = {{podcast}{podcast}},
+  podcastepisode   = {{podcastafsnit}{podcastafsnit}},
+  interview        = {{interview}{interv\adddot}},
+  speech           = {{tale}{tale}},
+  lithograph       = {{litografi}{litgr\adddot}},
+  video            = {{video}{video}},
+  film             = {{film}{film}},
+  tvseries         = {{tv-serie}{tv-serie}},
+  tvepisode        = {{tv-serie-afsnit}{tv-serie-afsnit}},
+  narrator         = {{indtaler}{indt\adddot}},
+  narrators        = {{indtalere}{indt\adddot}},
+  producer         = {{producer}{producer}},
+  producers        = {{producere}{producere}},
+  execproducer     = {{ledende\space producer}{led\addot\space prod\adddot}},
+  execproducers    = {{ledende\space producere}{led\adddotspace prod\adddot}},
+  execdirector     = {{ledende\space instrukt{\o}r}{led\adddotspace instr\adddot}},
+  execdirectors    = {{ledende\space instrukt{\o}rer}{led\adddotspace instr\adddot}},
+  director         = {{instrukt{\o}r}{instr\adddot}},
+  directors        = {{instrukt{\o}rer}{instr\adddot}},
+  writer           = {{manuskriptforfatter}{manuskriptforf\adddot}},
+  writers          = {{manuskriptforfattere}{manuskriptforf\adddot}},
+  host             = {{v{\ae}rt}{v{\ae}rt}},
+  hosts            = {{v{\ae}rter}{v{\ae}rter}},
+  guestexpert      = {{g{\ae}steekspert}{g{\ae}steeksp\adddot}},
+  guestexperts     = {{g{\ae}steeksperter}{g{\ae}steeksp\adddot}},
+  with             = {{med}{med}},
+  manunpub         = {{upubliceret}{upubl\adddot}},
+  maninprep        = {{under\space udarbejdelse}{under\space udarbejdelse}},%similar to standard biblatex "inpreparation" translation in danish.lbx
+  mansub           = {{indsendt\space til\space bed{\o}mmelse}{indsendt\space til\space bed{\o}mmelse}},
+  supplement       = {{supplement}{suppl\adddot}},
+  part             = {{del}{del}},
+  revisededition   = {{revideret\space udgave}{rev\adddotspace udg\adddot}},
+  commenton        = {{kommentar\space p{\aa}}{kommentar\space p{aa}}},% in the context: <comment on the blog post 'xxx'>
+  page             = {{side}{{}s\adddot}},
+  pages            = {{side}{{}s\adddot}},% in the context <side (s.) 16–17>, English: <pages (pp.) 16–17>. Not plural in Danish.
+  on               = {{p{\aa}}{p{\aa}}},
+  retrieved        = {{hentet}{hentet}},
+  available        = {{tilg{\ae}ngelig}{tilg{\ae}ngelig}},
+  from             = {{fra}{fra}},
+  archivedat       = {{arkiveret\space ved}{arkiveret\space ved}},
+  reviewof         = {{anmeldelse\space af}{anmeldelse\space af}},
+  paragraph        = {{afsnit}{afs\adddot}},
+  paragraphs       = {{afsnit}{afs\adddot}},
+  january          = {{januar}{januar}},%APA does not like abbreviating months, which the standard biblatex.lbx files do. Thus the months are duplicated here.
+  february         = {{februar}{februar}},
+  march            = {{marts}{marts}},
+  april            = {{april}{april}},
+  may              = {{maj}{maj}},
+  june             = {{juni}{juni}},
+  july             = {{juli}{juli}},
+  august           = {{august}{august}},
+  september        = {{september}{september}},
+  october          = {{oktober}{oktober}},
+  november         = {{november}{november}},
+  december         = {{december}{december}},
+%  mathesis         = {{Kandidatspeciale}{Kandidatspeciale}},%not necessary as this translation is already provided from the standard biblatex danish.lbx repo
+%  phdthesis        = {{PhD-afhandling}{PhD-afhandling}},%not necessary as this translation is already provided from the standard biblatex danish.lbx repo
+  origyear         = {{oprindeligt\space offentliggjort}{opr\adddotspace off\adddot}},
+  typechair        = {{ordstyrer}{ordstyrer}},
+  typechairs       = {{ordstyrere}{ordstyrere}},
+  typevolume       = {{bindredakt{\o}r}{bindred\adddot}},%or 'symposiumredakt{\o}r'
+  typevolumes      = {{bindredakt{\o}rer}{bindred\adddot}},%or 'symposiumredakt{\o}r'
+  typeseries       = {{serieredakt{\o}r}{seriered\adddot}},
+  typeseriess      = {{serieredakt{\o}rer}{seriered\adddot}},
+  typevolseries    = {{serie- og bindredakt{\o}r}{serie- og bindred\adddot}},
+  typevolseriess   = {{serie- og bindredakt{\o}rer}{serie- og bindred\adddot}},
+  annodomini       = {{e\adddot v\adddot t\adddot}{e\adddot v\adddot t\adddot}},%e.v.t. to keep it religiously neutral
+  beforechrist     = {{f\adddot v\adddot t\adddot}{f\adddot v\adddot t\adddot}},%f.v.t. to keep it religiously neutral
+  commonera        = {{v\adddot t\adddot}{v\adddot t\adddot}},%vor tidsregning, not applicable in Danish
+  beforecommonera  = {{f\adddot v\adddot t\adddot}{f\adddot v\adddot t\adddot}},
+  publication   = {{publikation}{publikation}}
+}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Drop end* when they are the same as *
+% You must use \printdate to get here otherwise it will be ignored
+
+\DeclareBibliographyExtras{%
+  \def\urldatecomma{\addcomma\addspace}%
+  \protected\def\mkbibdateapalong#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\iffieldundef{#3}%
+        {}%
+        {\addcomma\addspace}%
+       \stripzeros{\thefield{#4}}}%
+     \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}%
+        {\iffieldundef{#1}
+          {}
+          {\addspace}}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongextra#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldbibstring{#1}{\bibncpstring{\thefield{#1}}}{\thefield{#1}}\printfield{extradate}}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \stripzeros{\thefield{#4}}}%
+    \iffieldundef{#3}% MONNTH
+      {}%
+      {\iffieldundef{#4}
+        {\iffieldundef{#1}
+          {}
+          {\addspace}}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}}%
+  \protected\def\mkbibdateapalongmdy#1#2#3#4{%
+    % As per 10.1, Articles only have year
+    \ifboolexpr{ test {\ifentrytype{article}}
+                 and not test {\iffieldequalstr{entrysubtype}{nonacademic}} }
+      {\clearfield{labelmonth}%
+       \clearfield{labelday}}
+      {}%
+    \iffieldundef{#2}% YEARDIVISION
+      {}%
+      {\iffieldundef{#1}%
+        {}%
+        {\addcomma\addspace}%
+       \iffieldbibstring{#2}{\bibcplstring{\thefield{#2}}}{\thefield{#2}}}%
+    \iffieldundef{#4}% DAY
+      {}%
+      {\stripzeros{\thefield{#4}}}%
+    \iffieldundef{#3}% MONTH
+      {}%
+      {\iffieldundef{#4}%
+        {}%
+        {\adddot\addspace}%
+       \mkbibmonth{\thefield{#3}}}%
+    \iffieldundef{#1}% YEAR
+      {}%
+      {\iffieldundef{#3}%
+        {}%
+        {\addspace}%
+       \thefield{#1}}}}
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

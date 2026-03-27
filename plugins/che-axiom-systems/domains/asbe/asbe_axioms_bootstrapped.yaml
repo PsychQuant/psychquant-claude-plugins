@@ -1,0 +1,670 @@
+# ASBE Axioms — Bootstrapped Version
+# ASBE 公理的自舉版本：用 ASBE 格式定義 ASBE 本身
+#
+# This file demonstrates ASBE "eating its own dog food" —
+# the methodology is specified using its own format.
+
+meta:
+  domain: "ASBE Methodology"
+  version: "1.0.0"
+  author: "Che Cheng"
+  created: "2024-12-30"
+  description: |
+    Self-referential specification: ASBE axioms written in ASBE format.
+    This bootstrapping demonstrates that ASBE can specify itself,
+    providing a consistency check for the methodology.
+
+axioms:
+
+  - id: "A1_dual_expression"
+    name: "Dual Expression Axiom"
+    name_zh: "雙層表達公理"
+    one_liner: "Every rule needs both natural and formal expression"
+
+    statement_natural: |
+      Every rule in an ASBE specification must have both:
+      (1) A natural language expression that humans can read
+      (2) A formal expression that precisely defines the rule
+
+    statement_formal: |
+      ∀R ∈ Rule,
+        ∃ natural(R) : String ∧
+        ∃ formal(R) : String ∧
+        natural(R) ≠ ∅ ∧
+        formal(R) ≠ ∅
+
+    rationale: |
+      Natural language provides accessibility and intuition.
+      Formal notation provides precision and verifiability.
+      Neither alone suffices for reliable interpretation by
+      both humans and LLMs.
+
+    violations:
+      - description: "Rule with only natural language"
+        content: |
+          - id: "R1"
+            statement_natural: "Paragraphs should be clear"
+            # Missing: statement_formal
+        explanation: |
+          Without formal expression, "clear" is ambiguous.
+          What counts as clear? No precise boundary defined.
+
+      - description: "Rule with only formal notation"
+        content: |
+          - id: "R2"
+            statement_formal: "∀p ∈ P, |S(p)| ≤ 7"
+            # Missing: statement_natural
+        explanation: |
+          Formal notation alone is opaque to non-experts.
+          Reader cannot grasp the intent without explanation.
+
+    compliant:
+      - description: "Rule with both layers"
+        content: |
+          - id: "R3"
+            statement_natural: "Keep paragraphs to 7 sentences or fewer"
+            statement_formal: "∀p ∈ Paragraphs, |Sentences(p)| ≤ 7"
+        explanation: |
+          Natural language conveys intent; formal notation
+          provides precise, unambiguous boundary.
+
+  - id: "A2_example_grounding"
+    name: "Example Grounding Axiom"
+    name_zh: "範例錨定公理"
+    one_liner: "Every rule needs violation and compliant examples"
+
+    statement_natural: |
+      Every rule must be accompanied by at least one example
+      that violates it and at least one example that satisfies it.
+
+    statement_formal: |
+      ∀R ∈ Rule,
+        |violations(R)| ≥ 1 ∧
+        |compliant(R)| ≥ 1
+
+    rationale: |
+      Abstract rules are insufficient for reliable interpretation.
+      Concrete examples anchor understanding by showing the
+      boundary between acceptable and unacceptable cases.
+      LLMs particularly benefit from example-based learning.
+
+    violations:
+      - description: "Rule without any examples"
+        content: |
+          - id: "R4"
+            statement_natural: "Use active voice"
+            statement_formal: "∀s, Voice(s) = Active"
+            # Missing: violations and compliant
+        explanation: |
+          Reader cannot verify their interpretation.
+          Edge cases remain undefined.
+
+      - description: "Rule with only positive examples"
+        content: |
+          - id: "R5"
+            statement_natural: "Use active voice"
+            compliant:
+              - content: "The researcher analyzed the data"
+            # Missing: violations
+        explanation: |
+          Without counterexamples, the boundary is unclear.
+          What exactly counts as passive voice violation?
+
+    compliant:
+      - description: "Rule with both violation and compliant examples"
+        content: |
+          - id: "R6"
+            statement_natural: "Use active voice"
+            statement_formal: "∀s, Voice(s) = Active"
+            violations:
+              - content: "The data was analyzed by the researcher"
+                explanation: "Passive construction obscures agent"
+            compliant:
+              - content: "The researcher analyzed the data"
+                explanation: "Active voice clearly identifies agent"
+        explanation: |
+          Both positive and negative cases are shown.
+          Reader can interpolate the rule boundary.
+
+  - id: "A3_hierarchical_derivation"
+    name: "Hierarchical Derivation Axiom"
+    name_zh: "層級推導公理"
+    one_liner: "Rules form a DAG from axioms to operational rules"
+
+    statement_natural: |
+      Rules in an ASBE specification form a directed acyclic graph where:
+      - Axioms are roots (no parents)
+      - Theorems derive from axioms
+      - Corollaries derive from theorems
+      - Operational rules derive from any of the above
+      Every non-axiom must specify its parent rules.
+
+    statement_formal: |
+      ∀R ∈ Rule,
+        R.type ∈ {axiom, theorem, corollary, rule} ∧
+        (R.type = axiom → derives_from(R) = ∅) ∧
+        (R.type ≠ axiom → derives_from(R) ≠ ∅) ∧
+        ¬∃ cycle in derivation_graph
+
+    rationale: |
+      Hierarchical structure enables:
+      1. Traceability: Every rule can be justified
+      2. Consistency checking: Contradictions are detectable
+      3. Minimality: Core axioms are clearly identified
+      4. Learning: Understanding flows from fundamentals
+
+    violations:
+      - description: "Theorem without derivation source"
+        content: |
+          theorems:
+            - id: "T1"
+              statement_natural: "Begin sentences with known info"
+              # Missing: derives_from
+        explanation: |
+          Why is this true? What axioms support it?
+          Without derivation, it's an unsupported claim.
+
+      - description: "Circular derivation"
+        content: |
+          - id: "T1"
+            derives_from: ["T2"]
+          - id: "T2"
+            derives_from: ["T1"]
+        explanation: |
+          Circular reasoning provides no foundation.
+          Violates DAG structure requirement.
+
+    compliant:
+      - description: "Properly derived theorem"
+        content: |
+          axioms:
+            - id: "A1"
+              statement_natural: "Writing transfers ideas to readers"
+          theorems:
+            - id: "T1"
+              derives_from: ["A1"]
+              statement_natural: "Begin with known info for smooth transfer"
+        explanation: |
+          T1 explicitly derives from A1.
+          The justification chain is traceable.
+
+  - id: "A4_minimal_axiom_set"
+    name: "Minimal Axiom Set Axiom"
+    name_zh: "最小公理集公理"
+    one_liner: "Axioms should be independent, consistent, and sufficient"
+
+    statement_natural: |
+      The set of axioms should be:
+      (1) Independent: No axiom is derivable from others
+      (2) Consistent: No contradictions can be derived
+      (3) Sufficient: All domain rules can be derived
+
+    statement_formal: |
+      Let A = {a₁, a₂, ..., aₙ} be axiom set.
+
+      Independence:
+        ∀aᵢ ∈ A, aᵢ ∉ Closure(A \ {aᵢ})
+
+      Consistency:
+        ¬∃φ such that φ ∈ Closure(A) ∧ ¬φ ∈ Closure(A)
+
+      Sufficiency:
+        ∀R ∈ DomainRules, R ∈ Closure(A)
+
+    rationale: |
+      Minimality prevents redundancy and clarifies foundations.
+      A bloated axiom set obscures what is truly fundamental.
+      Independence ensures each axiom contributes uniquely.
+
+    violations:
+      - description: "Redundant axiom"
+        content: |
+          axioms:
+            - id: "A1"
+              statement: "All paragraphs should be clear"
+            - id: "A2"
+              statement: "Paragraphs must be understandable"
+              # This is derivable from A1
+        explanation: |
+          A2 adds nothing beyond A1.
+          It should be removed or merged.
+
+      - description: "Contradictory axioms"
+        content: |
+          axioms:
+            - id: "A1"
+              statement: "Be concise"
+            - id: "A2"
+              statement: "Include all relevant details"
+              # These can contradict in practice
+        explanation: |
+          Without priority or scope rules, these axioms
+          may produce contradictory guidance.
+
+    compliant:
+      - description: "Minimal, independent axiom set"
+        content: |
+          axioms:
+            - id: "A1"
+              statement: "Writing transfers ideas (purpose)"
+            - id: "A2"
+              statement: "Reader comprehension is the measure (focus)"
+            - id: "A3"
+              statement: "One idea per unit (unity)"
+          # Each captures a distinct, non-derivable principle
+        explanation: |
+          Three axioms, each addressing a different aspect.
+          None can be derived from the others.
+
+  - id: "A5_semantic_equivalence"
+    name: "Semantic Equivalence Axiom"
+    name_zh: "語意等價公理"
+    one_liner: "Natural and formal expressions must mean the same thing"
+
+    statement_natural: |
+      The natural language expression and formal expression
+      of a rule must be semantically equivalent—they must
+      express the same rule, not different rules.
+
+    statement_formal: |
+      ∀R ∈ Rule,
+        Meaning(natural(R)) ≡ Meaning(formal(R))
+
+      Where ≡ denotes semantic equivalence:
+        ∀ situation s,
+          Applies(natural(R), s) ⟺ Applies(formal(R), s)
+
+    rationale: |
+      If natural and formal layers express different rules,
+      readers will be confused about which to follow.
+      The two layers are alternate representations, not
+      different specifications.
+
+    violations:
+      - description: "Mismatched natural and formal"
+        content: |
+          - id: "R7"
+            statement_natural: "Keep paragraphs short"
+            statement_formal: "∀p, |words(p)| < 100"
+        explanation: |
+          "Short" is vague; "<100 words" is precise.
+          Are they the same? A 95-word paragraph is
+          "compliant" formally but may not feel "short".
+          The mismatch creates confusion.
+
+    compliant:
+      - description: "Aligned natural and formal"
+        content: |
+          - id: "R8"
+            statement_natural: "Keep paragraphs under 100 words"
+            statement_formal: "∀p ∈ Paragraphs, |words(p)| < 100"
+        explanation: |
+          Natural language explicitly states the same
+          threshold as the formal notation.
+          No interpretation gap exists.
+
+theorems:
+
+  - id: "T1_counterexample_power"
+    name: "Counterexample Power Theorem"
+    name_zh: "反例效力定理"
+    one_liner: "One good violation beats pages of explanation"
+    derives_from: ["A2_example_grounding"]
+
+    statement_natural: |
+      A single well-chosen violation example can disambiguate
+      a rule more effectively than additional natural language
+      elaboration.
+
+    statement_formal: |
+      ∀R ∈ Rule, ∀ elaboration e,
+        InformationGain(violation_example) ≥ InformationGain(e)
+
+      When: violation_example ∈ BoundaryCase(R)
+
+    rationale: |
+      Derived from A2: Examples operate in the same domain as
+      actual use cases, while natural language operates in a
+      meta-domain requiring interpretation. Boundary-case
+      examples directly show where the rule cuts.
+
+    violations:
+      - description: "Over-relying on prose explanation"
+        content: |
+          statement_natural: |
+            Sentences should flow smoothly, connecting ideas
+            in a way that feels natural to the reader, with
+            each sentence building on the previous one and
+            leading to the next, creating a sense of logical
+            progression... [500 more words]
+          violations: []  # No examples!
+        explanation: |
+          Despite lengthy explanation, reader still uncertain
+          about what counts as "smooth flow" in practice.
+
+    compliant:
+      - description: "Concise prose with decisive example"
+        content: |
+          statement_natural: "Sentences should flow smoothly"
+          violations:
+            - content: |
+                Mitochondria produce energy. I like pizza.
+                The project deadline is Friday.
+              explanation: "Abrupt topic jumps break flow"
+        explanation: |
+          The violation example instantly clarifies what
+          "flow" means better than paragraphs of prose.
+
+  - id: "T2_layer_complementarity"
+    name: "Layer Complementarity Theorem"
+    name_zh: "層次互補定理"
+    one_liner: "Natural and formal layers rescue each other"
+    derives_from: ["A1_dual_expression", "A5_semantic_equivalence"]
+
+    statement_natural: |
+      When the natural language expression is ambiguous,
+      the formal expression resolves the ambiguity.
+      When the formal expression is opaque, the natural
+      language provides intuition.
+
+    statement_formal: |
+      ∀R ∈ Rule,
+        Ambiguous(natural(R)) → Resolves(formal(R)) ∧
+        Opaque(formal(R)) → Clarifies(natural(R))
+
+    rationale: |
+      From A1 (both layers required) and A5 (semantic equivalence):
+      Readers with different backgrounds can enter understanding
+      through different layers. Domain experts read formal;
+      newcomers read natural. Both arrive at the same rule.
+
+    violations:
+      - description: "Both layers equally unclear"
+        content: |
+          statement_natural: "Make it flow well"
+          statement_formal: "Flow(text) = Good"
+        explanation: |
+          Neither layer provides clarity.
+          Formal notation merely restates the vague term.
+
+    compliant:
+      - description: "Layers complement each other"
+        content: |
+          statement_natural: "Start sentences with familiar info"
+          statement_formal: "∀s₁,s₂ consecutive, Begin(s₂) ⊆ Info(s₁)"
+        explanation: |
+          "Familiar info" is clarified by formal subset relation.
+          Formal notation is humanized by "familiar" intuition.
+
+# =============================================================================
+# META-PRINCIPLES
+# =============================================================================
+# Meta-principles are design guidelines for creating ASBE specifications.
+# They are not axioms (not foundational) but practical wisdom for ASBE authors.
+
+meta_principles:
+
+  - id: "M1_llm_optimization"
+    name: "LLM Optimization Principle"
+    name_zh: "LLM 優化原則"
+    one_liner: "Structure for reliable LLM interpretation"
+
+    statement_natural: |
+      ASBE specifications should be structured for reliable LLM interpretation:
+        - Use consistent YAML/JSON structure
+        - Avoid ambiguous references
+        - Provide explicit field names
+        - Include type annotations where applicable
+
+    statement_formal: |
+      ∀ Spec ∈ ASBE,
+        Consistent(Structure(Spec)) ∧
+        ¬Ambiguous(References(Spec)) ∧
+        Explicit(FieldNames(Spec))
+
+    rationale: |
+      LLMs are primary consumers of ASBE specifications.
+      Structural consistency reduces parsing errors.
+      Explicit naming eliminates pronoun resolution failures.
+
+    violations:
+      - description: "Ambiguous references"
+        content: |
+          axioms:
+            - id: A1
+              statement: "It must be clear"
+            - id: A2
+              statement: "This follows from the above"
+        explanation: |
+          "It" and "the above" are ambiguous references.
+          LLMs may incorrectly resolve these pronouns.
+
+      - description: "Inconsistent structure"
+        content: |
+          axioms:
+            - id: A1
+              desc: "First rule"
+            - name: A2
+              description: "Second rule"
+        explanation: |
+          Field names switch between 'desc' and 'description'.
+          Field 'id' becomes 'name'. LLMs will fail to parse reliably.
+
+    compliant:
+      - description: "Consistent, explicit structure"
+        content: |
+          axioms:
+            - id: "A1_clarity"
+              statement_natural: "All text must be clear"
+              statement_formal: "∀t ∈ Text, Clear(t)"
+            - id: "A2_consistency"
+              statement_natural: "All formats must be consistent"
+              statement_formal: "∀f₁,f₂ ∈ Format, Compatible(f₁,f₂)"
+        explanation: |
+          Consistent field names (id, statement_natural, statement_formal).
+          No ambiguous references. Each axiom is self-contained.
+
+  - id: "M2_human_readability"
+    name: "Human Readability Principle"
+    name_zh: "人類可讀性原則"
+    one_liner: "Remain human-readable despite LLM optimization"
+
+    statement_natural: |
+      Despite LLM optimization, ASBE specifications must remain
+      human-readable and human-writable:
+        - Use meaningful identifiers
+        - Include prose rationales
+        - Maintain logical ordering
+
+    statement_formal: |
+      ∀ Spec ∈ ASBE,
+        Meaningful(Identifiers(Spec)) ∧
+        ∃ Rationale(r) for each Rule(r) ∧
+        LogicalOrder(Spec)
+
+    rationale: |
+      Humans author and review ASBE specifications.
+      LLM optimization must not sacrifice human comprehension.
+      The dual audience (human + LLM) is ASBE's core value.
+
+    violations:
+      - description: "Cryptic identifiers"
+        content: |
+          axioms:
+            - id: "x7f2"
+              statement_natural: "..."
+            - id: "q9z1"
+              derives_from: ["x7f2"]
+        explanation: |
+          Identifiers like "x7f2" are meaningless to humans.
+          No rationale provided. Readers cannot understand "why".
+
+      - description: "Random ordering"
+        content: |
+          theorems:
+            - id: T3_advanced
+            - id: T1_basic
+          axioms:
+            - id: A2_second
+            - id: A1_first
+        explanation: |
+          Theorems listed before axioms they depend on.
+          Numbering doesn't match order. Confusing to read.
+
+    compliant:
+      - description: "Human-friendly specification"
+        content: |
+          axioms:
+            - id: "A1_mass_conservation"
+              statement_natural: "Weight change equals intake minus output"
+              rationale: "Fundamental thermodynamic principle"
+
+          theorems:
+            - id: "T1_daily_fluctuation"
+              derives_from: ["A1_mass_conservation"]
+              rationale: "Explains why weight varies within a day"
+        explanation: |
+          Meaningful IDs (mass_conservation, daily_fluctuation).
+          Rationales explain the "why". Logical order (axioms → theorems).
+
+  - id: "M3_incremental_elaboration"
+    name: "Incremental Elaboration Principle"
+    name_zh: "漸進式擴展原則"
+    one_liner: "Start minimal, grow as needed"
+
+    statement_natural: |
+      An ASBE specification can start minimal and grow:
+        - Begin with core axioms
+        - Add theorems as patterns emerge
+        - Expand examples as edge cases are discovered
+        - The specification evolves while remaining consistent
+
+    statement_formal: |
+      ∀ Spec ∈ ASBE, ∃ sequence [Spec₀, Spec₁, ..., Specₙ]
+      where:
+        Spec₀ = MinimalValid(Spec)
+        Specᵢ₊₁ = Specᵢ ∪ {new_rule | Consistent(Specᵢ, new_rule)}
+        Specₙ = Spec
+
+    rationale: |
+      Perfect specifications don't emerge fully formed.
+      Real-world use reveals edge cases and missing rules.
+      ASBE supports iterative refinement without breaking changes.
+
+    violations:
+      - description: "All-or-nothing specification"
+        content: |
+          # Version 1.0 - Complete specification, 500 rules
+          # No intermediate versions exist
+          # Cannot add new rules without major rewrite
+        explanation: |
+          Monolithic specification is hard to review and extend.
+          New discoveries require restructuring the entire system.
+
+    compliant:
+      - description: "Incrementally evolved specification"
+        content: |
+          # v0.1 - Core axioms only (A1-A3)
+          # v0.2 - Added theorems T1-T2 based on usage
+          # v0.3 - Added edge case examples after user feedback
+          # v1.0 - Stable release with validated rule set
+
+          revision_history:
+            - version: "0.1"
+              changes: "Initial axiom set"
+            - version: "0.2"
+              changes: "Derived theorems from observed patterns"
+            - version: "0.3"
+              changes: "Added violation examples for ambiguous cases"
+        explanation: |
+          Specification grew organically from minimal core.
+          Each version is valid ASBE. Changes are documented.
+
+  - id: "M4_dual_format"
+    name: "Dual Format Representation Principle"
+    name_zh: "雙格式表達原則"
+    one_liner: "YAML for structure + Markdown for derivation"
+
+    statement_natural: |
+      Complex specifications benefit from maintaining two parallel formats:
+        (1) Structured format (YAML/JSON): Skeleton/index layer
+        (2) Prose format (Markdown): Flesh/derivation layer
+
+      Each format serves distinct cognitive purposes:
+        - YAML: Quick indexing, machine-parseable, structural overview
+        - Markdown: Visual diagrams, narrative flow, contextual explanation
+
+      Updates to one format must propagate to the other.
+
+    statement_formal: |
+      Spec = (Spec_structured, Spec_prose)
+      where:
+        Spec_structured ⊇ {all_rule_ids, formal_statements, hierarchy}
+        Spec_prose ⊇ {derivations, diagrams, examples_in_context, rationales}
+
+      Synchronization requirement:
+        ∀ axiom a: a ∈ Spec_structured ⟺ a ∈ Spec_prose
+
+    rationale: |
+      Different readers and use cases benefit from different formats:
+        - LLMs benefit from structured YAML for reliable parsing
+        - Humans benefit from Markdown for narrative understanding
+        - Quick reference uses YAML index
+        - Deep learning uses Markdown derivations
+
+      Maintaining both ensures the specification serves all audiences.
+
+    violations:
+      - description: "YAML-only specification lacking context"
+        content: |
+          # weight_control_axioms.yaml
+          axioms:
+            - id: A1_mass_conservation
+              formal: "ΔW = Σin - Σout"
+          # No prose explanation, no derivation, no diagrams
+        explanation: |
+          While machine-parseable, this provides no context for
+          why mass conservation matters or how to apply it.
+          Edge cases and visual intuition are missing.
+
+      - description: "Markdown-only specification lacking structure"
+        content: |
+          # Weight Control Theory
+
+          The fundamental principle is that weight change equals
+          intake minus output. This follows from thermodynamics...
+
+          [Continues for 50 pages without clear rule indexing]
+        explanation: |
+          While readable, this is hard to navigate and parse.
+          No clear list of axioms, no quick reference capability.
+          LLMs may struggle to extract specific rules reliably.
+
+    compliant:
+      - description: "Dual-format weight control specification"
+        content: |
+          # File 1: weight_control_axioms.yaml (skeleton)
+          axioms:
+            - id: A1_mass_conservation
+              formal: "ΔW = Σin - Σout"
+              see_also: "complete_molecular_tracking.md#mass-conservation"
+
+          # File 2: complete_molecular_tracking.md (flesh)
+          ## Mass Conservation
+
+          The fundamental axiom states that body weight change...
+
+          ```
+          Daily weight curve:
+              ↓meal  ↓meal    ↓meal
+          ────●──────●────────●────────
+             ╱╲     ╱╲       ╱╲
+            ╱  ╲   ╱  ╲     ╱  ╲
+          ─╱────╲─╱────╲───╱────╲──────
+          ```
+
+          This explains why weight spikes after meals...
+        explanation: |
+          YAML provides quick index and machine-readable structure.
+          Markdown provides derivation, ASCII diagrams, and context.
+          Cross-references link the two formats.
