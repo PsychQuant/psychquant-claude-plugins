@@ -30,7 +30,7 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.5.1",
+      "version": "2.6.0",
       "description": "Issue-driven development methodology: idd-issue \u2192 idd-diagnose \u2192 idd-implement \u2192 idd-verify \u2192 idd-close + idd-update. Auto-complete friendly.",
       "author": {
         "name": "Che Cheng"
