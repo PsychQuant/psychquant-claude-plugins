@@ -230,6 +230,17 @@ safari-browser upload "input[type='file']" "/path/to/document.pdf"
 safari-browser wait 5000   # wait for upload to complete
 ```
 
+### Human-like Delays (Anti-Bot)
+
+When automating sites that detect bots (banks, hospital EMR, social media), use Cauchy-distributed random delays instead of fixed `sleep`:
+
+```bash
+# Cauchy delay: median ~3s, occasionally 5-10s (simulates human rhythm)
+sleep $(python3 -c "import random, math; print(max(2, round(3 + math.tan(math.pi * (random.random() - 0.5)) * 0.8, 1)))")
+```
+
+Use between every `safari-browser` command when operating sensitive sites. Never use fixed intervals — that's how bots get detected.
+
 ## Troubleshooting
 
 - **Binary killed (exit 137 / SIGKILL)** — macOS Sequoia kills unsigned binaries that call osascript. Fix: `codesign --force --sign - ~/bin/safari-browser`. This is done automatically by `make install`.
