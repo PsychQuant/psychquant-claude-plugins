@@ -1,5 +1,5 @@
 ---
-name: claude-docs-guide
+name: claude-code-guide
 description: |
   Query Claude Code configuration, file locations, MCP settings, and official documentation.
   Use this skill proactively when the conversation involves:
@@ -11,7 +11,7 @@ description: |
 allowed-tools: WebFetch
 ---
 
-# Claude Docs Guide
+# Claude Code Guide
 
 Query Claude Code official documentation directly via WebFetch.
 

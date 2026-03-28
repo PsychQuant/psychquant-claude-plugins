@@ -60,21 +60,24 @@ When the user asks about or the conversation involves:
 gh search code "keyword" --repo openai/codex --limit 20
 ```
 
-**Read specific key files via GitHub API:**
+**Read specific key files via raw URL (preferred — avoids base64/size limits):**
 ```bash
-# Config schema (all valid config keys and values)
-gh api repos/openai/codex/contents/codex-rs/core/config.schema.json -q '.content' | base64 -d
+# Config schema (all valid config keys and values) — 78KB
+curl -sL https://raw.githubusercontent.com/openai/codex/main/codex-rs/core/config.schema.json
 
-# Model definitions (models, defaults, reasoning efforts)
-gh api repos/openai/codex/contents/codex-rs/core/models.json -q '.content' | base64 -d
+# Model definitions (models, defaults, reasoning efforts) — 251KB, too large for gh api contents
+curl -sL https://raw.githubusercontent.com/openai/codex/main/codex-rs/core/models.json
 
 # CLI entry point (flags, arguments)
-gh api repos/openai/codex/contents/codex-rs/exec/src/main.rs -q '.content' | base64 -d
+curl -sL https://raw.githubusercontent.com/openai/codex/main/codex-rs/exec/src/main.rs
 
 # In-repo documentation
 gh api repos/openai/codex/contents/docs/ -q '.[].name'
-gh api repos/openai/codex/contents/docs/config.md -q '.content' | base64 -d
+curl -sL https://raw.githubusercontent.com/openai/codex/main/docs/config.md
 ```
+
+> **IMPORTANT**: Do NOT use `gh api repos/.../contents/FILE -q '.content' | base64 -d` for files > 100KB.
+> GitHub API returns empty content for large files. Always use `curl -sL` with raw.githubusercontent.com.
 
 **Key files in `openai/codex` repo:**
 
