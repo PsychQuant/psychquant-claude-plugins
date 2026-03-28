@@ -230,11 +230,18 @@ safari-browser upload "input[type='file']" "/path/to/document.pdf"
 safari-browser wait 5000   # wait for upload to complete
 ```
 
+## Troubleshooting
+
+- **Binary killed (exit 137 / SIGKILL)** — macOS Sequoia kills unsigned binaries that call osascript. Fix: `codesign --force --sign - ~/bin/safari-browser`. This is done automatically by `make install`.
+- **Large JS output returns empty** — Safari `do JavaScript` silently drops results >~1MB. Use `safari-browser js --large "..."` or `--output /tmp/result.txt` for chunked read.
+
 ## Limitations
 
 - **macOS only** — requires Safari + AppleScript
 - **Not headless** — Safari always has a visible window
 - **JS returns strings only** — use `JSON.stringify()` for objects
+- **JS output ~1MB limit** — use `--large` flag for bigger results (auto-retries with chunked read)
 - **No network interception** — Safari has no API for this
 - **JS-based snapshot** — `snapshot` uses DOM scanning (not CDP accessibility tree), 90% as effective
-- **upload requires Accessibility permission** — System Preferences → Privacy → Accessibility
+- **Automation permission required** — first run prompts for Terminal → Safari access (System Settings → Privacy & Security → Automation)
+- **upload/pdf require Accessibility permission** — System Settings → Privacy & Security → Accessibility
