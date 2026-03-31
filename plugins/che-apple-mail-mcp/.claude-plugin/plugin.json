@@ -1,7 +1,7 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "1.1.0",
-  "description": "Apple Mail MCP server + 郵件工作流（歸檔、搜尋、管理）",
+  "version": "2.0.0",
+  "description": "Apple Mail MCP server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "apple-mail", "email", "archive", "markdown", "applescript", "macos"]
