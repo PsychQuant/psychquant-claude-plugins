@@ -40,8 +40,8 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "1.1.0",
-      "description": "Apple Mail MCP Server + \u90f5\u4ef6\u5de5\u4f5c\u6d41\uff08\u6b78\u6a94\u3001\u641c\u5c0b\u3001\u7ba1\u7406\uff09",
+      "version": "2.0.0",
+      "description": "Apple Mail MCP Server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作",
       "author": {
         "name": "Che Cheng"
       },
