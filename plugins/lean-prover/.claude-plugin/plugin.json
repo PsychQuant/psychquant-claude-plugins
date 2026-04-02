@@ -1,7 +1,7 @@
 {
   "name": "lean-prover",
-  "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with lake build feedback loop, Mathlib API search, and auto-commit on success",
-  "version": "1.0.0",
+  "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with Mathlib API rules, codex-prove-assist, lean-prover agent, and auto-commit",
+  "version": "1.1.0",
   "author": {
     "name": "Che Cheng"
   }
