@@ -20,8 +20,8 @@
     },
     {
       "name": "plugin-tools",
-      "version": "1.7.0",
-      "description": "Claude Code Plugin \u5b8c\u6574\u751f\u547d\u9031\u671f\u5de5\u5177\uff1aplugin-create\u3001plugin-deploy\u3001plugin-update\u3001plugin-health\u3001plugin-debug",
+      "version": "1.8.0",
+      "description": "Claude Code Plugin \u5b8c\u6574\u751f\u547d\u9031\u671f\u5de5\u5177\uff1aplugin-create\u3001plugin-upgrade\u3001plugin-deploy\u3001plugin-update\u3001plugin-health\u3001plugin-debug",
       "author": {
         "name": "Che Cheng"
       },
