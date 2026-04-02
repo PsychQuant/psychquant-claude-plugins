@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE_PATH=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // empty'); if [[ \"$FILE_PATH\" == *.lean ]] && [[ \"$FILE_PATH\" != *.lake/* ]]; then DIR=$(dirname \"$FILE_PATH\"); while [[ \"$DIR\" != \"/\" ]]; do if [[ -f \"$DIR/lakefile.toml\" ]]; then cd \"$DIR\" && BUILD=$(lake build 2>&1); SORRY=$(echo \"$BUILD\" | grep -c \"uses .sorry.\" || true); ERROR=$(echo \"$BUILD\" | grep -c \"error:\" || true); if [[ $ERROR -eq 0 ]]; then echo \"lake build ok — $SORRY sorry remaining\"; else echo \"lake build failed ($ERROR errors)\"; echo \"$BUILD\" | grep -A 2 'error:' | head -20; fi; break; fi; DIR=$(dirname \"$DIR\"); done; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE_PATH=$(echo \"$CLAUDE_TOOL_INPUT\" | jq -r '.file_path // empty'); if [[ \"$FILE_PATH\" == *.lean ]] && [[ \"$FILE_PATH\" != *.lake/* ]]; then DIR=$(dirname \"$FILE_PATH\"); while [[ \"$DIR\" != \"/\" ]]; do if [[ -f \"$DIR/lakefile.toml\" ]]; then cd \"$DIR\" && BUILD=$(lake build 2>&1); SORRY=$(echo \"$BUILD\" | grep -c \"uses .sorry.\" || true); ERROR=$(echo \"$BUILD\" | grep -c \"error:\" || true); if [[ $ERROR -eq 0 ]]; then echo \"lake build ok — $SORRY sorry remaining\"; else echo \"lake build failed ($ERROR errors)\"; echo \"$BUILD\" | grep -A 2 'error:' | head -20; fi; break; fi; DIR=$(dirname \"$DIR\"); done; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
