@@ -307,6 +307,16 @@
       },
       "source": "./plugins/che-axiom-systems",
       "category": "productivity"
+    },
+    {
+      "name": "lean-prover",
+      "version": "1.0.0",
+      "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with lake build feedback, Mathlib search, lean-prover agent, auto-commit",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/lean-prover",
+      "category": "development"
     }
   ]
 }
