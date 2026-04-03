@@ -8,7 +8,9 @@ disable-model-invocation: true
 
 # CLI Deploy — 部署 Swift CLI 工具
 
-完整的 CLI 工具部署流程：編譯 universal binary → 版本更新 → GitHub Release。
+完整的 CLI 工具部署流程：版本更新 → 編譯 universal binary → GitHub Release。
+
+**重要**：必須先 bump version 再 build，否則 binary 內嵌的版本號會是舊的。
 
 ## 參數
 
@@ -48,49 +50,7 @@ echo "Binary: $BINARY_NAME"
 
 ---
 
-## Phase 1: 編譯 Universal Binary
-
-### Step 1: 清理舊 build
-
-```bash
-rm -rf .build 2>/dev/null || true
-```
-
-### Step 2: 編譯兩種架構
-
-```bash
-swift build -c release --arch arm64
-swift build -c release --arch x86_64
-```
-
-### Step 3: 建立 Universal Binary
-
-```bash
-mkdir -p .release
-lipo -create \
-    .build/arm64-apple-macosx/release/$BINARY_NAME \
-    .build/x86_64-apple-macosx/release/$BINARY_NAME \
-    -output .release/$BINARY_NAME
-
-# 清除 xattr 汙染（Dropbox 目錄 build 的 binary 帶 com.dropbox.attrs）
-xattr -cr .release/$BINARY_NAME
-
-# 重新簽名（lipo 破壞原始 code signature）
-codesign --force --sign - .release/$BINARY_NAME
-```
-
-### Step 4: 驗證
-
-```bash
-file .release/$BINARY_NAME
-lipo -info .release/$BINARY_NAME
-```
-
-**預期**：`Mach-O universal binary with 2 architectures: [x86_64] [arm64]`
-
----
-
-## Phase 2: 更新版本與文檔
+## Phase 1: 更新版本與文檔（先於 build！）
 
 ### Step 1: 更新版本號
 
@@ -121,6 +81,51 @@ lipo -info .release/$BINARY_NAME
 ### Step 3: 更新 README.md（如適用）
 
 如果 README.md 有 Version History 區塊，加入新版本。
+
+---
+
+## Phase 2: 編譯 Universal Binary
+
+### Step 1: 清理舊 build
+
+```bash
+rm -rf .build 2>/dev/null || true
+```
+
+### Step 2: 編譯兩種架構
+
+```bash
+swift build -c release --arch arm64
+swift build -c release --arch x86_64
+```
+
+### Step 3: 建立 Universal Binary
+
+```bash
+mkdir -p .release
+lipo -create \
+    .build/arm64-apple-macosx/release/$BINARY_NAME \
+    .build/x86_64-apple-macosx/release/$BINARY_NAME \
+    -output .release/$BINARY_NAME
+
+# 清除 xattr 汙染（Dropbox 目錄 build 的 binary 帶 com.dropbox.attrs）
+xattr -cr .release/$BINARY_NAME
+
+# 重新簽名（lipo 破壞原始 code signature）
+codesign --force --sign - .release/$BINARY_NAME
+```
+
+### Step 4: 驗證 binary + 內嵌版本
+
+```bash
+file .release/$BINARY_NAME
+lipo -info .release/$BINARY_NAME
+.release/$BINARY_NAME version 2>/dev/null || .release/$BINARY_NAME --version 2>/dev/null
+```
+
+**預期**：
+- `Mach-O universal binary with 2 architectures: [x86_64] [arm64]`
+- 版本號顯示 `{version}`（如果顯示舊版本，表示 Phase 1 的 version bump 沒生效，**停下來檢查**）
 
 ---
 
@@ -235,3 +240,4 @@ curl -fsSL https://github.com/{owner}/{repo}/releases/latest/download/{binary} -
 | lipo 失敗 | 確認兩種架構都編譯成功 |
 | gh release create 卡住 | 用 `gh api` + `curl` 分步驟上傳 |
 | codesign 失敗 | `codesign --force --sign -` 用 ad-hoc 簽名 |
+| binary 版本號是舊的 | 確認 Phase 1 已更新 Version.swift 再 build（不能先 build 再 bump） |
