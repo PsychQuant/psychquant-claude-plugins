@@ -12,7 +12,7 @@ if [ -x "$GFH_BIN" ]; then
   GFH_VERSION=$("$GFH_BIN" version 2>/dev/null || echo "unknown")
   GFH_STATUS="gfh $GFH_VERSION installed at $GFH_BIN"
 else
-  GFH_STATUS="gfh NOT FOUND — build from ~/Developer/GiftHub: swift build -c release && cp .build/release/gfh ~/bin/"
+  GFH_STATUS="gfh NOT FOUND — install: curl -fsSL https://github.com/PsychQuant/GiftHub/releases/latest/download/gfh -o ~/bin/gfh && chmod +x ~/bin/gfh"
 fi
 
 # Count pointer files
