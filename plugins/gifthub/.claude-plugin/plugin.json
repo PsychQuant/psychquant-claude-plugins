@@ -1,0 +1,8 @@
+{
+  "name": "gifthub",
+  "description": "GiftHub CLI integration — auto-detect .gfh.json, inject usage context, auto-install after build",
+  "version": "1.0.0",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
