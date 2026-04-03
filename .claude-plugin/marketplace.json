@@ -327,6 +327,16 @@
       },
       "source": "./plugins/gifthub",
       "category": "development"
+    },
+    {
+      "name": "cli-tools",
+      "version": "1.0.0",
+      "description": "CLI tool lifecycle management — build, deploy, install, upgrade Swift CLI tools via GitHub Releases",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/cli-tools",
+      "category": "development"
     }
   ]
 }
