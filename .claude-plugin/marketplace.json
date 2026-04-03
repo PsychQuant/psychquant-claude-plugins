@@ -317,6 +317,16 @@
       },
       "source": "./plugins/lean-prover",
       "category": "development"
+    },
+    {
+      "name": "gifthub",
+      "version": "1.0.0",
+      "description": "GiftHub CLI integration — auto-detect .gfh.json, inject usage context, auto-install after build",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/gifthub",
+      "category": "development"
     }
   ]
 }
