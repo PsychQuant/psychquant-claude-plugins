@@ -1,8 +1,13 @@
 {
   "name": "safari-browser",
-  "description": "macOS native browser automation via Safari + AppleScript — permanent login, no auth management needed",
-  "version": "1.2.2",
+  "description": "macOS native browser automation via Safari + AppleScript — permanent login, real-time vision channel",
+  "version": "2.0.0",
   "author": {
     "name": "Che Cheng"
-  }
+  },
+  "channels": [
+    {
+      "server": "safari-browser-channel"
+    }
+  ]
 }
