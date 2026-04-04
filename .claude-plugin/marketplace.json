@@ -337,6 +337,16 @@
       },
       "source": "./plugins/cli-tools",
       "category": "development"
+    },
+    {
+      "name": "parallel-ai-agents",
+      "version": "1.0.0",
+      "description": "平行派發任務給多個 AI agent（Claude + Codex），獨立執行後交叉比對結果",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/parallel-ai-agents",
+      "category": "development"
     }
   ]
 }
