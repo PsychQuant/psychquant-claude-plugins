@@ -241,6 +241,89 @@ sleep $(python3 -c "import random, math; print(max(2, round(3 + math.tan(math.pi
 
 Use between every `safari-browser` command when operating sensitive sites. Never use fixed intervals — that's how bots get detected.
 
+## Real-time Vision Channel (v2.0)
+
+safari-browser includes a **Channel** that pushes real-time page change events into your Claude Code session. No polling needed — Claude receives text descriptions of what's happening on the page as it happens.
+
+### How it works
+
+```
+Safari page → screenshot (every 1.5s) → local VLM (safari-vision, ~1.3s)
+    → text summary → Channel push → Claude Code session
+```
+
+The VLM runs **entirely on-device** (MLXVLM Qwen2.5-VL-3B on Apple Silicon). No API calls, no cloud, no token cost for vision. Claude only receives short text descriptions (~50 tokens each).
+
+### Start with channel
+
+```bash
+# First time: install safari-vision and download model (~2GB)
+cd ~/Developer/safari-browser/safari-vision && make install
+safari-vision setup
+
+# Start Claude Code with channel
+claude --dangerously-load-development-channels plugin:safari-browser@psychquant-claude-plugins
+```
+
+### What Claude receives
+
+Page change events arrive as `<channel>` tags:
+
+```
+<channel source="safari-browser-channel" event="page_change" timestamp="1711756800000">
+  Login form submitted, page redirecting to dashboard
+</channel>
+```
+
+Events only fire when the page **visually changes** — no spam.
+
+### Observe → Decide → Act loop
+
+When the channel is active, Claude can operate autonomously:
+
+1. **Observe**: receive `page_change` event describing current page state
+2. **Decide**: determine what action to take
+3. **Act**: call `safari_action` tool to execute safari-browser commands
+
+```
+# Claude receives: "Page shows login form with email and password fields"
+# Claude calls:
+safari_action({ command: "fill", args: ["input#email", "user@example.com"] })
+safari_action({ command: "fill", args: ["input#password", "secret"] })
+safari_action({ command: "click", args: ["button[type='submit']"] })
+# Claude receives: "Login successful, dashboard loading with 3 widgets"
+```
+
+### safari_action tool
+
+The channel exposes a `safari_action` tool for bidirectional communication:
+
+```
+safari_action({ command: "click", args: ["button.submit"] })
+safari_action({ command: "fill", args: ["input#email", "user@example.com"] })
+safari_action({ command: "get", args: ["url"] })
+safari_action({ command: "snapshot", args: [] })
+```
+
+All safari-browser subcommands are available. Invalid commands are rejected.
+
+### Configuration
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `SB_CHANNEL_INTERVAL` | `1500` | Screenshot interval in ms |
+| `SB_VLM_PROMPT` | "Describe the current state..." | Custom VLM prompt |
+| `SB_BINARY` | `safari-browser` | Path to safari-browser |
+| `SB_VISION_BINARY` | `safari-vision` | Path to safari-vision |
+
+### Requirements
+
+- `safari-browser` CLI installed (`~/bin/safari-browser`)
+- `safari-vision` CLI installed (`~/bin/safari-vision` + `~/bin/mlx.metallib`)
+- VLM model downloaded (`safari-vision setup`)
+- Bun runtime (`brew install oven-sh/bun/bun`)
+- Claude Code v2.1.80+ (Channels support)
+
 ## Troubleshooting
 
 - **Binary killed (exit 137 / SIGKILL)** — macOS Sequoia kills unsigned binaries that call osascript. Fix: `codesign --force --sign - ~/bin/safari-browser`. This is done automatically by `make install`.
