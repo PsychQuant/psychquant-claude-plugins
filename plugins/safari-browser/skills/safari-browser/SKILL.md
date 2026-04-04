@@ -307,11 +307,25 @@ safari_action({ command: "snapshot", args: [] })
 
 All safari-browser subcommands are available. Invalid commands are rejected.
 
+### Monitor Loop (Opt-in)
+
+**⚠️ The vision monitor loop is OFF by default** (as of v2.0.1). Without it, the channel still provides the `safari_action` reply tool for Claude → Safari commands, but Claude won't receive automatic page change events.
+
+To enable the monitor, set `SB_CHANNEL_MONITOR=1` in your environment before launching Claude Code:
+
+```bash
+# Enable periodic screenshot + VLM analysis
+SB_CHANNEL_MONITOR=1 claude --dangerously-load-development-channels plugin:safari-browser@psychquant-claude-plugins
+```
+
+When enabled, the monitor takes silent screenshots every 1.5s and only pushes events when the page visually changes.
+
 ### Configuration
 
 | Environment Variable | Default | Description |
 |---|---|---|
-| `SB_CHANNEL_INTERVAL` | `1500` | Screenshot interval in ms |
+| `SB_CHANNEL_MONITOR` | `0` | Set to `1` to enable vision monitor loop (otherwise reply tool only) |
+| `SB_CHANNEL_INTERVAL` | `1500` | Screenshot interval in ms (only when monitor enabled) |
 | `SB_VLM_PROMPT` | "Describe the current state..." | Custom VLM prompt |
 | `SB_BINARY` | `safari-browser` | Path to safari-browser |
 | `SB_VISION_BINARY` | `safari-vision` | Path to safari-vision |
