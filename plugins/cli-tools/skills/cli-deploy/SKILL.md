@@ -31,10 +31,21 @@ ls Package.swift
 
 ### Step 2: 取得 Binary 名稱
 
+**重要**：Binary 名稱由 `products:` 區塊的 `.executable(name: ...)` 決定，**不是** `targets:` 區塊的 `executableTarget.name`。兩者可以不同（例如 `.executable(name: "gfh", targets: ["gfs"])` — binary 是 `gfh`，target 資料夾是 `gfs`）。抓錯的話後面 `lipo` / `curl` 會找不到檔案。
+
 ```bash
-BINARY_NAME=$(grep -A5 'executableTarget\|\.executable' Package.swift | grep 'name:' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+# 優先從 products 區塊抓 .executable(name: "X")
+BINARY_NAME=$(grep -E '\.executable\(name:' Package.swift | head -1 | sed 's/.*name: *"\([^"]*\)".*/\1/')
+
+# Fallback：只有當沒有 products 區塊時才用 executableTarget 名稱
+if [ -z "$BINARY_NAME" ]; then
+    BINARY_NAME=$(grep -A2 'executableTarget' Package.swift | grep 'name:' | head -1 | sed 's/.*"\([^"]*\)".*/\1/')
+fi
+
 echo "Binary: $BINARY_NAME"
 ```
+
+若 `BINARY_NAME` 為空，**停下來**請使用者確認 — 繼續往下做會寫壞路徑。
 
 ### Step 3: 取得當前版本
 
@@ -61,22 +72,27 @@ echo "Binary: $BINARY_NAME"
 
 ### Step 2: 更新 CHANGELOG.md
 
-在 CHANGELOG.md 頂部加入新版本（如果檔案存在）：
+**先檢查是否已有 `[Unreleased]` 區塊**：
 
-```markdown
-## [{version}] - {date}
+- **若有** `[Unreleased]` 區塊 → 把標題改成 `[{version}] - {date}`（promote 既有內容，避免重複）：
+  ```
+  ## [Unreleased]        →   ## [{version}] - {date}
+  ```
+- **若無** `[Unreleased]` 區塊 → 在 CHANGELOG.md 頂部新增：
+  ```markdown
+  ## [{version}] - {date}
 
-### Added
-- ...
+  ### Added
+  - ...
 
-### Changed
-- ...
+  ### Changed
+  - ...
 
-### Fixed
-- ...
-```
+  ### Fixed
+  - ...
+  ```
 
-用 AskUserQuestion 詢問變更摘要。
+在沒有 `[Unreleased]` 的情況下，用 AskUserQuestion 詢問變更摘要。
 
 ### Step 3: 更新 README.md（如適用）
 
@@ -133,11 +149,21 @@ lipo -info .release/$BINARY_NAME
 
 ### Step 1: Commit + Push
 
+**只 stage 本次 deploy 實際動過的檔案** — `git add -A` 會把使用者 working tree 裡無關的 modified files（例如 session-start hook 改的 `.claude/*`、`CLAUDE.md`）全部塞進 release commit，污染歷史。
+
 ```bash
-git add -A
+# 只 stage Phase 1 改過的檔案
+git add Sources/*/Version.swift CHANGELOG.md
+[ -f README.md ] && git diff --cached --quiet README.md 2>/dev/null || git add README.md 2>/dev/null || true
+
+# 檢查 staging 內容，確認沒混進無關檔案
+git diff --cached --stat
+
 git commit -m "v{version}: {change-summary}"
 git push origin main
 ```
+
+如果 `git diff --cached --stat` 顯示了非預期的檔案，停下來檢查 — 可能是 working tree 本來就髒。
 
 ### Step 2: 建立 GitHub Release
 
