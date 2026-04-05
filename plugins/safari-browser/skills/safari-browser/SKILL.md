@@ -307,6 +307,26 @@ safari_action({ command: "snapshot", args: [] })
 
 All safari-browser subcommands are available. Invalid commands are rejected.
 
+### Monitor control tools (v2.1.0, #12)
+
+When the monitor is enabled, three tools coordinate the observe loop with your actions:
+
+- `safari_monitor_pause()` — stop emitting `page_change` events
+- `safari_monitor_resume()` — start emitting again
+- `safari_monitor_status()` — returns `{ enabled, paused, running, interval_ms, last_event_at }`
+
+Use pause/resume around multi-step sequences to avoid receiving stale/transitional descriptions mid-action:
+
+```
+safari_monitor_pause()
+safari_action({ command: "click", args: ["@e3"] })
+safari_action({ command: "wait", args: ["--url", "dashboard"] })
+safari_monitor_resume()
+# next page_change event will describe post-action state
+```
+
+If `SB_CHANNEL_MONITOR=1` is not set, pause/resume return `{ enabled: false, message: ... }` (informational, not an error).
+
 ### Monitor Loop (Opt-in)
 
 **⚠️ The vision monitor loop is OFF by default** (as of v2.0.1). Without it, the channel still provides the `safari_action` reply tool for Claude → Safari commands, but Claude won't receive automatic page change events.
