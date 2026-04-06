@@ -145,10 +145,11 @@ All selector-accepting commands support `@eN` refs from the last snapshot.
 
 ### Screenshot, PDF & Upload
 ```bash
-safari-browser screenshot [path]            # default: screenshot.png
-safari-browser screenshot --full path       # full page
-safari-browser pdf [path]                   # export as PDF (System Events)
-safari-browser upload <selector> <file>     # via System Events file dialog
+safari-browser screenshot [path]            # default: screenshot.png [non-interfering]
+safari-browser screenshot --full path       # full page [non-interfering]
+safari-browser pdf --allow-hid [path]       # export as PDF [actively interfering — requires --allow-hid]
+safari-browser upload <selector> <file>     # JS DataTransfer injection [non-interfering]
+safari-browser upload --allow-hid <sel> <file>  # System Events fallback [actively interfering]
 ```
 
 ### Tab Management
@@ -226,7 +227,8 @@ safari-browser wait --url "success"
 ### File Upload
 ```bash
 safari-browser open "https://example.com/upload"
-safari-browser upload "input[type='file']" "/path/to/document.pdf"
+safari-browser upload "input[type='file']" "/path/to/document.pdf"           # JS DataTransfer (non-interfering)
+safari-browser upload --native "input[type='file']" "/path/to/document.pdf"  # native file dialog (isTrusted, anti-bot)
 safari-browser wait 5000   # wait for upload to complete
 ```
 
