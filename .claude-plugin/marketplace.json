@@ -290,8 +290,8 @@
     },
     {
       "name": "safari-browser",
-      "version": "2.1.0",
-      "description": "macOS native browser automation via Safari + AppleScript — permanent login, vision channel with pause/resume, upload --native",
+      "version": "2.2.0",
+      "description": "macOS native browser automation via Safari + AppleScript — permanent login, upload --native",
       "author": {
         "name": "Che Cheng"
       },
