@@ -132,11 +132,14 @@ safari-browser is enabled <selector>
 safari-browser is checked <selector>
 ```
 
-### Snapshot (Element Discovery)
+### Snapshot (Element Discovery + Page State)
 ```bash
 safari-browser snapshot                     # scan interactive elements → @e1, @e2...
 safari-browser snapshot -c                  # compact (exclude hidden elements)
 safari-browser snapshot -d 3                # limit DOM depth
+safari-browser snapshot --page              # full page state: accessibility tree + metadata + alerts + dialogs
+safari-browser snapshot --page --json       # full page state as JSON
+safari-browser snapshot --page -s "main"    # scoped to <main> element
 safari-browser snapshot -s "form.login"     # scope to CSS selector
 safari-browser snapshot --json              # JSON array output
 ```
