@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "psychquant-claude-plugins",
-  "description": "Che Cheng's Claude Code Plugin Marketplace - \u5b78\u8853\u7814\u7a76\u8207\u751f\u7522\u529b\u5de5\u5177",
+  "description": "Che Cheng's Claude Code Plugin Marketplace - 學術研究與生產力工具",
   "owner": {
     "name": "Che Cheng",
     "email": "che@example.com"
@@ -11,7 +11,7 @@
     {
       "name": "mcp-tools",
       "version": "1.13.0",
-      "description": "MCP Server \u958b\u767c\u5de5\u5177\u96c6\uff1amcp-new-app\u3001mcp-deploy\u3001mcp-install\u3001mcp-upgrade\u3001mcp-clone\u3001mcp-publish\u3001mcp-sync\u3001mcp-diagnose\u3001mcp-debug\u3001mcp-test\u3001mcp-to-plugin\u3001mcp-issue",
+      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-issue",
       "author": {
         "name": "Che Cheng"
       },
@@ -21,7 +21,7 @@
     {
       "name": "plugin-tools",
       "version": "1.8.0",
-      "description": "Claude Code Plugin \u5b8c\u6574\u751f\u547d\u9031\u671f\u5de5\u5177\uff1aplugin-create\u3001plugin-upgrade\u3001plugin-deploy\u3001plugin-update\u3001plugin-health\u3001plugin-debug",
+      "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug",
       "author": {
         "name": "Che Cheng"
       },
@@ -31,7 +31,7 @@
     {
       "name": "issue-driven-dev",
       "version": "2.12.0",
-      "description": "Issue-driven development methodology: idd-issue \u2192 idd-diagnose \u2192 idd-implement \u2192 idd-verify \u2192 idd-close. SDD (Spec-Driven Development) as special case via diagnose complexity assessment.",
+      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close. SDD (Spec-Driven Development) as special case via diagnose complexity assessment.",
       "author": {
         "name": "Che Cheng"
       },
@@ -51,7 +51,7 @@
     {
       "name": "r-shiny-debugger",
       "version": "1.0.0",
-      "description": "\u529f\u80fd\u6e2c\u8a66\u5c0e\u5411\u7684 R Shiny App Debug \u5de5\u5177\uff0c\u6574\u5408 agent-browser \u8207 R console",
+      "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser 與 R console",
       "author": {
         "name": "Che Cheng"
       },
@@ -61,7 +61,7 @@
     {
       "name": "che-archive-lines",
       "version": "1.0.0",
-      "description": "\u6b78\u6a94 LINE macOS \u804a\u5929\u8a18\u9304\u5230\u6587\u5b57\u6a94\uff0c\u4f7f\u7528\u5ea7\u6a19\u9ede\u64ca\u81ea\u52d5\u5316",
+      "description": "歸檔 LINE macOS 聊天記錄到文字檔，使用座標點擊自動化",
       "author": {
         "name": "Che Cheng"
       },
@@ -81,7 +81,7 @@
     {
       "name": "claude-config-guide",
       "version": "1.0.0",
-      "description": "[Deprecated \u2014 replaced by ai-docs-guide] Claude Code \u8a2d\u5b9a\u67e5\u8a62\u52a9\u624b",
+      "description": "[Deprecated — replaced by ai-docs-guide] Claude Code 設定查詢助手",
       "author": {
         "name": "Che Cheng"
       },
@@ -91,7 +91,7 @@
     {
       "name": "che-things-mcp",
       "version": "1.6.1",
-      "description": "Things 3 \u4efb\u52d9\u7ba1\u7406 MCP Server - 47 \u500b\u5de5\u5177\u652f\u63f4\u5b8c\u6574 GTD \u5de5\u4f5c\u6d41\u7a0b",
+      "description": "Things 3 任務管理 MCP Server - 47 個工具支援完整 GTD 工作流程",
       "author": {
         "name": "Che Cheng"
       },
@@ -101,7 +101,7 @@
     {
       "name": "che-ical-mcp",
       "version": "1.7.0",
-      "description": "macOS \u884c\u4e8b\u66c6\u8207\u63d0\u9192\u4e8b\u9805 MCP Server - EventKit \u6574\u5408\uff0c28 \u500b\u5de5\u5177\uff0c\u652f\u63f4 attendees/organizer\u3001undo/redo\u3001\u6bcf\u4e8b\u4ef6\u6642\u5340\u3001--cli \u6a21\u5f0f\u3001--setup TCC \u6388\u6b0a\u3001\u5f48\u6027\u65e5\u671f\u89e3\u6790\u3001\u6a21\u7cca\u5339\u914d\u3001batch \u64cd\u4f5c",
+      "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，28 個工具，支援 attendees/organizer、undo/redo、每事件時區、--cli 模式、--setup TCC 授權、彈性日期解析、模糊匹配、batch 操作",
       "author": {
         "name": "Che Cheng"
       },
@@ -111,7 +111,7 @@
     {
       "name": "che-duckdb-mcp",
       "version": "1.1.0",
-      "description": "DuckDB MCP Server - \u6574\u5408\u6587\u6a94\u67e5\u8a62\u8207\u8cc7\u6599\u5eab\u64cd\u4f5c\uff0c14 \u500b\u5de5\u5177\uff08DuckDB v1.5.0-dev engine\uff09",
+      "description": "DuckDB MCP Server - 整合文檔查詢與資料庫操作，14 個工具（DuckDB v1.5.0-dev engine）",
       "author": {
         "name": "Che Cheng"
       },
@@ -121,7 +121,7 @@
     {
       "name": "che-word-mcp",
       "version": "1.17.0",
-      "description": "Word MCP Server - Swift \u539f\u751f OOXML \u64cd\u4f5c\uff0c148 \u500b\u5de5\u5177\uff0c\u652f\u63f4 Dual-Mode + Session \u72c0\u614b\u7ba1\u7406\uff08dirty tracking, autosave, finalize\uff09",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，148 個工具，支援 Dual-Mode + Session 狀態管理（dirty tracking, autosave, finalize）",
       "author": {
         "name": "Che Cheng"
       },
@@ -141,7 +141,7 @@
     {
       "name": "claude-switch",
       "version": "1.0.0",
-      "description": "Claude Code \u591a\u5e33\u865f\u7ba1\u7406\uff1a\u5207\u63db\u5e33\u865f\u3001\u5217\u51fa\u5e33\u865f\u3001\u81ea\u52d5\u8a2d\u5b9a IDE symlink \u89e3\u6c7a VS Code \u5075\u6e2c\u554f\u984c",
+      "description": "Claude Code 多帳號管理：切換帳號、列出帳號、自動設定 IDE symlink 解決 VS Code 偵測問題",
       "author": {
         "name": "Che Cheng"
       },
@@ -151,7 +151,7 @@
     {
       "name": "che-xcode-mcp",
       "version": "1.0.0",
-      "description": "App Store Connect MCP Server \u2014 99 tools across 15 domain managers covering the full ASC API",
+      "description": "App Store Connect MCP Server — 99 tools across 15 domain managers covering the full ASC API",
       "author": {
         "name": "Che Cheng"
       },
@@ -161,7 +161,7 @@
     {
       "name": "che-dropbox-ignore",
       "version": "2.1.0",
-      "description": "Dropbox \u540c\u6b65\u6392\u9664\u7ba1\u7406 \u2014 \u81ea\u52d5\u5c0d .git\u3001build artifacts \u7b49\u8a2d\u5b9a com.dropbox.ignored xattr",
+      "description": "Dropbox 同步排除管理 — 自動對 .git、build artifacts 等設定 com.dropbox.ignored xattr",
       "author": {
         "name": "Che Cheng"
       },
@@ -171,7 +171,7 @@
     {
       "name": "che-bot-toolkit",
       "version": "0.1.0",
-      "description": "Bot \u958b\u767c\u5de5\u5177\u96c6",
+      "description": "Bot 開發工具集",
       "author": {
         "name": "Che Cheng"
       },
@@ -181,7 +181,7 @@
     {
       "name": "archive-first",
       "version": "2.1.0",
-      "description": "Protect files from AI-assisted deletion \u2014 PreToolUse hooks block destructive commands on archived/ paths, toggle with archived-lock/archived-unlock",
+      "description": "Protect files from AI-assisted deletion — PreToolUse hooks block destructive commands on archived/ paths, toggle with archived-lock/archived-unlock",
       "author": {
         "name": "Che Cheng"
       },
@@ -191,7 +191,7 @@
     {
       "name": "codex-batch",
       "version": "1.0.0",
-      "description": "Batch content generation using Codex CLI (GPT-5.4) \u2014 parallel codex exec with large reference docs as context",
+      "description": "Batch content generation using Codex CLI (GPT-5.4) — parallel codex exec with large reference docs as context",
       "author": {
         "name": "Che Cheng"
       },
@@ -201,7 +201,7 @@
     {
       "name": "che-svg-mcp",
       "version": "0.1.0",
-      "description": "SVG MCP Server \u2014 Swift \u539f\u751f XML \u64cd\u4f5c\uff0c33 \u500b\u5de5\u5177\uff0cSession-based \u5411\u91cf\u5716\u5f62\u7de8\u8f2f",
+      "description": "SVG MCP Server — Swift 原生 XML 操作，33 個工具，Session-based 向量圖形編輯",
       "author": {
         "name": "Che Cheng"
       },
@@ -211,7 +211,7 @@
     {
       "name": "che-pixel-mcp",
       "version": "0.1.0",
-      "description": "Pixel MCP Server \u2014 Swift \u539f\u751f Core Image \u64cd\u4f5c\uff0c36 \u500b\u5de5\u5177\uff0c200+ \u6ffe\u93e1\uff0cSession-based \u9ede\u9663\u5716\u5f62\u7de8\u8f2f",
+      "description": "Pixel MCP Server — Swift 原生 Core Image 操作，36 個工具，200+ 濾鏡，Session-based 點陣圖形編輯",
       "author": {
         "name": "Che Cheng"
       },
@@ -221,7 +221,7 @@
     {
       "name": "che-telegram-mcp",
       "version": "1.0.0",
-      "description": "Telegram MCP Plugin \u2014 \u7d50\u5408 Bot API \u8207\u500b\u4eba\u5e33\u865f (TDLib)\uff0cmacOS Keychain \u5bc6\u9470\u7ba1\u7406",
+      "description": "Telegram MCP Plugin — 結合 Bot API 與個人帳號 (TDLib)，macOS Keychain 密鑰管理",
       "author": {
         "name": "Che Cheng"
       },
@@ -241,7 +241,7 @@
     {
       "name": "che-creative-suite",
       "version": "0.1.0",
-      "description": "Creative Suite \u2014 \u5354\u8abf che-svg-mcp\uff08\u5411\u91cf\uff09\u8207 che-pixel-mcp\uff08\u9ede\u9663\uff09\u7684\u5716\u5f62\u8655\u7406\u5de5\u4f5c\u6d41\uff0c\u542b creative-router skill \u8207 creative-agent",
+      "description": "Creative Suite — 協調 che-svg-mcp（向量）與 che-pixel-mcp（點陣）的圖形處理工作流，含 creative-router skill 與 creative-agent",
       "author": {
         "name": "Che Cheng"
       },
@@ -347,6 +347,16 @@
       },
       "source": "./plugins/parallel-ai-agents",
       "category": "development"
+    },
+    {
+      "name": "macdoc",
+      "version": "1.0.0",
+      "description": "macOS 原生文件處理 CLI — 格式轉換、VLM OCR、SRT 處理",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/macdoc",
+      "category": "productivity"
     }
   ]
 }
