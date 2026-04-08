@@ -340,7 +340,7 @@
     },
     {
       "name": "parallel-ai-agents",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "description": "Ensemble 審閱：4 Claude + Codex 交叉比對，支援 independent/hybrid/mix N 三種模式",
       "author": {
         "name": "Che Cheng"
