@@ -151,9 +151,14 @@ All selector-accepting commands support `@eN` refs from the last snapshot.
 safari-browser screenshot [path]            # default: screenshot.png [non-interfering]
 safari-browser screenshot --full path       # full page [non-interfering]
 safari-browser pdf --allow-hid [path]       # export as PDF [actively interfering — requires --allow-hid]
-safari-browser upload <selector> <file>     # native file dialog (default, fast) [~1s keyboard]
-safari-browser upload --js <sel> <file>    # JS DataTransfer injection [non-interfering, slow for large files]
+safari-browser upload <selector> <file>     # smart default: native dialog if Accessibility permitted, else JS fallback
+safari-browser upload --js <sel> <file>    # force JS DataTransfer injection [non-interfering]
+safari-browser upload --native <sel> <file> # force native file dialog [requires Accessibility permission]
 ```
+
+**Upload behavior**: With Accessibility permission granted, `upload` uses the native file dialog by default (clipboard paste for path input — fast, supports all characters including CJK and spaces). Without permission, it automatically falls back to JS DataTransfer injection and prints a hint to stderr. Use `--js` to force JS mode, or `--native`/`--allow-hid` to force native mode (backward compatible).
+
+**PDF export**: Uses clipboard paste for path input (instead of keystroke), precise waits (`repeat until exists`) instead of blind delays, and AXDefault button click (locale-independent) for the Save button. Still requires `--allow-hid`.
 
 ### Tab Management
 ```bash
@@ -230,8 +235,9 @@ safari-browser wait --url "success"
 ### File Upload
 ```bash
 safari-browser open "https://example.com/upload"
-safari-browser upload "input[type='file']" "/path/to/document.pdf"         # native dialog (default)
-safari-browser upload --js "input[type='file']" "/path/to/document.pdf"   # JS injection (no permissions needed)
+safari-browser upload "input[type='file']" "/path/to/document.pdf"         # smart default (native if permitted, else JS)
+safari-browser upload --js "input[type='file']" "/path/to/document.pdf"   # force JS injection (no permissions needed)
+safari-browser upload --native "input[type='file']" "/path/to/document.pdf" # force native dialog
 safari-browser wait 5000   # wait for upload to complete
 ```
 
@@ -260,4 +266,5 @@ Use between every `safari-browser` command when operating sensitive sites. Never
 - **No network interception** — Safari has no API for this
 - **JS-based snapshot** — `snapshot` uses DOM scanning (not CDP accessibility tree), 90% as effective
 - **Automation permission required** — first run prompts for Terminal → Safari access (System Settings → Privacy & Security → Automation)
-- **upload/pdf require Accessibility permission** — System Settings → Privacy & Security → Accessibility
+- **upload smart default** — uses native file dialog when Accessibility permission is granted; auto-falls back to JS DataTransfer otherwise. Force with `--js` or `--native`
+- **pdf requires Accessibility permission** — System Settings → Privacy & Security → Accessibility (uses clipboard paste + AXDefault button click)
