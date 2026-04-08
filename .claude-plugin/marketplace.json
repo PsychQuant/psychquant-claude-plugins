@@ -340,8 +340,8 @@
     },
     {
       "name": "parallel-ai-agents",
-      "version": "1.1.1",
-      "description": "Orchestrated team (4 Claude) + Codex 交叉審閱，合併去重產出共識/盲點報告",
+      "version": "1.3.0",
+      "description": "Ensemble 審閱：4 Claude + Codex 交叉比對，支援 independent/additional 兩種模式",
       "author": {
         "name": "Che Cheng"
       },
