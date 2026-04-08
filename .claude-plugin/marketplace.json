@@ -30,7 +30,7 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.12.2",
+      "version": "2.12.3",
       "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close. SDD (Spec-Driven Development) as special case via diagnose complexity assessment.",
       "author": {
         "name": "Che Cheng"
