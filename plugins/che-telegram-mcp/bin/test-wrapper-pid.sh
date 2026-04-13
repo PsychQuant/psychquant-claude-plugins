@@ -311,17 +311,30 @@ PID_FILE="$TMPDIR/test7.pid"
 #   making Test 7 a false positive.
 #
 #   Correct fix: block the bash main process on a FIFO with no writer.
-#   `read -t 30 < FIFO` blocks in the OPEN phase (kernel waits for writer)
-#   up to the timeout. No child fork, no premature EOF.
-cat > "$TMPDIR/stubborn-binary.sh" <<'STUBBORN'
+#   Open-for-read on a FIFO without a writer blocks at the OS open()
+#   syscall. `read -t` does NOT apply during open() (bash's read timeout
+#   only applies once fd is open), so this effectively blocks forever
+#   until SIGKILL arrives. No child fork.
+#
+#   Sentinel file ($STUBBORN_READY) is touched AFTER trap is set and
+#   FIFO is created. Test harness waits for this sentinel before sending
+#   SIGTERM, avoiding the race where bash hasn't installed trap yet
+#   (verified by Codex during #11 verify round — without the sentinel,
+#   SIGTERM sometimes killed bash before trap took effect).
+STUBBORN_READY="$TMPDIR/stubborn-ready"
+cat > "$TMPDIR/stubborn-binary.sh" <<STUBBORN
 #!/bin/bash
 trap '' TERM
-FIFO="/tmp/stubborn-fifo-$$"
-mkfifo "$FIFO"
-# Open FIFO for read; kernel blocks until a writer appears or timeout.
-# No writer ever appears, so read blocks up to 30s in single process.
-read -t 30 < "$FIFO" || true
-rm -f "$FIFO"
+FIFO="$TMPDIR/stubborn-fifo-\$\$"
+if ! mkfifo "\$FIFO" 2>/dev/null; then
+    echo "stubborn: mkfifo failed for \$FIFO" >&2
+    exit 1
+fi
+# Cleanup FIFO on normal exit (SIGKILL won't run this; leftover FIFO is harmless)
+trap 'rm -f "\$FIFO"' EXIT
+# Sentinel: signals test harness that trap + FIFO are ready
+touch "$STUBBORN_READY"
+read < "\$FIFO" || true
 STUBBORN
 chmod +x "$TMPDIR/stubborn-binary.sh"
 
@@ -363,13 +376,31 @@ WRAPPER_PID=$!
 wait_for_file "$PID_FILE" 30
 STUBBORN_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
 
+# CRITICAL: wait for stubborn binary to install its SIGTERM-ignore trap
+# AND be blocked inside read < FIFO before sending SIGTERM. Otherwise
+# bash dies on default SIGTERM handler and test becomes false positive.
+if ! wait_for_file "$STUBBORN_READY" 30; then
+    fail "stubborn binary failed to become ready"
+fi
+
 # Snapshot any children of stubborn binary BEFORE termination (for orphan check)
 CHILDREN_BEFORE=$(pgrep -P "$STUBBORN_PID" 2>/dev/null | tr '\n' ' ')
 
 # Tell wrapper to terminate; binary will ignore SIGTERM, wrapper should SIGKILL it
+START_NS=$(date +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1e9))')
 kill -TERM "$WRAPPER_PID"
 if wait_for_dead "$STUBBORN_PID" 50; then
-    pass "stubborn binary killed via SIGKILL fallback"
+    # Verify wrapper actually took the SIGKILL path (≥1.5s elapsed).
+    # If it died quickly (<500ms), bash died before trap took effect,
+    # meaning SIGKILL fallback was never exercised.
+    wait "$WRAPPER_PID" 2>/dev/null
+    END_NS=$(date +%s%N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1e9))')
+    ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
+    if (( ELAPSED_MS < 1500 )); then
+        fail "wrapper exited in ${ELAPSED_MS}ms — SIGKILL path not exercised (trap race?)"
+    else
+        pass "stubborn binary killed via SIGKILL fallback (${ELAPSED_MS}ms elapsed, SIGTERM-ignore verified)"
+    fi
 else
     fail "stubborn binary survived SIGKILL fallback"
     kill -KILL "$STUBBORN_PID" 2>/dev/null
