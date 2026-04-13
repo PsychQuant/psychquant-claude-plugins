@@ -43,62 +43,14 @@ if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
     exit 1
 fi
 
-# --- PID tracking + orphan cleanup (#8) ---
-# Claude Code 異常退出時，上一個 MCP server process 可能 orphan 繼續佔用資源，
-# 新的 wrapper 啟動前先清掉舊的才能乾淨地開新 session。
-PID_FILE="$HOME/.cache/che-telegram-bot-mcp.pid"
-mkdir -p "$(dirname "$PID_FILE")"
-
-if [[ -f "$PID_FILE" ]]; then
-    # `read` preserves internal whitespace (rejected by regex below),
-    # unlike `tr -d` which would silently concatenate "12 34" → "1234".
-    OLD_PID=
-    read -r OLD_PID < "$PID_FILE" 2>/dev/null || true
-    if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
-        # PID recycling 防護：比對 comm 的 basename（exact match，不用 substring）
-        OLD_COMM=$(ps -p "$OLD_PID" -o comm= 2>/dev/null)
-        OLD_BASENAME=$(basename "$OLD_COMM" 2>/dev/null)
-        if [[ "$OLD_BASENAME" == "$BINARY_NAME" ]]; then
-            kill -TERM "$OLD_PID" 2>/dev/null
-            # Wait up to 2s for graceful shutdown
-            for _ in 1 2 3 4; do
-                kill -0 "$OLD_PID" 2>/dev/null || break
-                sleep 0.5
-            done
-            kill -0 "$OLD_PID" 2>/dev/null && kill -KILL "$OLD_PID" 2>/dev/null
-        fi
-    fi
-fi
-
-# Fork + wait + trap（不能用 exec，因為 exec 會取代 shell，無法 trap cleanup）
-# CRITICAL: `<&0` explicitly inherits wrapper's stdin. Without it, POSIX/bash
-# redirects backgrounded (&) command's stdin to /dev/null, breaking MCP
-# stdio JSON-RPC protocol (#8 follow-up bug).
-"$BINARY" "$@" <&0 &
-BIN_PID=$!
-echo "$BIN_PID" > "$PID_FILE"
-
-cleanup() {
-    # Kill binary FIRST (before removing PID file, so orphans remain trackable)
-    if [[ -n "$BIN_PID" ]] && kill -0 "$BIN_PID" 2>/dev/null; then
-        kill -TERM "$BIN_PID" 2>/dev/null
-        # Wait up to 2s for graceful shutdown
-        for _ in 1 2 3 4; do
-            kill -0 "$BIN_PID" 2>/dev/null || break
-            sleep 0.5
-        done
-        kill -0 "$BIN_PID" 2>/dev/null && kill -KILL "$BIN_PID" 2>/dev/null
-        wait "$BIN_PID" 2>/dev/null
-    fi
-    # Ownership check: only remove PID file if it still belongs to us
-    # (prevents old wrapper's late-firing trap from deleting new wrapper's PID file)
-    if [[ -f "$PID_FILE" ]]; then
-        CURRENT_PID=
-        read -r CURRENT_PID < "$PID_FILE" 2>/dev/null || true
-        [[ "$CURRENT_PID" == "$BIN_PID" ]] && rm -f "$PID_FILE"
-    fi
-}
-trap cleanup EXIT INT TERM
-
-wait "$BIN_PID"
-exit $?
+# NOTE: bot-mcp 不需要 PID tracking (#12)
+#
+# Telegram Bot API 是 stateless HTTPS client — 沒有 local DB lock、沒有
+# file handle 競爭、沒有 single-instance constraint。多個 bot-mcp instance
+# 並存對 Telegram 服務端來說是合法的。所以 #8 引入的整套 PID file +
+# orphan cleanup + ownership check 對 bot-mcp 完全沒對應的 root cause，
+# 純粹是維護成本和潛在 multi-instance race（見 #10）。
+#
+# 對照組：che-telegram-all-mcp-wrapper.sh 仍然需要 PID tracking，因為
+# TDLib 用 single-instance binlog/sqlite。
+exec "$BINARY" "$@"
