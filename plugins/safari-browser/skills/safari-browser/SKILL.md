@@ -187,7 +187,35 @@ safari-browser storage local set <key> <value>
 safari-browser storage local remove <key>
 safari-browser storage local clear
 safari-browser storage session get/set/remove/clear
+
+# Multi-window: per-origin storage requires --url targeting (#23)
+safari-browser storage local get token --url plaud   # Plaud's token
+safari-browser storage local get token --url oauth   # different OAuth provider's token
 ```
+
+### Multi-Window Targeting (#17 #18 #21 #23)
+
+When Safari has more than one window open, every command that reads from
+or drives a document accepts global targeting flags:
+
+```bash
+safari-browser documents                                # discover available windows
+safari-browser get url --url plaud                      # target by URL substring
+safari-browser get title --window 2                     # target by window index (1-based)
+safari-browser snapshot --url plaud                     # snapshot specific document
+safari-browser wait --for-url "/dashboard" --url plaud  # wait on specific document
+
+# Window-scoped commands (close/screenshot/pdf/upload --native) only accept --window
+safari-browser screenshot --window 2 out.png
+safari-browser pdf --window 2 --allow-hid out.pdf
+safari-browser upload --native "input[type=file]" file.mp3 --window 2
+```
+
+**Default `screenshot` behavior** (#23 R7): when AX permission is granted, default `screenshot` (no flag) uses AX SPI for reliable identity (no title/bounds heuristic). Without AX permission, falls back to legacy CG name match.
+
+**`screenshot --window N`** (#23 R6 C1): requires Accessibility permission. Uses `_AXUIElementGetWindow` private SPI for reliable AS↔CG mapping. Eliminates the wrong-window failure modes that bedevil bounds-/title-based matching. Strict fail-closed: throws `windowIdentityAmbiguous` when multiple visible windows can't be uniquely identified, instead of silently picking one.
+
+**Wait command rename** (#23 BREAKING): `wait --url <pattern>` → `wait --for-url <pattern>`. The old `--url` flag is now a global targeting flag.
 
 ### Settings
 ```bash
