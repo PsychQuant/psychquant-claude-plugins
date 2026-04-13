@@ -43,14 +43,21 @@ if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
     exit 1
 fi
 
-# NOTE: bot-mcp 不需要 PID tracking (#12)
+# NOTE: bot-mcp 不需要 local resource PID tracking (#12)
 #
-# Telegram Bot API 是 stateless HTTPS client — 沒有 local DB lock、沒有
-# file handle 競爭、沒有 single-instance constraint。多個 bot-mcp instance
-# 並存對 Telegram 服務端來說是合法的。所以 #8 引入的整套 PID file +
-# orphan cleanup + ownership check 對 bot-mcp 完全沒對應的 root cause，
-# 純粹是維護成本和潛在 multi-instance race（見 #10）。
+# Bot API 是 HTTPS client，本地端 **沒有** local DB、file lock、binlog
+# 這類 single-instance resource。所以 #8 引入的 PID file + orphan
+# cleanup + ownership check 針對的「orphan 卡住下次啟動」問題，在
+# bot-mcp 不存在。
+#
+# Caveat：`get_updates` 是 long-polling API，Telegram 服務端規定同一個
+# bot token 只能有一個 client 在 polling，第二個會收到
+# "409 Conflict: terminated by other getUpdates request"。所以 **多
+# instance 不會 corrupt local state，但 getUpdates 會在 server side
+# 互踢**。修這個 race 應該用 server-side locking (advisory lock 在
+# getUpdates 呼叫前檢查)，而不是 wrapper PID tracking。見 #10 /
+# Server.swift follow-up。
 #
 # 對照組：che-telegram-all-mcp-wrapper.sh 仍然需要 PID tracking，因為
-# TDLib 用 single-instance binlog/sqlite。
+# TDLib 用 single-instance binlog/sqlite 無法共享。
 exec "$BINARY" "$@"

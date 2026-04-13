@@ -305,17 +305,23 @@ PID_FILE="$TMPDIR/test7.pid"
 #   subshell killed bash but left sleep as an orphan adopted by launchd. The
 #   test then "passed" by checking only the bash PID, missing the orphan.
 #
-#   Fix: make the stubborn binary a SINGLE process that ignores SIGTERM AND
-#   has no children. Use bash's builtin `read -t` with timeout so the bash
-#   process itself blocks (no fork to /bin/sleep). On SIGTERM, the trap
-#   ignores it; on SIGKILL, the bash process dies with no orphans.
+#   Naive fix attempt: `read -t 30 < /dev/null`. DOES NOT WORK — /dev/null
+#   returns EOF immediately, `read` returns exit=1 in ~1ms regardless of -t.
+#   Verified: stubborn binary would exit before wrapper even sent SIGTERM,
+#   making Test 7 a false positive.
+#
+#   Correct fix: block the bash main process on a FIFO with no writer.
+#   `read -t 30 < FIFO` blocks in the OPEN phase (kernel waits for writer)
+#   up to the timeout. No child fork, no premature EOF.
 cat > "$TMPDIR/stubborn-binary.sh" <<'STUBBORN'
 #!/bin/bash
 trap '' TERM
-# Block this process for up to 30s using `read` builtin (no child fork).
-# `read -t 30` is bash builtin so no /bin/sleep child is created.
-# stdin is closed (< /dev/null) so it just waits for the timeout.
-read -t 30 < /dev/null || true
+FIFO="/tmp/stubborn-fifo-$$"
+mkfifo "$FIFO"
+# Open FIFO for read; kernel blocks until a writer appears or timeout.
+# No writer ever appears, so read blocks up to 30s in single process.
+read -t 30 < "$FIFO" || true
+rm -f "$FIFO"
 STUBBORN
 chmod +x "$TMPDIR/stubborn-binary.sh"
 
