@@ -40,7 +40,10 @@ PID_FILE="$HOME/.cache/che-telegram-all-mcp.pid"
 mkdir -p "$(dirname "$PID_FILE")"
 
 if [[ -f "$PID_FILE" ]]; then
-    OLD_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+    # `read` preserves internal whitespace (rejected by regex below),
+    # unlike `tr -d` which would silently concatenate "12 34" → "1234".
+    OLD_PID=
+    read -r OLD_PID < "$PID_FILE" 2>/dev/null || true
     if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
         # PID recycling 防護：比對 comm 的 basename（exact match，不用 substring）
         OLD_COMM=$(ps -p "$OLD_PID" -o comm= 2>/dev/null)
@@ -76,8 +79,10 @@ cleanup() {
     fi
     # Ownership check: only remove PID file if it still belongs to us
     # (prevents old wrapper's late-firing trap from deleting new wrapper's PID file)
-    if [[ -f "$PID_FILE" ]] && [[ "$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')" == "$BIN_PID" ]]; then
-        rm -f "$PID_FILE"
+    if [[ -f "$PID_FILE" ]]; then
+        CURRENT_PID=
+        read -r CURRENT_PID < "$PID_FILE" 2>/dev/null || true
+        [[ "$CURRENT_PID" == "$BIN_PID" ]] && rm -f "$PID_FILE"
     fi
 }
 trap cleanup EXIT INT TERM

@@ -41,7 +41,8 @@ PID_FILE="$pid_file"
 mkdir -p "\$(dirname "\$PID_FILE")"
 
 if [[ -f "\$PID_FILE" ]]; then
-    OLD_PID=\$(cat "\$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+    OLD_PID=
+    read -r OLD_PID < "\$PID_FILE" 2>/dev/null || true
     if [[ "\$OLD_PID" =~ ^[0-9]+\$ ]] && kill -0 "\$OLD_PID" 2>/dev/null; then
         OLD_COMM=\$(ps -p "\$OLD_PID" -o comm= 2>/dev/null)
         OLD_BASENAME=\$(basename "\$OLD_COMM" 2>/dev/null)
@@ -70,8 +71,10 @@ cleanup() {
         kill -0 "\$BIN_PID" 2>/dev/null && kill -KILL "\$BIN_PID" 2>/dev/null
         wait "\$BIN_PID" 2>/dev/null
     fi
-    if [[ -f "\$PID_FILE" ]] && [[ "\$(cat "\$PID_FILE" 2>/dev/null | tr -d '[:space:]')" == "\$BIN_PID" ]]; then
-        rm -f "\$PID_FILE"
+    if [[ -f "\$PID_FILE" ]]; then
+        CURRENT_PID=
+        read -r CURRENT_PID < "\$PID_FILE" 2>/dev/null || true
+        [[ "\$CURRENT_PID" == "\$BIN_PID" ]] && rm -f "\$PID_FILE"
     fi
 }
 trap cleanup EXIT INT TERM
@@ -83,12 +86,21 @@ EOF
 }
 
 # Helper: poll for condition with timeout (avoids timing races)
+# Uses `ps -o state=` to detect zombies (Z state) as "dead", since `kill -0`
+# returns success for zombies (process exists but is un-reaped). After detecting
+# death, attempts to reap via `wait` so subsequent checks see the PID gone.
 wait_for_dead() {
     local pid=$1
     local max_tenths=${2:-30}  # default 3s
     local i=0
     while [[ $i -lt $max_tenths ]]; do
-        kill -0 "$pid" 2>/dev/null || return 0
+        local state
+        state=$(ps -p "$pid" -o state= 2>/dev/null | tr -d ' ')
+        # Treat missing process OR zombie as "dead"
+        if [[ -z "$state" ]] || [[ "$state" == Z* ]]; then
+            wait "$pid" 2>/dev/null  # reap if we're the parent
+            return 0
+        fi
         sleep 0.1
         i=$((i + 1))
     done
@@ -312,6 +324,33 @@ if wait_for_dead "$STUBBORN_PID" 50; then
 else
     fail "stubborn binary survived SIGKILL fallback"
     kill -KILL "$STUBBORN_PID" 2>/dev/null
+fi
+wait "$WRAPPER_PID" 2>/dev/null
+
+# ----------------------------------------------------------------------
+test_case "Corrupted PID file with internal whitespace is rejected, not coalesced"
+PID_FILE="$TMPDIR/test8.pid"
+# Write corrupted content: "12 34" should NOT be parsed as PID 1234
+echo "12 34" > "$PID_FILE"
+
+make_fake_wrapper "$TMPDIR/wrapper8.sh" "$PID_FILE" "sleep" "2"
+"$TMPDIR/wrapper8.sh" &
+WRAPPER_PID=$!
+
+# Poll until wrapper overwrites PID file with its own BIN_PID
+NEW_CONTENT=""
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+    NEW_CONTENT=$(cat "$PID_FILE" 2>/dev/null)
+    [[ "$NEW_CONTENT" != "12 34" ]] && break
+    sleep 0.1
+done
+
+if [[ "$NEW_CONTENT" == "1234" ]]; then
+    fail "wrapper parsed '12 34' as '1234' (tr -d bug regressed)"
+elif [[ "$NEW_CONTENT" =~ ^[0-9]+$ ]]; then
+    pass "corrupted PID rejected, valid new PID written ($NEW_CONTENT)"
+else
+    fail "unexpected PID file content: '$NEW_CONTENT'"
 fi
 wait "$WRAPPER_PID" 2>/dev/null
 
