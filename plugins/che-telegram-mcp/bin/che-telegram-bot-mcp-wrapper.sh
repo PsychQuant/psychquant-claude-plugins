@@ -3,13 +3,13 @@
 # Bot token is read from macOS Keychain at runtime.
 
 BINARY_NAME="CheTelegramBotMCP"
-GITHUB_REPO="kiki830621/che-telegram-bot-mcp"
+GITHUB_REPO="kiki830621/che-msg"
 RELEASE_URL="https://github.com/$GITHUB_REPO/releases/latest/download/$BINARY_NAME"
 INSTALL_DIR="$HOME/bin"
 
 # Find binary
 BINARY=""
-for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-bot-mcp/.build/release/$BINARY_NAME"; do
+for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-bot-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-bot-mcp/.build/release/$BINARY_NAME"; do
     [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
