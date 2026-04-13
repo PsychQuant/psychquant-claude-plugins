@@ -43,4 +43,37 @@ if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
     exit 1
 fi
 
-exec "$BINARY" "$@"
+# --- PID tracking + orphan cleanup (#8) ---
+# Claude Code 異常退出時，上一個 MCP server process 可能 orphan 繼續佔用資源，
+# 新的 wrapper 啟動前先清掉舊的才能乾淨地開新 session。
+PID_FILE="$HOME/.cache/che-telegram-bot-mcp.pid"
+mkdir -p "$(dirname "$PID_FILE")"
+
+if [[ -f "$PID_FILE" ]]; then
+    OLD_PID=$(cat "$PID_FILE" 2>/dev/null)
+    if [[ -n "$OLD_PID" ]] && kill -0 "$OLD_PID" 2>/dev/null; then
+        # PID recycling 防護：確認是我們的 binary
+        if ps -p "$OLD_PID" -o comm= 2>/dev/null | grep -q "$BINARY_NAME"; then
+            kill -TERM "$OLD_PID" 2>/dev/null
+            sleep 0.5
+            kill -0 "$OLD_PID" 2>/dev/null && kill -KILL "$OLD_PID" 2>/dev/null
+        fi
+    fi
+fi
+
+# Fork + wait + trap（不能用 exec，因為 exec 會取代 shell，無法 trap cleanup）
+"$BINARY" "$@" &
+BIN_PID=$!
+echo "$BIN_PID" > "$PID_FILE"
+
+cleanup() {
+    rm -f "$PID_FILE"
+    if [[ -n "$BIN_PID" ]] && kill -0 "$BIN_PID" 2>/dev/null; then
+        kill -TERM "$BIN_PID" 2>/dev/null
+        wait "$BIN_PID" 2>/dev/null
+    fi
+}
+trap cleanup EXIT INT TERM
+
+wait "$BIN_PID"
+exit $?
