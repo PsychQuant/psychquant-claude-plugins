@@ -299,13 +299,24 @@ wait "$WRAPPER_A_PID" 2>/dev/null
 # ----------------------------------------------------------------------
 test_case "SIGKILL fallback: binary that ignores SIGTERM still gets killed"
 PID_FILE="$TMPDIR/test7.pid"
-# Use a binary that traps SIGTERM and ignores it
-# We'll write a fake wrapper but with a binary that's a bash subshell trapping SIGTERM
-cat > "$TMPDIR/stubborn-binary.sh" <<'EOF'
+# Stubborn binary structure (#11):
+#   The previous version used `trap '' TERM; sleep 30`. Bash's trap ignores
+#   SIGTERM correctly, but `sleep 30` is a CHILD process. SIGKILL of the bash
+#   subshell killed bash but left sleep as an orphan adopted by launchd. The
+#   test then "passed" by checking only the bash PID, missing the orphan.
+#
+#   Fix: make the stubborn binary a SINGLE process that ignores SIGTERM AND
+#   has no children. Use bash's builtin `read -t` with timeout so the bash
+#   process itself blocks (no fork to /bin/sleep). On SIGTERM, the trap
+#   ignores it; on SIGKILL, the bash process dies with no orphans.
+cat > "$TMPDIR/stubborn-binary.sh" <<'STUBBORN'
 #!/bin/bash
-trap '' TERM  # Ignore SIGTERM
-sleep 30
-EOF
+trap '' TERM
+# Block this process for up to 30s using `read` builtin (no child fork).
+# `read -t 30` is bash builtin so no /bin/sleep child is created.
+# stdin is closed (< /dev/null) so it just waits for the timeout.
+read -t 30 < /dev/null || true
+STUBBORN
 chmod +x "$TMPDIR/stubborn-binary.sh"
 
 # Custom wrapper that uses stubborn binary
@@ -315,7 +326,7 @@ BINARY_NAME="stubborn-binary.sh"
 BINARY="$TMPDIR/stubborn-binary.sh"
 PID_FILE="$PID_FILE"
 
-"\$BINARY" &
+"\$BINARY" <&0 &
 BIN_PID=\$!
 echo "\$BIN_PID" > "\$PID_FILE"
 
@@ -329,8 +340,10 @@ cleanup() {
         kill -0 "\$BIN_PID" 2>/dev/null && kill -KILL "\$BIN_PID" 2>/dev/null
         wait "\$BIN_PID" 2>/dev/null
     fi
-    if [[ -f "\$PID_FILE" ]] && [[ "\$(cat "\$PID_FILE" 2>/dev/null | tr -d '[:space:]')" == "\$BIN_PID" ]]; then
-        rm -f "\$PID_FILE"
+    if [[ -f "\$PID_FILE" ]]; then
+        CURRENT_PID=
+        read -r CURRENT_PID < "\$PID_FILE" 2>/dev/null || true
+        [[ "\$CURRENT_PID" == "\$BIN_PID" ]] && rm -f "\$PID_FILE"
     fi
 }
 trap cleanup EXIT INT TERM
@@ -344,6 +357,9 @@ WRAPPER_PID=$!
 wait_for_file "$PID_FILE" 30
 STUBBORN_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
 
+# Snapshot any children of stubborn binary BEFORE termination (for orphan check)
+CHILDREN_BEFORE=$(pgrep -P "$STUBBORN_PID" 2>/dev/null | tr '\n' ' ')
+
 # Tell wrapper to terminate; binary will ignore SIGTERM, wrapper should SIGKILL it
 kill -TERM "$WRAPPER_PID"
 if wait_for_dead "$STUBBORN_PID" 50; then
@@ -351,6 +367,21 @@ if wait_for_dead "$STUBBORN_PID" 50; then
 else
     fail "stubborn binary survived SIGKILL fallback"
     kill -KILL "$STUBBORN_PID" 2>/dev/null
+fi
+
+# Verify NO orphan children remain (#11)
+ORPHAN_FOUND=
+for child_pid in $CHILDREN_BEFORE; do
+    if kill -0 "$child_pid" 2>/dev/null; then
+        ORPHAN_FOUND="$child_pid"
+        kill -KILL "$child_pid" 2>/dev/null
+        break
+    fi
+done
+if [[ -z "$ORPHAN_FOUND" ]]; then
+    pass "no orphan children left after SIGKILL (process tree fully reaped)"
+else
+    fail "orphan child PID $ORPHAN_FOUND survived parent SIGKILL"
 fi
 wait "$WRAPPER_PID" 2>/dev/null
 
