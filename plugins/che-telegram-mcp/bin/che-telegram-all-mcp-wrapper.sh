@@ -3,11 +3,11 @@
 # Credentials are read from macOS Keychain at runtime — never stored in config files.
 
 BINARY_NAME="CheTelegramAllMCP"
-GITHUB_REPO="kiki830621/che-telegram-all-mcp"
+GITHUB_REPO="kiki830621/che-msg"
 
 # Find binary
 BINARY=""
-for loc in "$HOME/bin/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-all-mcp/.build/release/$BINARY_NAME"; do
+for loc in "$HOME/bin/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-all-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-all-mcp/.build/release/$BINARY_NAME"; do
     [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
