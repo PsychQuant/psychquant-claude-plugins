@@ -57,7 +57,7 @@ if [[ -f "\$PID_FILE" ]]; then
     fi
 fi
 
-"\$BINARY" $sleep_duration &
+"\$BINARY" $sleep_duration <&0 &
 BIN_PID=\$!
 echo "\$BIN_PID" > "\$PID_FILE"
 
@@ -121,6 +121,33 @@ wait_for_file() {
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf '$TMPDIR'" EXIT
+
+# ----------------------------------------------------------------------
+# Test 0: stdin inheritance — critical for MCP stdio protocol
+# POSIX rule: in non-interactive shell, `cmd &` redirects stdin to /dev/null
+# unless explicitly overridden with `<&0`. Using `/bin/sleep` as fake binary
+# never exercises this path; we need a binary that actually reads stdin.
+test_case "Wrapper inherits stdin to backgrounded binary (POSIX & rule)"
+PID_FILE="$TMPDIR/test0.pid"
+OUT_FILE="$TMPDIR/test0.out"
+
+# Build a minimal wrapper that mimics the production stdin-inheritance path
+cat > "$TMPDIR/wrapper0.sh" <<EOF
+#!/bin/bash
+PID_FILE="$PID_FILE"
+/bin/cat > "$OUT_FILE" <&0 &
+BIN_PID=\$!
+echo "\$BIN_PID" > "\$PID_FILE"
+wait "\$BIN_PID"
+EOF
+chmod +x "$TMPDIR/wrapper0.sh"
+
+echo "MCP_STDIN_TEST_PAYLOAD" | "$TMPDIR/wrapper0.sh"
+if [[ "$(cat "$OUT_FILE" 2>/dev/null)" == "MCP_STDIN_TEST_PAYLOAD" ]]; then
+    pass "stdin inherited via <&0 (bug from commit 06015c9 blocked)"
+else
+    fail "stdin NOT inherited — POSIX & rule redirected to /dev/null (MCP stdio would break)"
+fi
 
 # ----------------------------------------------------------------------
 test_case "PID file created on start, removed on clean exit"
