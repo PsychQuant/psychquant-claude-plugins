@@ -40,12 +40,18 @@ PID_FILE="$HOME/.cache/che-telegram-all-mcp.pid"
 mkdir -p "$(dirname "$PID_FILE")"
 
 if [[ -f "$PID_FILE" ]]; then
-    OLD_PID=$(cat "$PID_FILE" 2>/dev/null)
-    if [[ -n "$OLD_PID" ]] && kill -0 "$OLD_PID" 2>/dev/null; then
-        # PID recycling 防護：確認是我們的 binary
-        if ps -p "$OLD_PID" -o comm= 2>/dev/null | grep -q "$BINARY_NAME"; then
+    OLD_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+    if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
+        # PID recycling 防護：比對 comm 的 basename（exact match，不用 substring）
+        OLD_COMM=$(ps -p "$OLD_PID" -o comm= 2>/dev/null)
+        OLD_BASENAME=$(basename "$OLD_COMM" 2>/dev/null)
+        if [[ "$OLD_BASENAME" == "$BINARY_NAME" ]]; then
             kill -TERM "$OLD_PID" 2>/dev/null
-            sleep 0.5
+            # Wait up to 2s for graceful shutdown
+            for _ in 1 2 3 4; do
+                kill -0 "$OLD_PID" 2>/dev/null || break
+                sleep 0.5
+            done
             kill -0 "$OLD_PID" 2>/dev/null && kill -KILL "$OLD_PID" 2>/dev/null
         fi
     fi
@@ -57,10 +63,21 @@ BIN_PID=$!
 echo "$BIN_PID" > "$PID_FILE"
 
 cleanup() {
-    rm -f "$PID_FILE"
+    # Kill binary FIRST (before removing PID file, so orphans remain trackable)
     if [[ -n "$BIN_PID" ]] && kill -0 "$BIN_PID" 2>/dev/null; then
         kill -TERM "$BIN_PID" 2>/dev/null
+        # Wait up to 2s for graceful shutdown
+        for _ in 1 2 3 4; do
+            kill -0 "$BIN_PID" 2>/dev/null || break
+            sleep 0.5
+        done
+        kill -0 "$BIN_PID" 2>/dev/null && kill -KILL "$BIN_PID" 2>/dev/null
         wait "$BIN_PID" 2>/dev/null
+    fi
+    # Ownership check: only remove PID file if it still belongs to us
+    # (prevents old wrapper's late-firing trap from deleting new wrapper's PID file)
+    if [[ -f "$PID_FILE" ]] && [[ "$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')" == "$BIN_PID" ]]; then
+        rm -f "$PID_FILE"
     fi
 }
 trap cleanup EXIT INT TERM
