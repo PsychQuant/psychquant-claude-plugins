@@ -220,7 +220,7 @@
     },
     {
       "name": "che-telegram-mcp",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Telegram MCP Plugin — 結合 Bot API 與個人帳號 (TDLib)，macOS Keychain 密鑰管理",
       "author": {
         "name": "Che Cheng"
