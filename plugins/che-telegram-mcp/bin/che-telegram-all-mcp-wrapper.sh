@@ -61,7 +61,10 @@ if [[ -f "$PID_FILE" ]]; then
 fi
 
 # Fork + wait + trap（不能用 exec，因為 exec 會取代 shell，無法 trap cleanup）
-"$BINARY" "$@" &
+# CRITICAL: `<&0` explicitly inherits wrapper's stdin. Without it, POSIX/bash
+# redirects backgrounded (&) command's stdin to /dev/null, breaking MCP
+# stdio JSON-RPC protocol (#8 follow-up bug).
+"$BINARY" "$@" <&0 &
 BIN_PID=$!
 echo "$BIN_PID" > "$PID_FILE"
 
