@@ -30,8 +30,8 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.15.0",
-      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close. Plus idd-comment (template-guided, prose-first) and idd-edit (edit existing comment). SDD as special case via diagnose complexity assessment.",
+      "version": "2.16.0",
+      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close. Plus idd-list (workflow-aware issue listing), idd-comment (template-guided, prose-first), and idd-edit (edit existing comment). SDD as special case via diagnose complexity assessment.",
       "author": {
         "name": "Che Cheng"
       },
