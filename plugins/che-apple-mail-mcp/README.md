@@ -11,6 +11,23 @@ macOS Apple Mail MCP server with native AppleScript integration.
 - Flag, move, delete operations
 - VIP senders and signatures
 
+## Commands
+
+### `/archive-mail` — 歸檔郵件到 Markdown
+
+把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。
+
+```bash
+# Explicit filter mode
+/archive-mail some@example.com
+/archive-mail some@example.com communications
+
+# Zero-arg mode (planned in #13 — reads .claude/emails.md config)
+/archive-mail
+```
+
+詳細 spec 見 [`commands/archive-mail.md`](commands/archive-mail.md)。
+
 ## Installation
 
 ### Option 1: From Release (Recommended)
