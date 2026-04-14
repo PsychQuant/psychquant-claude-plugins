@@ -30,8 +30,8 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.16.0",
-      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close. Plus idd-list (workflow-aware issue listing), idd-comment (template-guided, prose-first), and idd-edit (edit existing comment). SDD as special case via diagnose complexity assessment.",
+      "version": "2.17.0",
+      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Skip/won't-fix marks (- [~] / - [-]) require reasons. Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
       "author": {
         "name": "Che Cheng"
       },
@@ -110,8 +110,8 @@
     },
     {
       "name": "che-duckdb-mcp",
-      "version": "2.0.0",
-      "description": "Swift-native DuckDB MCP — dual-source docs (llms.txt + full) with TF-IDF search + fuzzy function matching, plus 6 local DB tools (14 total). Pinned duckdb-swift, real DuckDB error messages.",
+      "version": "2.1.0",
+      "description": "Swift-native DuckDB MCP + guidance Skill — dual-source docs (llms.txt + full) with TF-IDF search + fuzzy function matching, plus 6 local DB tools (14 total). Pinned duckdb-swift, real DuckDB error messages, decision tree for when to use each tool.",
       "author": {
         "name": "Che Cheng"
       },
