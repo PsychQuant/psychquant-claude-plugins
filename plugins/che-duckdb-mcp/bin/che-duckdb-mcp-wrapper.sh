@@ -1,6 +1,6 @@
 #!/bin/bash
 # Auto-download wrapper for CheDuckDBMCP
-REPO="kiki830621/che-duckdb-mcp"
+REPO="PsychQuant/che-duckdb-mcp"
 BINARY_NAME="CheDuckDBMCP"
 INSTALL_DIR="$HOME/bin"
 
