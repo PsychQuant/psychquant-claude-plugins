@@ -2,7 +2,7 @@
 name: che-duckdb-mcp
 description: Guide for using the che-duckdb-mcp MCP tools to search DuckDB documentation and operate local DuckDB databases. Use when user asks about DuckDB SQL syntax, DuckDB functions (read_csv, json_extract, etc.), querying local .duckdb files, or anything related to DuckDB.
 allowed-tools:
-  - mcp__che-duckdb-mcp__*
+  - mcp__plugin_che-duckdb-mcp_duckdb__*
 ---
 
 # che-duckdb-mcp — DuckDB Documentation & Local Database
@@ -14,7 +14,7 @@ allowed-tools:
 ### "How do I use DuckDB function X?"
 
 ```
-mcp__che-duckdb-mcp__get_function_docs { function_name: "X" }
+mcp__plugin_che-duckdb-mcp_duckdb__get_function_docs { function_name: "X" }
 ```
 
 - Supports fuzzy matching: `read_csvs` → `read_csv`, `JSON_EXTRACT` → `json_extract`
@@ -24,7 +24,7 @@ mcp__che-duckdb-mcp__get_function_docs { function_name: "X" }
 ### "What's the DuckDB SQL syntax for X?"
 
 ```
-mcp__che-duckdb-mcp__get_sql_syntax { statement: "COPY" }   # SELECT, INSERT, CREATE TABLE, etc.
+mcp__plugin_che-duckdb-mcp_duckdb__get_sql_syntax { statement: "COPY" }   # SELECT, INSERT, CREATE TABLE, etc.
 ```
 
 - Use for SQL statements (SELECT, INSERT, CREATE, COPY, ATTACH, etc.)
@@ -33,7 +33,7 @@ mcp__che-duckdb-mcp__get_sql_syntax { statement: "COPY" }   # SELECT, INSERT, CR
 ### "Search DuckDB docs for keyword X"
 
 ```
-mcp__che-duckdb-mcp__search_docs { query: "window functions", mode: "all", limit: 10 }
+mcp__plugin_che-duckdb-mcp_duckdb__search_docs { query: "window functions", mode: "all", limit: 10 }
 ```
 
 - Uses TF-IDF ranking (not substring match) — order matters, first result is usually best
@@ -44,22 +44,22 @@ mcp__che-duckdb-mcp__search_docs { query: "window functions", mode: "all", limit
 ### "Show me section X of the docs"
 
 ```
-mcp__che-duckdb-mcp__list_sections [{ level: 2 }]       # browse structure
-mcp__che-duckdb-mcp__get_section { id: "..." }          # fetch by anchor id
-mcp__che-duckdb-mcp__get_section { title: "COPY" }      # fuzzy title match
+mcp__plugin_che-duckdb-mcp_duckdb__list_sections [{ level: 2 }]       # browse structure
+mcp__plugin_che-duckdb-mcp_duckdb__get_section { id: "..." }          # fetch by anchor id
+mcp__plugin_che-duckdb-mcp_duckdb__get_section { title: "COPY" }      # fuzzy title match
 ```
 
 ### "List all DuckDB functions"
 
 ```
-mcp__che-duckdb-mcp__list_functions
+mcp__plugin_che-duckdb-mcp_duckdb__list_functions
 ```
 
 ### "My doc results look outdated"
 
 ```
-mcp__che-duckdb-mcp__refresh_docs        # force re-download both llms.txt + duckdb-docs.md
-mcp__che-duckdb-mcp__get_doc_info        # shows per-source lastUpdated, sectionCount, cachePath
+mcp__plugin_che-duckdb-mcp_duckdb__refresh_docs        # force re-download both llms.txt + duckdb-docs.md
+mcp__plugin_che-duckdb-mcp_duckdb__get_doc_info        # shows per-source lastUpdated, sectionCount, cachePath
 ```
 
 Normally not needed — the MCP uses ETag/Last-Modified conditional HTTP caching, so it auto-refreshes when upstream changes.
@@ -71,7 +71,7 @@ Normally not needed — the MCP uses ETag/Last-Modified conditional HTTP caching
 ### "Connect to a .duckdb file"
 
 ```
-mcp__che-duckdb-mcp__db_connect { path: "/abs/path/to/file.duckdb", read_only: true }
+mcp__plugin_che-duckdb-mcp_duckdb__db_connect { path: "/abs/path/to/file.duckdb", read_only: true }
 ```
 
 - `path` omitted → in-memory database
@@ -81,7 +81,7 @@ mcp__che-duckdb-mcp__db_connect { path: "/abs/path/to/file.duckdb", read_only: t
 ### "Run a SELECT query"
 
 ```
-mcp__che-duckdb-mcp__db_query { sql: "SELECT ...", format: "markdown", limit: 1000 }
+mcp__plugin_che-duckdb-mcp_duckdb__db_query { sql: "SELECT ...", format: "markdown", limit: 1000 }
 ```
 
 - Allowed: SELECT / WITH / SHOW / DESCRIBE / EXPLAIN / PRAGMA
@@ -92,21 +92,21 @@ mcp__che-duckdb-mcp__db_query { sql: "SELECT ...", format: "markdown", limit: 10
 ### "Run CREATE / INSERT / UPDATE / DELETE"
 
 ```
-mcp__che-duckdb-mcp__db_execute { sql: "CREATE TABLE ... AS SELECT ..." }
+mcp__plugin_che-duckdb-mcp_duckdb__db_execute { sql: "CREATE TABLE ... AS SELECT ..." }
 ```
 
 ### "What tables are there? What's this table's schema?"
 
 ```
-mcp__che-duckdb-mcp__db_list_tables [{ include_views: true, schema: "main" }]
-mcp__che-duckdb-mcp__db_describe { table: "users" }              # by name
-mcp__che-duckdb-mcp__db_describe { query: "SELECT a+b FROM t" }  # result schema
+mcp__plugin_che-duckdb-mcp_duckdb__db_list_tables [{ include_views: true, schema: "main" }]
+mcp__plugin_che-duckdb-mcp_duckdb__db_describe { table: "users" }              # by name
+mcp__plugin_che-duckdb-mcp_duckdb__db_describe { query: "SELECT a+b FROM t" }  # result schema
 ```
 
 ### "What version / state is the DB in?"
 
 ```
-mcp__che-duckdb-mcp__db_info
+mcp__plugin_che-duckdb-mcp_duckdb__db_info
 ```
 
 Returns DuckDB engine version, `swiftBindingRevision` (pinned), connection path, table count, read-only state.

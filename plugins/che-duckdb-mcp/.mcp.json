@@ -1,5 +1,5 @@
 {
-  "che-duckdb-mcp": {
+  "duckdb": {
     "type": "stdio",
     "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-duckdb-mcp-wrapper.sh",
     "description": "DuckDB MCP server - Documentation queries and database operations"
