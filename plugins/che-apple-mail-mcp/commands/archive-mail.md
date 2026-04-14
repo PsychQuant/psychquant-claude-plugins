@@ -76,7 +76,21 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 
 ### Step 5: 生成 Markdown
 
-對每封新郵件，建立 Markdown 檔案：
+對每封新郵件，建立 Markdown 檔案。
+
+> **⚠️ 再次提醒（來自 Step 3）**：在 Step 5 呼叫 `mcp__plugin_che-apple-mail-mcp_mail__get_email` 讀取內文時，同樣要用 **display name（email 地址）**作為 `account_name`，不可用 `list_accounts` 回的 `ews://` URL 或 UUID——否則 AppleScript error -1728。
+
+`search_emails` 回傳**不含**完整內容（僅 subject / sender / date / mailbox / account），因此對每封新郵件先呼叫：
+
+```
+mcp__plugin_che-apple-mail-mcp_mail__get_email(
+  id: "<id from search>",
+  mailbox: "<mailbox from search>",
+  account_name: "<display name / email 地址>",
+  format: "text"
+)
+```
+
 
 **檔名格式**（fixes #16）：`YYYY-MM-DD_{subject-hyphenated}.md`
 
@@ -84,7 +98,7 @@ Subject → filename 轉換規則（依此順序執行）：
 1. **標點轉 `-`**：空白、冒號、斜線、反斜線、引號、問號、驚嘆號、中英標點（`,`、`。`、`、`、`:`、`；`、`(`、`)`、`[`、`]`、`?`、`!`）→ `-`
 2. **路徑字元移除**：`.` 開頭的檔名加底線前綴 `_`；`..` 保留為字面（標點轉換已把 `/` 變 `-`，不會路徑越界）
 3. **連續 dash 保留**：**不**合併連續 `-`（實務上 `Re:` + 空白 = `Re--`，符合 50 個歷史歸檔慣例）
-4. **截斷至 50 個 Unicode code points**（以 Swift `String.count` 為準，非 byte）
+4. **截斷至 50 個字元**（extended grapheme clusters，即 Swift `String.count` 的語意；非 Unicode code points、非 UTF-8 byte。`é` / `🇹🇼` / 中日韓字各算 1）
 5. **首尾 `-` 去除**（截斷後若尾部是 `-`，再次去除；最終檔名不應以 `-` 結尾）
 6. **空字串 fallback**：若步驟 1–5 後為空（空白 subject 或全標點 subject），使用 `no-subject`
 7. **保留 Unicode**（中文、日文、韓文、emoji 維持原樣）
