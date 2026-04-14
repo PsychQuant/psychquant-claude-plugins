@@ -1,7 +1,7 @@
 ---
 description: 歸檔指定聯絡人的 Apple Mail 郵件到 Markdown 檔案
 argument-hint: <email-filter> [output-dir]
-allowed-tools: mcp__apple-mail__*, mcp__che-apple-mail-mcp__*, mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Write, Glob
+allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Write, Glob
 ---
 
 # Archive Mail
@@ -11,8 +11,8 @@ allowed-tools: mcp__apple-mail__*, mcp__che-apple-mail-mcp__*, mcp__plugin_che-a
 ## 使用方式
 
 ```
-/archive-mail d06227105@ntu.edu.tw
-/archive-mail d06227105@ntu.edu.tw communication/emails
+/archive-mail user@example.com
+/archive-mail user@example.com communication/emails
 ```
 
 - 第一個參數：Email 過濾條件（寄件人或收件人包含此字串）
@@ -57,17 +57,15 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 )
 ```
 
-> **⚠️ account_name 陷阱（fixes #15）**
-> `list_accounts` 對 Exchange 帳號回傳的 `name` 是 `ews://AAMkA...` 形式的內部 URL；`uuid` 也不接受。後續呼叫 `get_email` / `search_emails` 時必須改用 **display name**（email 地址，例如 `d06227105@ntu.edu.tw`），否則會觸發：
+> **⚠️ account_name 陷阱（fixes #15）— 全域適用，`search_emails` 與 `get_email` 皆然**
+> `list_accounts` 對 Exchange 帳號回傳的 `name` 是 `ews://AAMkA...` 形式的內部 URL；`uuid` 也不接受。後續呼叫 `get_email` / `search_emails` 時必須改用 **display name**（email 地址，例如 `user@example.com`），否則會觸發：
 >
 > ```
 > AppleScript error (-1728): Mail got an error: Can't get account "ews://...".
 > ```
 >
 > 若配置 `.claude/emails.md` 的 `accounts` 欄位明列 email 地址，可直接拿來用。否則需要人工比對帳號。
-
-> **Note on tool prefix**
-> `mcp__plugin_che-apple-mail-mcp_mail__*` 是 plugin 載入後的正式 prefix。舊版文件的 `mcp__apple-mail__*` 是 plugin 化前的名稱，frontmatter `allowed-tools` 保留兩者作相容。
+> **此陷阱對 Step 5 讀取郵件內文同樣適用**，不要假設搜尋階段記的 `account_name` 可以直接沿用——若那是 EWS URL，到 `get_email` 會重現 -1728。
 
 ### Step 4: 過濾新郵件
 
@@ -82,25 +80,34 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 
 **檔名格式**（fixes #16）：`YYYY-MM-DD_{subject-hyphenated}.md`
 
-Subject → filename 轉換規則：
-- 空白 / 冒號 / 斜線 / 引號 / 中英標點（`,`、`。`、`、`、`:`、`；`、`(`、`)`、`[`、`]`）→ `-`
-- 連續 `-` 合成一個
-- 首尾 `-` 去除
-- 長度超過 50 字元則截斷
-- **保留 Unicode**（中文、日文、韓文 subject 維持原樣）
+Subject → filename 轉換規則（依此順序執行）：
+1. **標點轉 `-`**：空白、冒號、斜線、反斜線、引號、問號、驚嘆號、中英標點（`,`、`。`、`、`、`:`、`；`、`(`、`)`、`[`、`]`、`?`、`!`）→ `-`
+2. **路徑字元移除**：`.` 開頭的檔名加底線前綴 `_`；`..` 保留為字面（標點轉換已把 `/` 變 `-`，不會路徑越界）
+3. **連續 dash 保留**：**不**合併連續 `-`（實務上 `Re:` + 空白 = `Re--`，符合 50 個歷史歸檔慣例）
+4. **截斷至 50 個 Unicode code points**（以 Swift `String.count` 為準，非 byte）
+5. **首尾 `-` 去除**（截斷後若尾部是 `-`，再次去除；最終檔名不應以 `-` 結尾）
+6. **空字串 fallback**：若步驟 1–5 後為空（空白 subject 或全標點 subject），使用 `no-subject`
+7. **保留 Unicode**（中文、日文、韓文、emoji 維持原樣）
 
 同日同主旨多封郵件：
-- 第一封：無後綴 `2026-04-08_Re--Some-topic.md`
-- 第二封起：加 `-1`、`-2`、`-3` 後綴 `2026-04-08_Re--Some-topic-1.md`
+- 第 1 封：**無後綴** → `2026-04-08_Re--Some-topic.md`
+- 第 2 封：`-1` → `2026-04-08_Re--Some-topic-1.md`
+- 第 3 封：`-2` → `2026-04-08_Re--Some-topic-2.md`
+- 第 N 封（N ≥ 2）：`-{N-1}`
+
+偵測後綴編號：用 `Glob` 列出 `YYYY-MM-DD_{subject}*.md`，取現有最大 `-N` +1（若無匹配則第 1 封無後綴；有 1 個匹配則 `-1`）。
 
 範例（來自 `tatsuma/communications/`）：
 
-| Subject | 檔名 |
-|---------|------|
-| `Re: sabbatical year` | `2023-08-28_Re--sabbatical-year.md` |
-| `翻訳のお願い` | `2024-03-26_翻訳のお願い.md` |
-| `NTU PSY seminar 2024 final PPT` | `2024-04-04_NTU-PSY-seminar-2024-final-PPT.md` |
-| `Re: Poster at 九州心理学会` (第三封) | `2024-11-20_Re--Poster-at-九州心理学会-3.md` |
+| Subject | 順序 | 檔名 |
+|---------|------|------|
+| `Re: sabbatical year` | 第 1 封 | `2023-08-28_Re--sabbatical-year.md` |
+| `翻訳のお願い` | 第 1 封 | `2024-03-26_翻訳のお願い.md` |
+| `NTU PSY seminar 2024 final PPT` | 第 1 封 | `2024-04-04_NTU-PSY-seminar-2024-final-PPT.md` |
+| `Re: Poster at 九州心理学会` | 第 4 封 | `2024-11-20_Re--Poster-at-九州心理学会-3.md` |
+| `(空白 subject)` | 第 1 封 | `2026-04-08_no-subject.md` |
+
+> **歷史相容 note**：`communications/` 有少量 `-a` / `-b` 字母後綴（如 `2024-07-14_...-a.md`）。新規不遷移舊檔，但新檔**一律用 `-1` `-2` `-3` 數字後綴**。若混用造成困擾，另開 follow-up issue。
 
 **內容格式**：
 ```markdown
@@ -146,7 +153,7 @@ Subject → filename 轉換規則：
   "last_updated": "YYYY-MM-DD",
   "emails": {
     "message-id@example.com": {
-      "file": "20260113_topic.md",
+      "file": "2026-01-13_Meeting-notes.md",
       "date": "2026-01-13 14:30",
       "subject": "郵件主旨"
     }
@@ -161,12 +168,12 @@ Subject → filename 轉換規則：
 Archive Mail 完成
 ═══════════════════════════════════════════
 
-過濾條件: d06227105@ntu.edu.tw
+過濾條件: user@example.com
 輸出目錄: communication/emails
 
 新歸檔: 5 封
-  - 20260113_meeting_request.md
-  - 20260112_report_feedback.md
+  - 2026-01-13_Meeting-request.md
+  - 2026-01-12_Report-feedback.md
   - ...
 
 跳過（已歸檔）: 12 封
