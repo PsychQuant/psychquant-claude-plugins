@@ -110,8 +110,8 @@
     },
     {
       "name": "che-duckdb-mcp",
-      "version": "1.1.0",
-      "description": "DuckDB MCP Server - 整合文檔查詢與資料庫操作，14 個工具（DuckDB v1.5.0-dev engine）",
+      "version": "2.0.0",
+      "description": "Swift-native DuckDB MCP — dual-source docs (llms.txt + full) with TF-IDF search + fuzzy function matching, plus 6 local DB tools (14 total). Pinned duckdb-swift, real DuckDB error messages.",
       "author": {
         "name": "Che Cheng"
       },
