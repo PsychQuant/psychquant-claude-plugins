@@ -40,8 +40,8 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "2.1.1",
-      "description": "Apple Mail MCP Server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作",
+      "version": "2.1.2",
+      "description": "Apple Mail MCP Server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作. v2.1.2: list_accounts returns usable display_name for EWS/Exchange accounts (no more ews:// URL leakage).",
       "author": {
         "name": "Che Cheng"
       },
