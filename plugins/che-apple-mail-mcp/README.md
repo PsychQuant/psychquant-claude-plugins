@@ -18,13 +18,15 @@ macOS Apple Mail MCP server with native AppleScript integration.
 把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。
 
 ```bash
-# Explicit filter mode
+# Explicit filter mode (available now)
 /archive-mail some@example.com
 /archive-mail some@example.com communications
-
-# Zero-arg mode (planned in #13 — reads .claude/emails.md config)
-/archive-mail
 ```
+
+> **Roadmap — zero-arg mode (not yet implemented, tracked in #13)**
+> Planned: `/archive-mail` (no args) will read `.claude/emails.md` frontmatter for
+> filters / output_dir / last_archived / exclude_mailboxes. Do **not** call it
+> without args today — it requires a filter parameter.
 
 詳細 spec 見 [`commands/archive-mail.md`](commands/archive-mail.md)。
 
