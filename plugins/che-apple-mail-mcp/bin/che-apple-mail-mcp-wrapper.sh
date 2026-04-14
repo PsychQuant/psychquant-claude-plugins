@@ -1,6 +1,6 @@
 #!/bin/bash
 # Auto-download wrapper for CheAppleMailMCP
-REPO="kiki830621/che-apple-mail-mcp"
+REPO="PsychQuant/che-apple-mail-mcp"
 BINARY_NAME="CheAppleMailMCP"
 INSTALL_DIR="$HOME/bin"
 
