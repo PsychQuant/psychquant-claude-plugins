@@ -30,8 +30,8 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.17.0",
-      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Skip/won't-fix marks (- [~] / - [-]) require reasons. Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
+      "version": "2.17.1",
+      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Skip/won't-fix marks (- [~] / - [-]) require reasons. Commit convention: use (#NNN) or Refs #NNN, NEVER Closes/Fixes/Resolves trailers (they bypass idd-close gate). Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
       "author": {
         "name": "Che Cheng"
       },
