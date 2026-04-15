@@ -6,7 +6,7 @@ description: >
   "不應該用請教", "tone doesn't match my expertise", or when a draft uses deference language
   for topics where the user is the expert. Also trigger from /perspective-writer:role-calibrator directly.
 argument-hint: <role description or correction>
-allowed-tools: Read, Edit, Write, Grep, Glob
+allowed-tools: Read, Edit, Write, Grep, Glob, TaskCreate, TaskUpdate, TaskList
 ---
 
 # Role Calibrator
@@ -18,6 +18,24 @@ Adjust communication rules when the writer's **role/expertise** doesn't match th
 A single correspondence relationship has multiple **domains**. The writer might be junior in one domain
 (business strategy) but senior in another (statistical methodology). Generic rules like "always use 請教"
 break down when the writer IS the expert on the topic being discussed.
+
+## Step 0: Bootstrap Stage Task List（強制）
+
+**在動任何事之前**先用 `TaskCreate` 為這個 stage 建 todo list：
+
+```
+TaskCreate(name="step1_identify_calibration",     description="Step 1: 從 user 輸入抽出 who / domain / current problem / desired positioning")
+TaskCreate(name="step2_read_existing_rules",      description="Step 2: Glob .claude/rules/correspondence-*.md 並 Read 出現有 rules")
+TaskCreate(name="step3_add_role_section",         description="Step 3: 加或更新「## 角色定位」section（含語氣切換表、替換詞彙）")
+TaskCreate(name="step4_update_related_sections",  description="Step 4: 檢查信件結構 / 用詞偏好 / 注意事項是否要跟著調")
+TaskCreate(name="step5_confirm_with_user",        description="Step 5: 給 user 摘要：角色對哪些 domain 是專家、哪些 domain 仍請教")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：最容易漏的是 step 4（update related sections）—— 只加「角色定位」section 卻忘了更新「信件結構」裡的「提出想請教的點」，會留下前後矛盾的 rule。TaskList 強迫 step 4 被看見。
+
+---
 
 ## Step 1: Identify the Calibration
 

@@ -5,12 +5,30 @@ description: >
   diff the changes, extract concrete rules, and update .claude/rules/ files. Trigger when you
   detect a file modification system-reminder on a file you recently wrote or edited.
 argument-hint: (auto-triggered from file modification)
-allowed-tools: Read, Edit, Write, Grep, Glob
+allowed-tools: Read, Edit, Write, Grep, Glob, TaskCreate, TaskUpdate, TaskList
 ---
 
 # Draft Learner
 
 You have been triggered because a file you recently wrote or edited in this conversation was modified by the user. Your job is to learn from their edits and persist those preferences as reusable rules.
+
+## Step 0: Bootstrap Stage Task List（強制）
+
+**在動任何事之前**先用 `TaskCreate` 為這個 stage 建 todo list：
+
+```
+TaskCreate(name="step1_detect_and_diff",     description="Step 1: 讀修改後的檔案，對照原版，把每個改動分類")
+TaskCreate(name="step2_extract_rules",       description="Step 2: 把每個改動轉成具體、可重用的 rule（一改動一 rule）")
+TaskCreate(name="step3_locate_rules_file",   description="Step 3: Glob 找 .claude/rules/ 現有檔案；沒有就詢問是否建立")
+TaskCreate(name="step4_update_rules",        description="Step 4: Edit 現有檔案（不覆寫、不重複、矛盾就取代）或 Write 新檔")
+TaskCreate(name="step5_confirm_with_user",   description="Step 5: 給 user 簡短摘要說學到什麼、存到哪")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：draft-learner 最大風險是 step 2 偷懶寫出「be more formal」這種沒用的模糊 rule 就交差。TaskList 讓 step 2 的「extract_rules」必須被看到完成，不能靜默跳過。
+
+---
 
 ## Step 1: Detect and Diff
 
