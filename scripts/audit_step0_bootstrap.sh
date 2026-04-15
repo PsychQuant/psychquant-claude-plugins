@@ -27,11 +27,22 @@ for skill_dir in "$PLUGIN_SKILLS_DIR"/*/; do
     [ -f "$skill_md" ] || continue
     total=$((total + 1))
 
-    # Accept either "### Step 0" (plain) or "### Step 0.5" (when Step 0 is a gate).
-    if grep -qE '^### Step 0(\.5)?:' "$skill_md"; then
-        echo "OK    $skill_name"
+    # Match the literal Bootstrap heading. Accepts both "### Step 0:" (plain) and
+    # "### Step 0.5:" (used when Step 0 is a non-bootstrap gate, e.g. idd-close's
+    # Checklist Gate Check). The "Bootstrap Stage Task List" literal prevents
+    # false positives where Step 0 exists but is something other than a bootstrap
+    # (this is the bug Codex caught in #27 verify).
+    if grep -qE '^### Step 0(\.5)?: Bootstrap Stage Task List' "$skill_md"; then
+        # Defence in depth: also verify a TaskCreate( appears in the file.
+        # An empty bootstrap section (just heading, no tasks) is also a bug.
+        if grep -q 'TaskCreate(' "$skill_md"; then
+            echo "OK    $skill_name"
+        else
+            echo "MISS  $skill_name (Bootstrap heading present but no TaskCreate( found)"
+            miss=$((miss + 1))
+        fi
     else
-        echo "MISS  $skill_name"
+        echo "MISS  $skill_name (no '### Step 0[.5]: Bootstrap Stage Task List' heading)"
         miss=$((miss + 1))
     fi
 done
