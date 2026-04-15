@@ -88,6 +88,28 @@ looks impressive on paper.
 Before you write a single word of the actual letter, you must complete two phases of understanding.
 Skipping these phases is not allowed. If you don't have enough information, ask.
 
+## Phase 0: Bootstrap Stage Task List（強制）
+
+**在動任何事之前**先用 `TaskCreate` 為這個 stage 建 todo list，確保 7 個 phase 都有被追蹤：
+
+```
+TaskCreate(name="phase1_understand_writer",        description="Phase 1: 讀 user 材料建立 voice model + 問情緒狀態")
+TaskCreate(name="phase2_understand_recipient",     description="Phase 2: 研究收件人背景、power dynamic、cultural context")
+TaskCreate(name="phase3_simulate",                 description="Phase 3: 寫出 simulation 段落再開始 draft")
+TaskCreate(name="phase4_write_draft",              description="Phase 4: 初稿（Lead with WHY、Voice matching、Pressure calibration）")
+TaskCreate(name="phase5_antipatterns_check",       description="Phase 5+5b: 過 anti-pattern checklist、用 horizontal rule 包裹輸出")
+TaskCreate(name="phase6_present_and_iterate",      description="Phase 6: 呈現草稿並解釋選擇，等 user 回饋；若編輯檔案 → delegate draft-learner (6b)")
+TaskCreate(name="phase7_persist_rules",            description="Phase 7: 徵詢後把通信習慣寫到 .claude/rules/correspondence-[recipient].md")
+```
+
+完成每一個 phase 立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：Phase 1-3 是「理解」階段，很容易被跳過直接 Phase 4 寫 draft。強制 TaskList 讓 skip 變得明顯。另外 Phase 7（persist rules）常被忘記，TaskList 收尾時就會提醒還沒做。
+
+**注意**：Phase 5b 是 output format 的格式規範（用 `---` 不用 `>`），併進 `phase5_antipatterns_check`；Phase 6b 是偵測到檔案被改動時 delegate 到 `draft-learner` skill，不算獨立 phase，處理完回到 `phase6_present_and_iterate`。
+
+---
+
 ## Phase 1: Understand the Writer
 
 Read the user's existing materials to build a mental model of who they are and how they write.
