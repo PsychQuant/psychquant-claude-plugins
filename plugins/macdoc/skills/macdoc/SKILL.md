@@ -19,6 +19,7 @@ description: |
 |--------|------|---------|
 | `convert` | 格式轉換 | SRT→HTML、MD→HTML、DOCX→MD |
 | `ocr` | VLM OCR | PDF/圖片→文字（手寫筆記辨識） |
+| `config` | 設定管理 | AI CLI 工具、OCR host/model 預設值 |
 | `pdf` | PDF→LaTeX | 學術 PDF 處理（較少用） |
 | `bib` | BibLaTeX→APA | 參考文獻格式轉換 |
 
@@ -97,20 +98,44 @@ macdoc ocr <input> [options]
 | **Ollama**（預設） | `--backend ollama` | 透過 Ollama HTTP API，需要先啟動 Ollama |
 | **MLX**（本地） | `--backend mlx` | 用 mlx-swift-lm 本地推理（⚠️ 目前有 upstream bug） |
 
-### Ollama 設定
+### Ollama host 設定（v1.1+）
 
-本機有 Ollama 的話直接用：
+**推薦流程**：用 `config ocr` 設定好 host profile，之後就不用每次傳 `--host`。
+
 ```bash
-macdoc ocr handwritten.pdf --backend ollama --pages 1-3
+# 一次性設定（本機或遠端 Kyle）
+macdoc config ocr add-host kyle localhost:11435   # 先建 SSH tunnel 到 kyle
+macdoc config ocr add-host local localhost:11434  # 本機 Ollama
+macdoc config ocr set-default kyle                # 設為預設
+
+# 之後直接 OCR，不用 --host
+macdoc ocr handwritten.pdf
 ```
 
-如果本機沒有 Ollama（或 GPU 不夠），用 SSH tunnel 連到遠端機器：
-```bash
-# 建立 SSH tunnel（Kyle's Mac Studio, M4 Max/128GB）
-ssh -f -N -L 11434:localhost:11434 kyle
+**`--host` 解析規則**：先當 profile 名查 config，找不到才當原始地址。
 
-# 然後正常使用（macdoc 預設連 localhost:11434）
-macdoc ocr handwritten.pdf --backend ollama
+```bash
+macdoc ocr file.pdf                       # 用 default profile
+macdoc ocr file.pdf --host local          # 切換到 local profile
+macdoc ocr file.pdf --host 192.168.1.50:11434  # 不是 profile,當原始地址
+```
+
+### SSH tunnel 到 Kyle
+
+Kyle 的 Mac Studio（M4 Max/128GB）上有 Ollama + glm-ocr：
+
+```bash
+# 建 SSH tunnel（Kyle's Ollama 預設只聽 localhost）
+ssh -fN -L 11435:localhost:11434 kyle
+
+# 確認連線
+curl -s http://localhost:11435/api/tags | python3 -m json.tool
+
+# OCR（如果已設 default=kyle）
+macdoc ocr notes.pdf --output notes.md
+
+# 長時間 OCR 記得用 caffeinate 防電腦睡眠（SSH tunnel 會斷）
+caffeinate -i -- macdoc ocr large.pdf --output large.md
 ```
 
 ### 可用模型
@@ -127,38 +152,68 @@ macdoc ocr handwritten.pdf --backend ollama
 # 手寫筆記 PDF（指定頁碼）
 macdoc ocr notes.pdf --pages 1-3 --output notes.md
 
+# 大型 PDF 分段 OCR(避免長時間 tunnel 斷線)
+macdoc ocr big.pdf --pages 1-60  --output part1.md
+macdoc ocr big.pdf --pages 61-120 --output part2.md
+cat part1.md part2.md > full.md
+
 # 單張圖片
 macdoc ocr screenshot.png
 
-# 指定模型
+# 指定模型(覆寫 config default)
 macdoc ocr document.pdf --model qwen3-vl
-
-# 輸出到 stdout（預設）
-macdoc ocr page.png
 ```
 
 ### 已知問題
 
 - **MLX backend crash**：mlx-swift-lm 有 upstream bug（ml-explore/mlx-swift-lm#191），所有 VLM 模型都會 crash。暫時只能用 Ollama。
+- **SSH tunnel 長時間會斷**：連線超過 2-3 小時會 timeout。解法是分段 OCR（`--pages`）或用 `caffeinate -i`。
 - **大頁面**：超過 8000px 的頁面會被自動縮小。
 
 ---
 
-## SSH 遠端設定
+## config — 設定管理
 
-Kyle 的 Mac Studio 上已安裝 Ollama 和多個模型：
+設定檔存在 `~/.config/macdoc/config.json`。
+
+### config ai — AI CLI 工具設定
 
 ```bash
-# ~/.ssh/config 已設定
-Host kyle
-  HostName 172.22.18.70
-  User kylelin
+macdoc config ai detect                  # 偵測本機已安裝的 codex/claude/gemini
+macdoc config ai list                    # 顯示目前設定
+macdoc config ai set transcription codex # 設定 one-shot 轉寫預設後端
+macdoc config ai set agent claude        # 設定 agentic 後端
+```
 
-# 建 tunnel
-ssh -f -N -L 11434:localhost:11434 kyle
+### config ocr — OCR host/model 設定（v1.1+）
 
-# 確認連線
-curl -s http://localhost:11434/api/tags | python3 -m json.tool
+| 子命令 | 用途 |
+|--------|------|
+| `list` | 顯示目前 OCR 設定（含 profile 列表） |
+| `add-host <name> <addr>` | 新增/更新 host profile |
+| `remove-host <name>` | 移除 profile |
+| `set-default <name>` | 設定預設 host |
+| `set-model <model>` | 設定預設模型（如 glm-ocr） |
+| `set-backend <ollama\|mlx>` | 設定預設後端 |
+
+```bash
+# 完整範例：設定 kyle 遠端 + local 兩個 profile
+ssh -fN -L 11435:localhost:11434 kyle  # 建 tunnel
+macdoc config ocr add-host kyle localhost:11435
+macdoc config ocr add-host local localhost:11434
+macdoc config ocr set-default kyle
+macdoc config ocr set-model glm-ocr
+
+# 查看
+macdoc config ocr list
+# === OCR 設定 ===
+# backend: ollama
+# model:   glm-ocr
+# default host: kyle → localhost:11435
+#
+# === Host Profiles ===
+#   kyle → localhost:11435 ★
+#   local → localhost:11434
 ```
 
 ---
@@ -171,3 +226,10 @@ curl -s http://localhost:11434/api/tags | python3 -m json.tool
 | SRT → handout 網頁 | `macdoc convert --to html` → `inject-search.py` |
 | PDF 筆記 → PNG | `pdftoppm -png -r 200`（不是 macdoc，是 poppler） |
 | 學生作業 .docx → 閱讀 | 用 che-word-mcp 的 `get_document_text`（不需要 macdoc） |
+
+---
+
+## 版本紀錄
+
+- **1.1.0**：新增 `config ocr` 子命令組,支援具名 host profile(`--host kyle` 等),預設 host/model 可存 config
+- **1.0.0**：初版
