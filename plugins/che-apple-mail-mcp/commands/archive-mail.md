@@ -51,6 +51,18 @@ attachment_routing:
   documents_dir: correspondence/attachments
 ```
 
+**讀取搜尋擴展設定**（可選，v2.4.0+）：
+
+```yaml
+subject_keywords: [taxometric, SSQ, paper]    # subject 關鍵字搜尋（補抓 sender 漏掉的 internal threads）
+participant_aliases:                           # 成員別名（用於 audit 報告顯示）
+  "b08801008@ntu.edu.tw": "Pei-Chi"
+  "r13227202@ntu.edu.tw": "Pei-Chi"
+```
+
+- `subject_keywords`：可選。若有，Step 3 會做第二輪 subject 搜尋。若無，只跑 sender 搜尋（向後相容）。
+- `participant_aliases`：可選。目前用於 audit 報告的顯示名稱；不影響搜尋行為。
+
 **分類優先序**（config > keyword > extension）：
 1. YAML config 明確指定 → 最高
 2. 檔名 keyword 子字串匹配（先比 `data_keywords`，再比 `document_keywords`）→ 中
@@ -85,6 +97,28 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 >
 > 若配置 `.claude/emails.md` 的 `accounts` 欄位明列 email 地址，可直接拿來用。否則需要人工比對帳號。
 > **此陷阱對 Step 5 讀取郵件內文同樣適用**，不要假設搜尋階段記的 `account_name` 可以直接沿用——若那是 EWS URL，到 `get_email` 會重現 -1728。
+
+**3b. Subject-keyword 搜尋**（v2.4.0+，若 `subject_keywords` 有設定）：
+
+對每個 keyword，執行：
+```
+search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
+```
+
+將結果加入 corpus。
+
+**3c. Thread-subject 擴展**（v2.4.0+，自動）：
+
+對步驟 3 / 3b 找到的每封信：
+1. 提取 bare subject（去掉 `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` 前綴，用正則 `^(Re|RE|Fwd|FW|转发|轉寄):\s*`）
+2. 用 bare subject 搜尋：`search_emails(query: bare_subject, field: "subject", limit: 100)`
+3. 將結果加入 corpus
+
+**3d. 合併去重**：
+
+三組結果（sender + subject_keywords + thread-subject）用 Message-ID 去重。最終 corpus 進入 Step 4。
+
+在 Step 7 報告中加上：`搜尋結果: {sender_count} by sender + {keyword_count} by subject + {thread_count} by thread expansion = {total_unique} unique`
 
 ### Step 4: 過濾新郵件
 
@@ -296,12 +330,58 @@ Archive Mail 完成
 
 若無附件：`附件: 0 個下載`（不顯示分類明細）。
 
+### Step 8: 覆蓋率稽核（Coverage Audit）（v2.4.0+）
+
+歸檔主流程結束後，自動執行覆蓋率稽核：
+
+**8a. 附件完整性檢查**：
+
+對所有新歸檔的郵件，呼叫 `list_attachments` 取得附件數量，比對磁碟上對應目錄的實際檔案數。
+
+- 一致 → pass
+- 不一致 → 發出 warning：`⚠️ {email_stem}: {差異} attachment missing (expected {報告數}, found {磁碟數})`
+
+**8b. Thread 完整性檢查**：
+
+對歸檔中每個唯一的 bare subject：
+1. 用 bare subject 搜尋 `search_emails(field: "subject", query: bare_subject)`，取得 total count
+2. 比對已歸檔的 count
+3. 若 `archived < total` → 發出 warning：`⚠️ Thread "{subject}": {差額} potential missing siblings (archived {已歸檔}/{total})`
+
+**8c. 稽核報告**：
+
+```
+Archive Coverage Audit
+═══════════════════════════════════════════
+附件覆蓋: 15/15 (100%)
+Thread 覆蓋: 3 threads, 2 complete, 1 with gaps
+
+搜尋結果: 37 by sender + 12 by subject + 9 by thread expansion = 58 unique
+
+Issues:
+  ⚠️ 2026-04-08_Re--Taxometric: 1 attachment missing
+  ⚠️ Thread "indicator selection": 2 potential missing siblings
+
+建議: 在 .claude/emails.md 加入 subject_keywords 擴大搜尋範圍
+═══════════════════════════════════════════
+```
+
+若所有檢查通過：
+```
+Archive Coverage Audit
+═══════════════════════════════════════════
+附件覆蓋: 15/15 (100%) ✓
+Thread 覆蓋: 3 threads, 3 complete ✓
+═══════════════════════════════════════════
+```
+
 ## 注意事項
 
 - 使用 apple-mail MCP，需確保 MCP server 已連接
 - Message-ID 用於去重，確保不會重複歸檔
 - 寄出的郵件不產生「重點摘要」和「待辦事項」
 - **附件自動下載**（v2.3.0+）：每封歸檔信件的附件會自動下載到分類目錄。研究資料檔（csv / sav / xlsx 等）放到 `data/raw/`；文件附件（pdf / docx 等）放到 `correspondence/attachments/{email_stem}/`。可透過 `.claude/emails.md` 的 `attachment_routing` 區塊自訂規則。
+- **搜尋擴展 + 覆蓋率稽核**（v2.4.0+）：除了 sender 搜尋，可設定 `subject_keywords` 補抓 internal threads。每次歸檔後自動跑 Coverage Audit 檢查附件完整性和 thread 覆蓋率。
 
 ## 附件分類設定範例
 
@@ -334,3 +414,24 @@ attachment_routing:
   documents_dir: correspondence/attachments  # 保留預設
 ---
 ```
+
+## 搜尋擴展設定範例（v2.4.0+）
+
+```yaml
+---
+filters:
+  - tatsuma
+subject_keywords:                        # 用 subject 關鍵字補抓 internal threads
+  - taxometric
+  - SSQ
+  - "attachment security"
+participant_aliases:                     # 成員別名（audit 報告顯示用）
+  "b08801008@ntu.edu.tw": "Pei-Chi"
+  "kllay@ntu.edu.tw": "Lay"
+attachment_routing:
+  data_dir: data/raw
+  documents_dir: correspondence/attachments
+---
+```
+
+設定 `subject_keywords` 後，Step 3 會自動做三輪搜尋（sender + subject keyword + thread-subject expansion）並去重。Step 8 Coverage Audit 會報告覆蓋率。
