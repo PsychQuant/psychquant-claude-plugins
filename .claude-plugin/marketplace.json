@@ -40,8 +40,8 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "2.2.0",
-      "description": "Apple Mail MCP Server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作. v2.2.0: save_attachment 改走 SQLite + .emlx fast path, 10-100x 加速 (1-3s → <50ms); 新增 MIMEParser.parseAllParts 非 lossy MIME enumeration API + MIMEPart struct; CJK 檔名 (RFC 5987) 完整支援.",
+      "version": "2.5.0",
+      "description": "Apple Mail MCP server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作. v2.5.0: 四個 composing 工具 (compose/draft/reply/forward) 新增 format 參數支援 markdown/HTML body (Closes #14 #15 via upstream v2.3.0 binary). 疊加 v2.4.0 archive-mail 搜尋擴展 + Coverage Audit.",
       "author": {
         "name": "Che Cheng"
       },
