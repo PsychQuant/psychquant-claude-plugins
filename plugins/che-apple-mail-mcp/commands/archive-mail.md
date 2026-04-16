@@ -38,6 +38,25 @@ mkdir -p "${output_dir}"
 - 若存在，載入已歸檔的 Message-ID
 - 若不存在，建立空索引 `{"version": "1.0", "emails": {}}`
 
+**讀取附件設定**（可選）：檢查 `.claude/emails.md` 是否有 `attachment_routing` YAML front matter 區塊。
+若有，載入自訂規則（all-or-nothing 取代，不做 merge）。若無，使用以下內建預設：
+
+```yaml
+attachment_routing:
+  data_extensions: [csv, tsv, sav, dta, parquet, feather, xlsx, sas7bdat]
+  document_extensions: [pdf, docx, doc, txt, md, rtf, odt]
+  data_keywords: [data, raw, indicators, codebook, dataset]          # 大小寫不敏感子字串匹配
+  document_keywords: [Submission, Figures, Tables, Manuscript, draft, Revision, v1, v2, v3]
+  data_dir: data/raw
+  documents_dir: correspondence/attachments
+```
+
+**分類優先序**（config > keyword > extension）：
+1. YAML config 明確指定 → 最高
+2. 檔名 keyword 子字串匹配（先比 `data_keywords`，再比 `document_keywords`）→ 中
+3. 副檔名匹配（先比 `data_extensions`，再比 `document_extensions`）→ 最低
+4. 全部未命中 → 保守預設：歸類為 document
+
 ### Step 3: 搜尋郵件（使用 apple-mail MCP）
 
 使用 `mcp__plugin_che-apple-mail-mcp_mail__search_emails` 搜尋：
@@ -157,6 +176,82 @@ Subject → filename 轉換規則（依此順序執行）：
 *歸檔日期：YYYY-MM-DD*
 ```
 
+### Step 5.5: 下載並分流附件
+
+對每封已歸檔的新郵件：
+
+1. **列出附件**：呼叫 `mcp__plugin_che-apple-mail-mcp_mail__list_attachments`（或 `list_attachments_batch`）取得附件清單。若為空 → 跳到下一封。
+
+2. **分類每個附件**：用 Step 2 載入的分類規則判斷 `data` 或 `document`：
+
+   ```
+   classify(filename):
+     lowercase_name = filename.lowercased()
+     ext = filename 的副檔名（去掉 `.`）
+
+     # Tier 1: keyword match（先比 data_keywords）
+     for kw in data_keywords:
+       if lowercase_name contains kw → return "data"
+     for kw in document_keywords:
+       if lowercase_name contains kw → return "document"
+
+     # Tier 2: extension match
+     if ext in data_extensions → return "data"
+     if ext in document_extensions → return "document"
+
+     # Tier 3: fallback
+     return "document"
+   ```
+
+3. **決定目標路徑**：
+   - `"data"` → `{data_dir}/{original_filename}`
+   - `"document"` → `{documents_dir}/{email_md_stem}/{original_filename}`
+   
+   其中 `email_md_stem` 是該封信的 Markdown 檔名去掉 `.md`（例如 `2026-04-08_Re--Taxometric-Analysis`）。
+
+4. **下載**：呼叫 `mcp__plugin_che-apple-mail-mcp_mail__save_attachment` 將附件存到目標路徑。
+   - 檔名保留原始 bytes（空白、`&`、中日文、emoji 不改）
+   - 目標目錄若不存在，先 `mkdir -p`
+   - 若 `save_attachment` 失敗，log warning 繼續下一個（不中斷歸檔）
+
+5. **更新 Markdown**：在該封信的 Markdown 中插入 `Attachments:` 區塊。
+
+   **放置位置**：簽名（signature）之後、thread quote 之前。
+   Thread quote 的辨識 pattern：第一個匹配 `差出人:` / `寄件者:` / `From:` / `On .* wrote:` 的行。
+   若沒有 thread quote（原始信件，非回覆），`Attachments:` 接在 body 最後。
+
+   **連結格式**：
+   ```markdown
+   Attachments:
+   - [原始檔名](相對路徑URL編碼) (大小 KB)
+   ```
+
+   URL 編碼規則（僅用於 Markdown link URL，display text 保留原始）：
+   - 空白 → `%20`
+   - `&` → `%26`
+   - 其餘（含中日文）→ 保留原字元
+
+   範例：
+   ```markdown
+   Attachments:
+   - [Figures & Tables20260408.docx](attachments/2026-04-08_Re--Taxometric-Analysis/Figures%20%26%20Tables20260408.docx) (93 KB)
+   - [raw_indicators.csv](../../data/raw/raw_indicators.csv) (12 KB)
+   ```
+
+6. **回覆信無附件但引用原信附件時**：若 `list_attachments` 為空，但 body 中出現 `<filename.ext>` 形式的引用標記（Mail.app 的 quote-time marker），插入 cross-reference：
+
+   ```markdown
+   Attachments:
+   (Attachments on the original email from {original_sender} — see `{original_stem}.md`)
+   ```
+
+   若無法推斷原始 stem（原信未歸檔），改為：
+   ```markdown
+   (Attachments referenced in thread quote — original not yet archived)
+   ```
+
+7. **累計計數**：記錄 `data_count` 和 `document_count`，供 Step 7 報告用。
+
 ### Step 6: 更新索引
 
 將新歸檔的郵件加入索引：
@@ -192,11 +287,50 @@ Archive Mail 完成
 
 跳過（已歸檔）: 12 封
 
+附件: 15 個下載
+  → 4 to data/raw
+  → 11 to correspondence/attachments
+
 ═══════════════════════════════════════════
 ```
+
+若無附件：`附件: 0 個下載`（不顯示分類明細）。
 
 ## 注意事項
 
 - 使用 apple-mail MCP，需確保 MCP server 已連接
 - Message-ID 用於去重，確保不會重複歸檔
 - 寄出的郵件不產生「重點摘要」和「待辦事項」
+- **附件自動下載**（v2.3.0+）：每封歸檔信件的附件會自動下載到分類目錄。研究資料檔（csv / sav / xlsx 等）放到 `data/raw/`；文件附件（pdf / docx 等）放到 `correspondence/attachments/{email_stem}/`。可透過 `.claude/emails.md` 的 `attachment_routing` 區塊自訂規則。
+
+## 附件分類設定範例
+
+在 `.claude/emails.md` front matter 加入 `attachment_routing` 覆寫預設規則。**注意：partial override 取代所有預設**——省略的欄位會變成空列表，不會自動使用內建預設。
+
+完整預設值（供 copy-paste）：
+
+```yaml
+---
+filters:
+  - tatsuma
+attachment_routing:
+  data_extensions: [csv, tsv, sav, dta, parquet, feather, xlsx, sas7bdat]
+  document_extensions: [pdf, docx, doc, txt, md, rtf, odt]
+  data_keywords: [data, raw, indicators, codebook, dataset]
+  document_keywords: [Submission, Figures, Tables, Manuscript, draft, Revision, v1, v2, v3]
+  data_dir: data/raw
+  documents_dir: correspondence/attachments
+---
+```
+
+只需列出想改的部分（但理解：列出即取代整組預設）：
+
+```yaml
+---
+attachment_routing:
+  data_extensions: [csv, sav]            # 只認這兩種為 data
+  data_keywords: [raw, indicators]       # 窄化 keyword
+  data_dir: research/raw-data            # 自訂 data 目標路徑
+  documents_dir: correspondence/attachments  # 保留預設
+---
+```
