@@ -3,7 +3,7 @@
 # Bot token is read from macOS Keychain at runtime.
 
 BINARY_NAME="CheTelegramBotMCP"
-GITHUB_REPO="kiki830621/che-msg"
+GITHUB_REPO="PsychQuant/che-msg"
 RELEASE_URL="https://github.com/$GITHUB_REPO/releases/latest/download/$BINARY_NAME"
 INSTALL_DIR="$HOME/bin"
 
@@ -17,11 +17,13 @@ if [[ -z "$BINARY" ]]; then
     echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
     mkdir -p "$INSTALL_DIR"
     URL=$(curl -sL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" \
-        | grep '"browser_download_url"' | grep "$BINARY_NAME" | head -1 \
+        | grep '"browser_download_url"' | grep "/$BINARY_NAME\"" | head -1 \
         | sed 's/.*"\(https[^"]*\)".*/\1/')
     if [[ -n "$URL" ]]; then
         curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
             || { echo "ERROR: Download failed." >&2; exit 1; }
+        # Strip macOS quarantine to avoid Gatekeeper prompt
+        xattr -dr com.apple.quarantine "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
         BINARY="$INSTALL_DIR/$BINARY_NAME"
         echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
     else

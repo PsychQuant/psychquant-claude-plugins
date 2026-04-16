@@ -1,6 +1,6 @@
 {
   "name": "che-telegram-mcp",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Telegram MCP Server Plugin — Bot API + 個人帳號 TDLib 全功能存取，28+ 工具，Keychain 密鑰管理",
   "author": { "name": "Che Cheng" },
   "license": "MIT",

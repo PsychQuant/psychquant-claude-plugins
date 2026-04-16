@@ -16,14 +16,14 @@ Claude Code plugin for Telegram — combines **Bot API** and **personal account 
 **telegram-all** (requires TDLib, ~300MB first build):
 ```bash
 cd ~/Developer/che-mcps
-git clone https://github.com/kiki830621/che-telegram-all-mcp.git
+git clone https://github.com/PsychQuant/che-msg.git
 cd che-telegram-all-mcp && swift build -c release
 ```
 
 **telegram-bot** (lightweight):
 ```bash
 cd ~/Developer/che-mcps
-git clone https://github.com/kiki830621/che-telegram-bot-mcp.git
+git clone https://github.com/PsychQuant/che-msg.git
 cd che-telegram-bot-mcp && swift build -c release
 ```
 

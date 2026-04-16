@@ -3,21 +3,36 @@
 # Credentials are read from macOS Keychain at runtime — never stored in config files.
 
 BINARY_NAME="CheTelegramAllMCP"
-GITHUB_REPO="kiki830621/che-msg"
+GITHUB_REPO="PsychQuant/che-msg"
+INSTALL_DIR="$HOME/bin"
 
-# Find binary
+# Find binary — prefer $HOME/bin (installed from release) > source builds
 BINARY=""
-for loc in "$HOME/bin/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-all-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-all-mcp/.build/release/$BINARY_NAME"; do
+for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-all-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-all-mcp/.build/release/$BINARY_NAME"; do
     [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
+# Fallback: download latest binary from GitHub Release
 if [[ -z "$BINARY" ]]; then
-    echo "$BINARY_NAME not found." >&2
-    echo "Build from source:" >&2
-    echo "  git clone https://github.com/$GITHUB_REPO.git" >&2
-    echo "  cd che-telegram-all-mcp && swift build -c release" >&2
-    echo "  cp .build/release/$BINARY_NAME ~/bin/" >&2
-    exit 1
+    echo "$BINARY_NAME not found. Downloading from GitHub Release..." >&2
+    mkdir -p "$INSTALL_DIR"
+    URL=$(curl -sL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" \
+        | grep '"browser_download_url"' | grep "/$BINARY_NAME\"" | head -1 \
+        | sed 's/.*"\(https[^"]*\)".*/\1/')
+    if [[ -n "$URL" ]]; then
+        curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
+            || { echo "ERROR: Download failed." >&2; exit 1; }
+        # Strip macOS quarantine to avoid Gatekeeper prompt
+        xattr -dr com.apple.quarantine "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
+        BINARY="$INSTALL_DIR/$BINARY_NAME"
+        echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+    else
+        echo "ERROR: No release asset found for $BINARY_NAME." >&2
+        echo "Check https://github.com/$GITHUB_REPO/releases or build from source:" >&2
+        echo "  git clone https://github.com/$GITHUB_REPO.git" >&2
+        echo "  cd che-telegram-all-mcp && swift build -c release" >&2
+        exit 1
+    fi
 fi
 
 # Read credentials from macOS Keychain
