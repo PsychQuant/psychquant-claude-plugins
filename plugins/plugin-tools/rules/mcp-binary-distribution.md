@@ -155,3 +155,47 @@ macOS binary 未簽章會被 Gatekeeper 擋。
 - [ ] Wrapper 把 `~/bin/` 放最高優先搜尋路徑
 - [ ] README 有說明 `--version` 和手動更新方式
 - [ ] Binary release 附 checksum（`.sha256` 或 release notes 裡）
+
+## plugin-deploy ↔ mcp-deploy 依賴關係
+
+Binary-based MCP 的 deploy 有兩個 repo 要同步：
+
+```
+MCP source repo (e.g. che-msg)              Plugin marketplace repo
+        │                                       │
+        ├─ Source code                          ├─ bin/wrapper.sh (引用 binary)
+        └─ mcp-deploy                           └─ plugin-deploy
+              │                                       │
+              ├─ Build binary                        ├─ Bump plugin.json version
+              ├─ Create GitHub Release              ├─ Update marketplace.json
+              └─ Phase 4: bump plugin (opt-in) ──► └─ 使用者裝了就拿到新 binary
+                      ↑
+                      └── 如果跳過 Phase 4，plugin-deploy 必須 block
+```
+
+### 正確順序
+
+| 場景 | 順序 |
+|------|------|
+| **只改 MCP code（修 bug、加 tool）** | `mcp-deploy` → Phase 4 opt-in → plugin 自動 bump |
+| **只改 plugin shell（wrapper、skill、agent）** | `plugin-deploy` 即可，binary 不需動 |
+| **同時改兩邊** | 先 `mcp-deploy` 發 release，再 `plugin-deploy` |
+
+### Deploy skill 的 cross-check
+
+`plugin-tools:plugin-deploy` 的 **Step 2.5 MCP Binary Check** 會：
+
+1. 偵測 plugin 是否含 `.mcp.json`
+2. 掃 `bin/*-wrapper.sh` 抓 `BINARY_NAME` + `GITHUB_REPO`
+3. 查該 repo 的 latest release 有沒有對應 asset
+4. **沒有 → 直接 block，要求先跑 `/mcp-tools:mcp-deploy`**
+5. **有 → AskUserQuestion 確認是最新 source code 的版本**
+
+為什麼是 block 而非 warn：
+
+| 狀況 | 後果 |
+|------|------|
+| Release 沒 binary | 使用者裝新 plugin → wrapper auto-download 失敗 → plugin 完全壞掉 |
+| Release 有但過時 | 使用者跑舊 binary → 新功能用不到（silent failure）|
+
+第一種是使用者立刻發現的 hard failure，必須 block；第二種只能靠 trust + AskUserQuestion。

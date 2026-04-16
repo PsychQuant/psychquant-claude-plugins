@@ -52,6 +52,75 @@ PLUGIN_DIR="$MARKETPLACE_ROOT/plugins/$PLUGIN_NAME"
 | CLAUDE.md 存在 | 檔案存在 | 建議 |
 | 無硬編碼絕對路徑 | grep `/Users/` 等 | 建議 |
 | hooks 用 ${CLAUDE_PLUGIN_ROOT} | grep hooks 中的路徑 | 如有 hooks |
+| **MCP binary 已發布到 release** | 見 Step 2.5 | **MCP plugin 必要** |
+
+### Step 2.5: MCP Binary Check（MCP plugin 必跑）
+
+如果 plugin 包含 MCP server wrapper（透過 `.mcp.json` + `bin/*-wrapper.sh`），**必須**驗證 wrapper 所引用的 binary 已發布到 GitHub Release，否則使用者裝新版 plugin 也拿不到對應的 binary。
+
+**歷史脈絡**：plugin version bump 只更新 wrapper + marketplace.json，不會自動 trigger MCP binary 的 rebuild + release。若此步沒做好，使用者端會出現「plugin 顯示 vX.Y.Z，但跑的是舊 binary」的詭異狀態。
+
+```bash
+# 1. 偵測是否為 MCP plugin
+MCP_JSON="$PLUGIN_DIR/.mcp.json"
+if [ ! -f "$MCP_JSON" ]; then
+    echo "Not an MCP plugin — skip Step 2.5"
+    IS_MCP_PLUGIN=false
+else
+    IS_MCP_PLUGIN=true
+fi
+
+# 2. 若是 MCP plugin，掃 bin/ 下的 wrapper 抓 BINARY_NAME + GITHUB_REPO
+if [ "$IS_MCP_PLUGIN" = "true" ]; then
+    MCP_STALE=false
+    for wrapper in "$PLUGIN_DIR/bin/"*wrapper.sh; do
+        [ -f "$wrapper" ] || continue
+        BINARY_NAME=$(grep '^BINARY_NAME=' "$wrapper" | head -1 | cut -d'"' -f2)
+        GITHUB_REPO=$(grep '^GITHUB_REPO=' "$wrapper" | head -1 | cut -d'"' -f2)
+        [ -z "$BINARY_NAME" ] && continue
+        [ -z "$GITHUB_REPO" ] && continue
+
+        # 3. 查詢該 repo 的 latest release 是否含對應 binary asset
+        HAS_BINARY=$(curl -sL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" \
+            | grep '"browser_download_url"' | grep -c "/$BINARY_NAME\"" || true)
+
+        if [ "$HAS_BINARY" = "0" ]; then
+            echo "❌ BLOCKER: $BINARY_NAME not found in latest release of $GITHUB_REPO"
+            echo "   Wrapper will fail to auto-download. Run mcp-deploy first:"
+            echo "   cd <MCP-source-repo> && /mcp-tools:mcp-deploy"
+            MCP_STALE=true
+        else
+            echo "✅ $BINARY_NAME present in $GITHUB_REPO latest release"
+        fi
+    done
+
+    # 4. 如果有任何 binary 不在 release → BLOCK deploy
+    if [ "$MCP_STALE" = "true" ]; then
+        echo ""
+        echo "Plugin deploy blocked — MCP binary release is out of sync."
+        echo "Fix: run /mcp-tools:mcp-deploy from the MCP source repo first."
+        exit 1
+    fi
+fi
+```
+
+**用 AskUserQuestion 再確認 binary 是否為當前 source code 版本**：
+
+```
+question: "Release 有 $BINARY_NAME，但可能是舊版。source code 從那次 release 後有改動嗎？"
+options:
+  - "沒改動，release 是最新"
+  - "有改動但先 deploy plugin，之後再發 binary"
+  - "有改動，我先去跑 /mcp-tools:mcp-deploy 更新 binary"
+```
+
+**為什麼是 BLOCKER 而非 warning**：
+| 狀況 | 後果 |
+|------|------|
+| Release 沒 binary | 使用者裝新版 plugin → wrapper auto-download 失敗 → 整個 plugin 無法使用 |
+| Release 有 binary 但過時 | 使用者裝新版 plugin → 跑舊 binary → 新功能宣告了但跑不出來 |
+
+第一種是 hard failure（使用者完全 blocked），必須 block；第二種是 silent failure（使用者困惑但能跑），可以 warn。
 
 ### Step 3: Present Checklist
 
@@ -152,3 +221,13 @@ claude plugin list | grep {plugin-name}
 - 這個 skill 發布到**自己的 marketplace**（如 PsychQuant），push 即生效，不需要審核
 - 如果未來要提交到 Anthropic 官方 marketplace，目前只接受企業級合作夥伴
 - 發布前建議先用 `claude --plugin-dir` 本地測試
+
+## MCP plugin 的依賴
+
+若此 plugin 含 `.mcp.json` + `bin/*-wrapper.sh`，屬於 **binary-based MCP plugin**：
+
+- Wrapper 執行時會自動從 GitHub Release 下載 binary
+- Plugin version bump **不等於** binary 會自動更新
+- 必須先在 MCP source repo 跑 `/mcp-tools:mcp-deploy` 發 binary release，才能跑 `plugin-deploy`
+
+詳見 [rules/mcp-binary-distribution.md](../../rules/mcp-binary-distribution.md) 的「plugin-deploy ↔ mcp-deploy 依賴關係」。Step 2.5 會自動偵測並 block 不同步的情況。
