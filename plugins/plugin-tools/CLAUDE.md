@@ -44,3 +44,9 @@ plugin-create → 開發/測試 → plugin-update → plugin-deploy → plugin-h
     ↑                                              |
     └── 有問題？ ←─────────────────────────────────┘
 ```
+
+## Rules
+
+| Rule | 何時適用 |
+|------|---------|
+| [mcp-binary-distribution.md](rules/mcp-binary-distribution.md) | MCP Server 是編譯型 binary（Swift / Rust / Go…）— 必須走 GitHub Release + wrapper 自動下載，否則修 bug 使用者收不到 |
