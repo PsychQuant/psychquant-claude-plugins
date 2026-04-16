@@ -26,9 +26,9 @@ check_keychain() {
 }
 
 echo "── Telegram MCP Status ──"
-check_binary "CheTelegramAllMCP" "kiki830621/che-telegram-all-mcp" "telegram-all (TDLib)"
+check_binary "CheTelegramAllMCP" "PsychQuant/che-msg" "telegram-all (TDLib)"
 check_keychain "che-telegram-all-mcp" "TELEGRAM_API_ID" "API ID"
 check_keychain "che-telegram-all-mcp" "TELEGRAM_API_HASH" "API Hash"
 
-check_binary "CheTelegramBotMCP" "kiki830621/che-telegram-bot-mcp" "telegram-bot"
+check_binary "CheTelegramBotMCP" "PsychQuant/che-msg" "telegram-bot"
 check_keychain "che-telegram-bot-mcp" "TELEGRAM_BOT_TOKEN" "Bot Token"
