@@ -32,7 +32,29 @@ allowed-tools:
 
 ## Execution Steps
 
-### Step 0: Parse Arguments
+### Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="parse_arguments", description="Step 0: 解析 plugin-name 和 --source（若有）")
+TaskCreate(name="locate_plugin", description="Step 1: 找到 marketplace 下的 plugin 目錄")
+TaskCreate(name="scan_structure", description="Step 2: 掃描 skills/agents/rules/hooks/commands/CLAUDE.md")
+TaskCreate(name="check_hook_format", description="Step 3: 驗證 hooks 格式（plugin.json 不該含 hooks）")
+TaskCreate(name="scan_related_projects", description="Step 4: 掃 --source 的 .claude/ 目錄找可匯入資源")
+TaskCreate(name="present_report", description="Step 5: 顯示 upgrade report，列出問題和可匯入清單")
+TaskCreate(name="execute_fixes", description="Step 6: 使用者選擇修復範圍（全部/🔴/逐一/只看報告）")
+TaskCreate(name="fix_hook_format", description="Step 7: 轉換 plugin.json hooks → hooks/hooks.json（若需要）")
+TaskCreate(name="import_rules", description="Step 8: 從 source 匯入 rules")
+TaskCreate(name="import_skills", description="Step 9: 從 source 匯入相關 skills（使用者選）")
+TaskCreate(name="update_claude_md", description="Step 10: 重新生成 CLAUDE.md 反映所有組件")
+TaskCreate(name="version_bump", description="Step 11: 根據變更幅度 bump 版本")
+TaskCreate(name="deploy", description="Step 12: 呼叫 plugin-update（git commit/push + marketplace update）")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+### Step 0.5: Parse Arguments
 
 從 `<args>` 取得：
 - `plugin-name`：要升級的 plugin

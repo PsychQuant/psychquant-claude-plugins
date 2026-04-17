@@ -32,6 +32,29 @@ Plugin 修改後有 5 個環節容易漏掉：
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 stage-level todo list，每完成一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+```
+TaskCreate(name="detect_marketplace", description="Phase 0: 找到 plugin 所屬的 marketplace repo")
+TaskCreate(name="detect_changes", description="Phase 1: 確認 plugin + git status + 最近 commits")
+TaskCreate(name="check_external_deps", description="Phase 1.5: 偵測 MCP/CLI 依賴，不同步時 AskUserQuestion")
+TaskCreate(name="sync_marketplace_json", description="Phase 2: 比對 plugin.json 和 marketplace.json 版本，commit+push")
+TaskCreate(name="marketplace_update", description="Phase 3: claude plugin marketplace update")
+TaskCreate(name="plugin_install_or_update", description="Phase 4: claude plugin install/update @marketplace")
+TaskCreate(name="verify_and_report", description="Phase 5: claude plugin list 驗證 + 提醒重啟")
+```
+
+**若 Phase 1.5 使用者選「順便更新」**，補加一筆：
+```
+TaskCreate(name="invoke_dependency_skill", description="Phase 1.5 auto-sync: 呼叫 /mcp-tools:mcp-deploy 或 /cli-tools:cli-upgrade")
+```
+
+**為什麼強制**：plugin-update 有 5 個常被漏掉的環節（marketplace.json 沒更新、沒 push、cache 沒 sync、plugin 沒 update、沒重啟），task list 讓每一步都有可見證據。
+
+---
+
 ## Phase 0: 偵測 Marketplace
 
 先確定 plugin 所在的 marketplace repo。

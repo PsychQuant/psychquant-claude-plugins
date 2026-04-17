@@ -25,6 +25,27 @@ allowed-tools:
 
 ## Execution Steps
 
+### Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 stage-level todo list：
+
+```
+TaskCreate(name="identify_plugin", description="Step 1: 從 $ARGUMENTS 找 plugin 目錄")
+TaskCreate(name="preflight_checks", description="Step 2: 跑必要 + 建議項目檢查")
+TaskCreate(name="mcp_binary_check", description="Step 2.5: 若是 MCP plugin，驗證 binary 在 GitHub Release 裡（不在則 BLOCK）")
+TaskCreate(name="present_checklist", description="Step 3: 顯示結果，讓使用者決定繼續或修問題")
+TaskCreate(name="fix_issues", description="Step 4: 若使用者選修問題，處理 README/LICENSE/hooks 等")
+TaskCreate(name="version_bump", description="Step 5: patch/minor/major bump plugin.json + marketplace.json")
+TaskCreate(name="update_marketplace_json", description="Step 6: 同步 marketplace.json 確認 version / description")
+TaskCreate(name="commit_and_push", description="Step 7: git add + commit + push")
+TaskCreate(name="sync_and_reload", description="Step 8: claude plugin marketplace update + plugin update")
+TaskCreate(name="verify", description="Step 9: claude plugin list 驗證版本")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：plugin-deploy 有 9 個步驟，MCP plugin 還要加 Step 2.5 blocker check。沒 task list 容易漏 Step 2.5（會導致新使用者裝了 plugin 但 wrapper 下載不到 binary）。
+
 ### Step 1: Identify Plugin
 
 從 `$ARGUMENTS` 取得 plugin name，找到 plugin 目錄：

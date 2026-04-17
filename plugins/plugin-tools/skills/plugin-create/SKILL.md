@@ -33,7 +33,27 @@ allowed-tools:
 
 ## Execution Steps
 
-### Step 0: Parse Arguments
+### Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="parse_arguments", description="解析 $ARGUMENTS 決定 New/Convert mode")
+TaskCreate(name="gather_info", description="AskUserQuestion 蒐集 plugin name / description / category / skills")
+TaskCreate(name="locate_marketplace", description="找到 plugin marketplace repo（psychquant 或 local）")
+TaskCreate(name="create_directory_structure", description="mkdir plugins/{name}/{.claude-plugin,skills,...}")
+TaskCreate(name="create_plugin_json", description="寫 .claude-plugin/plugin.json")
+TaskCreate(name="create_or_convert_skills", description="New: 建空 skills / Convert: 從 .claude/skills 轉換")
+TaskCreate(name="generate_claude_md", description="寫 plugin CLAUDE.md 列出所有組件")
+TaskCreate(name="sync_marketplace_json", description="加入 marketplace.json 的 plugins 陣列")
+TaskCreate(name="commit_push", description="git add + commit + push marketplace repo")
+TaskCreate(name="install_plugin", description="claude plugin install {name}@marketplace")
+TaskCreate(name="create_github_issue", description="（可選）建追蹤 issue 紀錄這個 plugin 的 roadmap")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+### Step 0.5: Parse Arguments
 
 ```
 $ARGUMENTS 格式：
