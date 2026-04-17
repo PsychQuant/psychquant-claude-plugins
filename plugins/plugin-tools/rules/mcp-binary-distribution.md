@@ -199,3 +199,46 @@ MCP source repo (e.g. che-msg)              Plugin marketplace repo
 | Release 有但過時 | 使用者跑舊 binary → 新功能用不到（silent failure）|
 
 第一種是使用者立刻發現的 hard failure，必須 block；第二種只能靠 trust + AskUserQuestion。
+
+## 擴展: 非 MCP 的 CLI-dependent plugin
+
+同樣的 dependency graph 也適用於不是 MCP 但依賴 CLI binary 的 plugin（例：[gifthub](../../gifthub) → `~/bin/gfh`）。
+
+### 訊號判斷
+
+| 訊號 | 意義 |
+|------|------|
+| `.mcp.json` 存在 | MCP plugin（走 mcp-tools 流程）|
+| `hooks/session-start.sh` curl `api.github.com/releases` | CLI-dependent plugin（走 cli-tools 流程）|
+| Skill 引用 `~/bin/$BINARY` 但無 `.mcp.json` | CLI-dependent plugin |
+
+### 三邊 ↔ 整合
+
+```
+MCP source repo               Plugin marketplace            CLI binary repo
+   (che-msg)                  (psychquant-plugins)           (GiftHub)
+      │                              │                           │
+      ├─ mcp-deploy                  ├─ plugin-deploy            ├─ cli-deploy
+      │  (build+release              │  (Step 2.5 checks MCP)    │  (release binary)
+      │   + Phase 4 bump plugin)     │                           │
+      │                              ├─ plugin-update            └─ cli-install / cli-upgrade
+      └────── binary ready ─────────►│  (Phase 1.5 checks both   ◄─── binary ready
+                                     │   MCP and CLI, warn only)
+```
+
+### plugin-update Phase 1.5 的行為
+
+| 依賴類型 | 檢查 | 發現不同步 |
+|---------|------|-----------|
+| MCP | wrapper 引用的 binary 在 GitHub Release 裡 | WARN + 建議 `/mcp-tools:mcp-deploy` |
+| CLI | `~/bin/$BINARY version` vs latest release tag | WARN + 建議 `/cli-tools:cli-upgrade $BINARY` |
+| 無（純 skill/rule） | 跳過 | — |
+
+### 為什麼 plugin-update 是 warn、plugin-deploy 是 block
+
+| Skill | 觸發頻率 | 嚴格度 | 理由 |
+|-------|---------|--------|------|
+| `plugin-deploy` | 偶爾（發版時）| BLOCK | Release 沒 binary = 新使用者裝 plugin 就壞 |
+| `plugin-update` | 頻繁（日常同步）| WARN | 開發者本地 binary 可能還沒推上 release；太嚴格會卡 dev loop |
+
+使用者判斷：如果已在 MCP source repo 本地 build + copy 到 `~/bin/`，即使 release 還沒發，plugin-update 仍可完成（warning 給出下一步提示）。

@@ -82,6 +82,74 @@ git log origin/main..HEAD --oneline
 
 ---
 
+## Phase 1.5: External Binary Dependency Check（若有）
+
+Plugin 如果依賴外部 binary（MCP server、CLI 工具），plugin-update 只會同步 shell
+（wrapper / skill / command），**不會** 自動更新 binary。這個 phase 偵測並提示。
+
+### Step 1: 偵測依賴類型
+
+| 訊號 | 類型 | 判斷方式 |
+|------|------|---------|
+| `.mcp.json` 存在 | **MCP binary** | `ls plugins/{name}/.mcp.json` |
+| `bin/*-wrapper.sh` 有 `GITHUB_REPO` | **MCP binary** | `grep -l GITHUB_REPO plugins/{name}/bin/*.sh` |
+| `hooks/session-start.sh` curl GitHub API | **CLI tool** | `grep 'api.github.com.*releases' plugins/{name}/hooks/` |
+| Skill / hook 引用 `~/bin/$BINARY` | **CLI tool** | `grep -rn '\$HOME/bin/\|~/bin/' plugins/{name}/{skills,hooks}/` |
+
+### Step 2: MCP 情境 — 查 latest release 有沒有對應 asset
+
+```bash
+for wrapper in plugins/{name}/bin/*-wrapper.sh; do
+    [ -f "$wrapper" ] || continue
+    BINARY_NAME=$(grep '^BINARY_NAME=' "$wrapper" | head -1 | cut -d'"' -f2)
+    GITHUB_REPO=$(grep '^GITHUB_REPO=' "$wrapper" | head -1 | cut -d'"' -f2)
+    [ -z "$BINARY_NAME" ] && continue
+
+    HAS_BINARY=$(curl -sL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" \
+        | grep '"browser_download_url"' | grep -c "/$BINARY_NAME\"" || true)
+
+    if [ "$HAS_BINARY" = "0" ]; then
+        echo "⚠️  $BINARY_NAME not in $GITHUB_REPO latest release"
+        echo "   Plugin will install but wrapper auto-download will fail."
+        echo "   → cd <MCP-source-repo> && /mcp-tools:mcp-deploy"
+    fi
+done
+```
+
+### Step 3: CLI 情境 — 比對本機 binary 和 latest release 版本
+
+```bash
+# 從 session-start.sh 抓 GitHub repo
+GFH_REPO=$(grep -oE '[A-Za-z0-9_-]+/[A-Za-z0-9_-]+' plugins/{name}/hooks/session-start.sh | head -1)
+BINARY_NAME=$(basename $(grep -oE '\$HOME/bin/[A-Za-z0-9_-]+' plugins/{name}/hooks/session-start.sh | head -1))
+
+LOCAL_VERSION=$("$HOME/bin/$BINARY_NAME" version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+LATEST_VERSION=$(curl -sL "https://api.github.com/repos/$GFH_REPO/releases/latest" \
+    | grep '"tag_name"' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+
+if [ "$LOCAL_VERSION" != "$LATEST_VERSION" ]; then
+    echo "⚠️  $BINARY_NAME local v$LOCAL_VERSION, latest v$LATEST_VERSION"
+    echo "   → /cli-tools:cli-upgrade $BINARY_NAME"
+fi
+```
+
+### Step 4: 行為決策
+
+| 狀況 | 動作 |
+|------|------|
+| 無依賴（純 skill / rule plugin） | 跳過此 phase |
+| 有依賴且 binary 已同步 | 顯示 ✅ 紀錄，繼續 Phase 2 |
+| 有依賴且 binary 不同步 | **Warn but don't block**（plugin-update 是日常同步，警告即可；block 是 plugin-deploy 的職責） |
+
+**為什麼只 warn 不 block**：
+
+| Skill | 嚴格度 | 理由 |
+|-------|--------|------|
+| `plugin-deploy` Step 2.5 | **BLOCK** | 正式發布，Release 沒 binary = 使用者完全壞掉 |
+| `plugin-update` Phase 1.5 | **WARN** | 日常同步，可能使用者本地已有 binary，只是 release 還沒發；不應擋住 dev loop |
+
+---
+
 ## Phase 2: 更新 marketplace.json（關鍵！）
 
 `marketplace.json` 位於 `{marketplace_repo_path}/.claude-plugin/marketplace.json`，是 marketplace 的 plugin index。
