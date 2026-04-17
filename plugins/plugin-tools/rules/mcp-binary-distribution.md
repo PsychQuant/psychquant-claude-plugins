@@ -230,15 +230,15 @@ MCP source repo               Plugin marketplace            CLI binary repo
 
 | 依賴類型 | 檢查 | 發現不同步 |
 |---------|------|-----------|
-| MCP | wrapper 引用的 binary 在 GitHub Release 裡 | WARN + 建議 `/mcp-tools:mcp-deploy` |
-| CLI | `~/bin/$BINARY version` vs latest release tag | WARN + 建議 `/cli-tools:cli-upgrade $BINARY` |
+| MCP | wrapper 引用的 binary 在 GitHub Release 裡 | **AskUserQuestion** → 選「順便更新」時自動呼叫 `/mcp-tools:mcp-deploy` |
+| CLI | `~/bin/$BINARY version` vs latest release tag | **AskUserQuestion** → 選「順便更新」時自動呼叫 `/cli-tools:cli-upgrade $BINARY` |
 | 無（純 skill/rule） | 跳過 | — |
 
-### 為什麼 plugin-update 是 warn、plugin-deploy 是 block
+### 為什麼 plugin-update 是 ask-then-auto-sync、plugin-deploy 是 block
 
-| Skill | 觸發頻率 | 嚴格度 | 理由 |
-|-------|---------|--------|------|
-| `plugin-deploy` | 偶爾（發版時）| BLOCK | Release 沒 binary = 新使用者裝 plugin 就壞 |
-| `plugin-update` | 頻繁（日常同步）| WARN | 開發者本地 binary 可能還沒推上 release；太嚴格會卡 dev loop |
+| Skill | 觸發頻率 | 行為 | 理由 |
+|-------|---------|------|------|
+| `plugin-deploy` | 偶爾（發版時）| **BLOCK** | Release 沒 binary = 新使用者裝 plugin 就壞，必須擋 |
+| `plugin-update` | 頻繁（日常同步）| **ASK + AUTO-SYNC** | 日常同步時多數情境是想一次更新完整鏈，但要尊重「只改 shell 不動 binary」的選擇 |
 
-使用者判斷：如果已在 MCP source repo 本地 build + copy 到 `~/bin/`，即使 release 還沒發，plugin-update 仍可完成（warning 給出下一步提示）。
+Plugin-update 被定位為 **dependency-aware orchestrator**——偵測到底層 binary 也該更新時，主動觸發整條 chain，而不只是提醒。但保留使用者控制權：AskUserQuestion 三個選項（順便更新 / 只更新 shell / 中止）。
