@@ -20,6 +20,27 @@ allowed-tools:
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 stage-level todo list：
+
+```
+TaskCreate(name="list_plugins_and_status", description="Phase 1: claude plugin list + claude plugin marketplace list")
+TaskCreate(name="check_hook_format", description="Phase 2 Check 1: 掃 hooks.json 格式錯誤")
+TaskCreate(name="check_script_permissions", description="Phase 2 Check 2: .sh 檔是否 executable")
+TaskCreate(name="check_plugin_json", description="Phase 2 Check 3: plugin.json 必要欄位")
+TaskCreate(name="check_mcp_binaries", description="Phase 2 Check 4: MCP wrapper 引用的 binary 是否存在 + universal")
+TaskCreate(name="check_directory_structure", description="Phase 2 Check 5: .claude-plugin 等目錄結構")
+TaskCreate(name="check_version_sync", description="Phase 3: marketplace.json vs installed 版本同步")
+TaskCreate(name="report_summary", description="Phase 4: 彙整所有 issue，排優先級，列修復步驟")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：plugin-health 跑很多獨立檢查，沒 task list 容易少做（特別是 MCP binary check 和 version sync），這些 silent failure 最傷。
+
+---
+
 ## Phase 1: 取得全局狀態
 
 ### Step 1: 列出所有 plugin 和狀態

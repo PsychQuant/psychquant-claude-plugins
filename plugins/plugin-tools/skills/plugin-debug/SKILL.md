@@ -23,6 +23,25 @@ allowed-tools:
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 stage-level todo list：
+
+```
+TaskCreate(name="identify_plugin", description="Phase 1: 確定要 debug 的 plugin + 找所有相關路徑（source / installed / cache）")
+TaskCreate(name="check_version_consistency", description="Phase 2: 比對 source vs cache / diff 源碼差異 / 找舊版殘留")
+TaskCreate(name="analyze_hooks", description="Phase 3: 列出所有 hook events + 分析副作用（特別是 chflags/xattr）")
+TaskCreate(name="trace_runtime_behavior", description="Phase 4: 重現問題 + trace script 執行 + 檢查 exit code")
+TaskCreate(name="identify_root_cause", description="Phase 5: 歸納根因（版本錯亂 / hook 誤觸 / 權限 / 格式）")
+TaskCreate(name="propose_fix", description="Phase 6: 列出修復步驟，建議用 plugin-update 或手動處理")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：debug 是探索性流程，很容易跳步驟「直接看 hook」忽略版本問題。Task list 強迫走完每個 phase，避免誤判根因。
+
+---
+
 ## Phase 1: 鎖定目標
 
 ### Step 1: 確定 Plugin
