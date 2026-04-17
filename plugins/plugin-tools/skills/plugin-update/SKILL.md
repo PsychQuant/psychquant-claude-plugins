@@ -133,20 +133,69 @@ if [ "$LOCAL_VERSION" != "$LATEST_VERSION" ]; then
 fi
 ```
 
-### Step 4: 行為決策
+### Step 4: 行為決策 — AskUserQuestion 主動同步
+
+偵測到依賴且不同步時，**主動問使用者要不要一起更新**，不只是 warn。
+plugin-update 是日常同步操作——連帶更新底層 binary 通常是想要的行為。
+
+**AskUserQuestion 格式**：
+
+```
+question: "此 plugin 依賴 $BINARY（$BINARY_TYPE），目前本機/release 不同步。要順便更新 binary 嗎？"
+options:
+  - "順便更新" — 自動觸發底層 skill（MCP → mcp-deploy / CLI → cli-upgrade）
+  - "只更新 plugin shell" — 略過 binary，只跑 marketplace.json sync + reload
+  - "中止" — 停止 plugin-update，讓我手動處理
+```
+
+**若使用者選「順便更新」**：
+
+| 依賴類型 | 自動觸發 | 時機 |
+|---------|---------|------|
+| MCP binary | `/mcp-tools:mcp-deploy` | 在此 phase 內執行，完成後才繼續 Phase 2 |
+| CLI tool | `/cli-tools:cli-upgrade $BINARY` | 同上 |
+
+**狀況表**：
 
 | 狀況 | 動作 |
 |------|------|
 | 無依賴（純 skill / rule plugin） | 跳過此 phase |
-| 有依賴且 binary 已同步 | 顯示 ✅ 紀錄，繼續 Phase 2 |
-| 有依賴且 binary 不同步 | **Warn but don't block**（plugin-update 是日常同步，警告即可；block 是 plugin-deploy 的職責） |
+| 有依賴且已同步 | 顯示 ✅，繼續 Phase 2 |
+| 有依賴但不同步 | **AskUserQuestion**：要順便更新 binary 嗎？ |
 
-**為什麼只 warn 不 block**：
+**為什麼 plugin-update 是 prompt-then-sync 而 plugin-deploy 是 block**：
 
-| Skill | 嚴格度 | 理由 |
-|-------|--------|------|
-| `plugin-deploy` Step 2.5 | **BLOCK** | 正式發布，Release 沒 binary = 使用者完全壞掉 |
-| `plugin-update` Phase 1.5 | **WARN** | 日常同步，可能使用者本地已有 binary，只是 release 還沒發；不應擋住 dev loop |
+| Skill | 觸發頻率 | 行為 | 理由 |
+|-------|---------|------|------|
+| `plugin-deploy` Step 2.5 | 偶爾（發版時）| **BLOCK** | Release 沒 binary = 新使用者裝 plugin 就壞，不能放過 |
+| `plugin-update` Phase 1.5 | 頻繁（日常同步）| **ASK + AUTO-SYNC** | 開發者通常想要一次更新完，但要尊重「只改 shell 不動 binary」的情境 |
+
+### Step 5: 執行 auto-sync（若使用者選擇）
+
+**MCP 情境**：
+
+```bash
+# 找到 MCP source repo（通常在 ~/Developer/ 下）
+MCP_SOURCE=$(find ~/Developer -maxdepth 3 -name "Package.swift" -exec grep -l "$BINARY_NAME" {} \; | head -1 | xargs dirname 2>/dev/null)
+
+if [ -n "$MCP_SOURCE" ]; then
+    cd "$MCP_SOURCE"
+    # 呼叫 mcp-deploy skill（建議用 Skill tool，不是 shell）
+    echo "Invoking /mcp-tools:mcp-deploy in $MCP_SOURCE..."
+    # Skill invocation: Skill(skill="mcp-tools:mcp-deploy")
+else
+    echo "MCP source repo not found. Please run /mcp-tools:mcp-deploy manually from the MCP repo."
+fi
+```
+
+**CLI 情境**：
+
+```bash
+# cli-upgrade 已知如何找 repo（從 ~/bin/$BINARY 偵測）
+# Skill invocation: Skill(skill="cli-tools:cli-upgrade", args="$BINARY_NAME")
+```
+
+完成後回到 Phase 2 繼續 marketplace.json sync。
 
 ---
 
