@@ -290,7 +290,7 @@
     },
     {
       "name": "safari-browser",
-      "version": "2.3.0",
+      "version": "2.5.0",
       "description": "macOS native browser automation via Safari + AppleScript — permanent login, upload --native",
       "author": {
         "name": "Che Cheng"
