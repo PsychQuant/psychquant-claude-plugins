@@ -19,6 +19,21 @@ allowed-tools: Bash(sdef:*), Bash(osascript:*), Bash(claude mcp:*), Bash(pkill:*
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="quick_diagnose", description="Phase 0: 建除錯日誌目錄 + 檢查連線 + 快速測試 + 錯誤分析")
+TaskCreate(name="identify_framework", description="Phase 1: 找原始碼 + 判斷框架（Swift/Python/TS）")
+TaskCreate(name="diagnosis_report", description="Phase 2: 產生報告 + 儲存")
+TaskCreate(name="post_fix_verify", description="Phase 3: 若修復了，重新 build + sync binary 驗證")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 快速診斷
 
 ### Step 0: 建立除錯日誌目錄

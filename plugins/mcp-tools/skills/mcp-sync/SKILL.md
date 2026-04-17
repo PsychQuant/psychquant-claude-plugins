@@ -30,6 +30,22 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="detect_project", description="Phase 0: 確認 MCP 專案 + 取 binary 名 + 偵測三位置 binary")
+TaskCreate(name="consistency_check", description="Phase 1: hash + 架構比對 + 輸出一致性報告")
+TaskCreate(name="execute_sync", description="Phase 2: 從 source of truth 同步到其他位置")
+TaskCreate(name="repackage_mcpb", description="Phase 2.5: 刪舊 .mcpb + 重新打包 + 驗證")
+TaskCreate(name="post_sync_verify", description="Phase 3: 最終驗證")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 偵測專案
 
 ### Step 1: 確認在 MCP 專案目錄

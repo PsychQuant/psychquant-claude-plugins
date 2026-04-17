@@ -18,6 +18,22 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="env_check", description="Phase 0: 確認專案 + 檢查 GitHub Release + 安裝 mcp-publisher + Registry 狀態")
+TaskCreate(name="create_server_json", description="Phase 1 (首次): 收集資訊 + 算 SHA-256 + 寫 server.json + Registry API 驗證")
+TaskCreate(name="update_server_json", description="Phase 1-U (更新): 讀現有 server.json + 取新版本 binary 資訊")
+TaskCreate(name="publish_to_registry", description="Phase 2: 實際 publish 到 MCP Registry")
+TaskCreate(name="verify_publication", description="Phase 3: 驗證已上架 + 測試安裝")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 環境檢查
 
 ### Step 1: 確認專案目錄
