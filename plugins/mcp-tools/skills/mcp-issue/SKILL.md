@@ -16,6 +16,19 @@ allowed-tools: Bash(gh:*, ls:*, cat:*), Read, Grep, Glob
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="locate_repo", description="Step 1: 從 MCP Server 名稱推斷 GitHub repo")
+TaskCreate(name="categorize_issue", description="Step 2: 分類 issue type（bug/feature/improvement）+ 決定 label")
+TaskCreate(name="create_issue", description="Step 3: gh issue create 含標題、body、label")
+TaskCreate(name="report_result", description="Step 4: 回報 issue number + URL")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
 ## 流程
 
 ### Step 1: 找到 MCP Server 的 GitHub repo

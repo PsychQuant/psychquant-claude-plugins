@@ -17,6 +17,21 @@ allowed-tools: Bash(claude mcp:*), Bash(grep:*), Read, Grep, Glob
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="prepare", description="Phase 0: 檢查連線 + 識別框架 + 建測試日誌目錄")
+TaskCreate(name="tool_discovery", description="Phase 1: 提取所有 tools + 自動分類 + 產生清單")
+TaskCreate(name="run_unit_tests", description="Phase 2: 執行單元測試（逐一呼叫 tools）")
+TaskCreate(name="generate_report", description="Phase 3: 產生測試報告 + 儲存")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 準備
 
 ### Step 1: 檢查連線

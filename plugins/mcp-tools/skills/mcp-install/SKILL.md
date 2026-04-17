@@ -21,6 +21,21 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="detect_project", description="Phase 0: 確認 MCP 專案目錄 + 讀專案資訊 + 確認 GitHub repo")
+TaskCreate(name="version_selection", description="Phase 1: 選版本（latest / 指定 / list）")
+TaskCreate(name="download_and_install", description="Phase 2: 確認 ~/bin + 取 binary 名 + 下載 + 設權限 + 驗證")
+TaskCreate(name="report", description="Phase 3: 輸出完成報告")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 檢測專案
 
 ### Step 1: 確認目前在 MCP 專案目錄

@@ -18,6 +18,26 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 stage-level todo list：
+
+```
+TaskCreate(name="detect_project", description="Phase 0: 確認 MCP 專案目錄 + 識別語言 + 讀當前版本 + 確認新版本號")
+TaskCreate(name="compile_binary", description="Phase 1: 編譯（Swift/Python/TS），Swift 要做 universal binary + codesign")
+TaskCreate(name="update_version_and_package", description="Phase 2: manifest.json + CHANGELOG + README + 打包 .mcpb + 驗證格式")
+TaskCreate(name="publish_to_github", description="Phase 3: git commit/push + gh release create + curl upload assets（大 binary 必須 curl）")
+TaskCreate(name="verify_binary_consistency", description="Phase 3.5 (Swift only)：hash 比對 + 架構確認")
+TaskCreate(name="publish_plugin", description="Phase 4 (可選)：發布為 Claude Code Plugin，更新 marketplace.json + cache 同步")
+TaskCreate(name="report_completion", description="Phase 5: 輸出版本資訊、Release URL、下一步提示")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+**為什麼強制**：mcp-deploy 有 5+ phases、每個 phase 有多個 step（總共 ~30 sub-steps），沒 task list 很容易漏步——特別是 Phase 3.5 binary consistency check 和 Phase 4 Phase 4 的 plugin sync（兩者都是 silent failure 的常見點）。
+
+---
+
 ## Phase 0: 檢測專案
 
 ### Step 1: 確認目前在 MCP 專案目錄

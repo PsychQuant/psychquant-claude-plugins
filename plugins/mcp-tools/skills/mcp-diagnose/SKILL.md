@@ -15,9 +15,23 @@ allowed-tools: Bash(ls:*, file:*, claude:mcp*), Read, Grep, mcp__*
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="setup_log_dir", description="建立 logs/mcptools/debug/ 目錄")
+TaskCreate(name="check_connection", description="Step 1: 檢查 MCP Server 連線狀態")
+TaskCreate(name="basic_functional_test", description="Step 2: 跑 3 個讀取類 tool 快速測試")
+TaskCreate(name="analyze_errors", description="Step 3: 錯誤訊息分析（若有）")
+TaskCreate(name="output_report", description="Step 4: 輸出診斷報告到 logs")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
 ## 診斷流程
 
-### Step 0: 建立診斷日誌目錄
+### Step 0.5: 建立診斷日誌目錄
 
 在專案根目錄建立 `logs/mcptools/debug/` 結構（diagnose 報告也存在 debug 目錄）：
 

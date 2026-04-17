@@ -1,6 +1,6 @@
 {
   "name": "mcp-tools",
-  "version": "1.13.1",
+  "version": "1.14.0",
   "description": "MCP Server \u958b\u767c\u5de5\u5177\u96c6\uff1amcp-new-app\uff08\u5efa\u7acb\u5c08\u6848\uff09\u3001mcp-deploy\uff08\u90e8\u7f72\u767c\u5e03+Plugin\uff09\u3001mcp-install\uff08\u5f9e GitHub \u5b89\u88dd\uff09\u3001mcp-upgrade\uff08\u5347\u7d1a\u5efa\u8b70\uff09\u3001mcp-clone\uff08Clone \u53c3\u8003 repo + \u81ea\u52d5\u5206\u6790\uff09\u3001mcp-clone-references\uff08\u641c\u5c0b\u7af6\u54c1\u6279\u6b21 clone\uff09\u3001mcp-sync\uff08Binary \u540c\u6b65\uff09\u3001mcp-diagnose\uff08\u9023\u7dda\u8a3a\u65b7\uff09\u3001mcp-debug\uff08\u529f\u80fd\u9664\u932f\uff09\u3001mcp-test\uff08\u5b8c\u6574\u6e2c\u8a66\uff09\u3001mcp-publish\uff08Registry \u767c\u5e03\uff09\u3001mcp-to-plugin\uff08Skill: MCP\u2192Plugin \u8f49\u63db + Keychain \u5bc6\u9470\u7ba1\u7406\uff09",
   "author": {
     "name": "Che Cheng"

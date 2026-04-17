@@ -23,6 +23,23 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="project_analysis", description="Phase 0: 確認專案位置 + 識別語言/框架 + 收集資訊")
+TaskCreate(name="dependency_analysis", description="Phase 1: 依賴分析（過時、安全漏洞、版本差距）")
+TaskCreate(name="structure_analysis", description="Phase 2: 目錄結構 + 程式碼品質 + Binary 一致性（Swift only）")
+TaskCreate(name="feature_analysis", description="Phase 3: 現有工具 + API 能力對比 + 建議新功能")
+TaskCreate(name="generate_upgrade_report", description="Phase 4: 彙整報告，列出所有建議 + 優先級")
+TaskCreate(name="await_approval_and_execute", description="Phase 5: AskUserQuestion 讓使用者挑選後執行")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 專案分析
 
 ### Step 1: 確認專案位置

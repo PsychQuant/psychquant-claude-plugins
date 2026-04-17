@@ -18,6 +18,21 @@ disable-model-invocation: true
 
 ---
 
+## Step 0: Bootstrap Stage Task List（強制）
+
+**動任何事之前**先用 `TaskCreate` 建 todo list：
+
+```
+TaskCreate(name="collect_info", description="Phase 0: 確認專案名稱 + 收集資訊 + 確認位置")
+TaskCreate(name="create_structure", description="Phase 1: 建立專案結構（Package.swift + Sources + Tests + mcpb）")
+TaskCreate(name="setup_git_and_mcpb", description="Phase 2: Git init + .gitignore + .gitattributes + mcpb/manifest + PRIVACY + README + CHANGELOG + LICENSE")
+TaskCreate(name="report", description="Phase 3: 完成報告")
+```
+
+完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+---
+
 ## Phase 0: 收集專案資訊
 
 ### Step 1: 確認專案名稱
