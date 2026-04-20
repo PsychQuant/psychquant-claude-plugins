@@ -18,11 +18,11 @@ Claude Code plugin for macOS Calendar & Reminders management using native EventK
 ```bash
 # Download the binary
 mkdir -p ~/bin
-curl -L https://github.com/kiki830621/che-ical-mcp/releases/latest/download/CheICalMCP -o ~/bin/CheICalMCP
+curl -L https://github.com/PsychQuant/che-ical-mcp/releases/latest/download/CheICalMCP -o ~/bin/CheICalMCP
 chmod +x ~/bin/CheICalMCP
 ```
 
-Or download `.mcpb` from [Releases](https://github.com/kiki830621/che-ical-mcp/releases) for one-click install.
+Or download `.mcpb` from [Releases](https://github.com/PsychQuant/che-ical-mcp/releases) for one-click install.
 
 On first use, macOS will prompt for **Calendar** and **Reminders** access - click "Allow".
 

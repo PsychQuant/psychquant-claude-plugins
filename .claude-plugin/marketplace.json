@@ -100,7 +100,7 @@
     },
     {
       "name": "che-ical-mcp",
-      "version": "1.7.0",
+      "version": "1.7.1",
       "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，28 個工具，支援 attendees/organizer、undo/redo、每事件時區、--cli 模式、--setup TCC 授權、彈性日期解析、模糊匹配、batch 操作",
       "author": {
         "name": "Che Cheng"
