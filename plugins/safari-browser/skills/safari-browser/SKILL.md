@@ -296,3 +296,7 @@ Use between every `safari-browser` command when operating sensitive sites. Never
 - **Automation permission required** — first run prompts for Terminal → Safari access (System Settings → Privacy & Security → Automation)
 - **upload smart default** — uses native file dialog when Accessibility permission is granted; auto-falls back to JS DataTransfer otherwise. Force with `--js` or `--native`
 - **pdf requires Accessibility permission** — System Settings → Privacy & Security → Accessibility (uses clipboard paste + AXDefault button click)
+
+## Playbooks
+
+Site-specific operation guides live as sibling skills named `safari-<site>-<action>/SKILL.md` — Claude Code auto-surfaces them by description when the user's intent matches. Seeds currently shipping: `safari-plaud-upload`, `safari-github-star`. To add a personal playbook (private site, custom flow), drop a `SKILL.md` at `~/.claude/skills/safari-<site>-<action>/SKILL.md` using the same convention; Claude loads user-local skills natively and no custom precedence is added by this plugin. Contribution guide: `plugins/safari-browser/skills/CONTRIBUTING-PLAYBOOKS.md`. Authoritative spec: `openspec/specs/playbook-skills/spec.md` in the safari-browser repo.
