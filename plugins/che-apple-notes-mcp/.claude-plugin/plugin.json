@@ -1,0 +1,18 @@
+{
+  "name": "che-apple-notes-mcp",
+  "version": "0.1.0",
+  "description": "macOS Apple Notes MCP server — SQLite fast read + AppleScript write, 18 tools, FDA fallback",
+  "author": {
+    "name": "Che Cheng"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "apple-notes",
+    "notes",
+    "macos",
+    "applescript",
+    "sqlite",
+    "productivity"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "notes": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-apple-notes-mcp-wrapper.sh",
+    "description": "macOS Apple Notes MCP server - SQLite fast read + AppleScript write"
+  }
+}
