@@ -3,7 +3,7 @@
 
 BINARY_NAME="CheICalMCP"
 INSTALL_PATH="$HOME/bin/$BINARY_NAME"
-GITHUB_REPO="kiki830621/che-ical-mcp"
+GITHUB_REPO="PsychQuant/che-ical-mcp"
 RELEASE_URL="https://github.com/$GITHUB_REPO/releases/latest/download/$BINARY_NAME"
 
 # Possible installation locations

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Auto-download wrapper for CheICalMCP
-REPO="kiki830621/che-ical-mcp"
+REPO="PsychQuant/che-ical-mcp"
 BINARY_NAME="CheICalMCP"
 INSTALL_DIR="$HOME/bin"
 
