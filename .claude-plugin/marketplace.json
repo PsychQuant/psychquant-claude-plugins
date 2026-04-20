@@ -49,6 +49,16 @@
       "category": "productivity"
     },
     {
+      "name": "che-apple-notes-mcp",
+      "version": "0.1.0",
+      "description": "Apple Notes MCP server — 18 tools. SQLite 快讀（<10ms）+ AppleScript 寫入（CloudKit-safe），FDA fallback。Folders/notes CRUD、search、batch、undo/redo，雙軌 body（plaintext 或 HTML）。",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-apple-notes-mcp",
+      "category": "productivity"
+    },
+    {
       "name": "r-shiny-debugger",
       "version": "1.0.0",
       "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser 與 R console",
