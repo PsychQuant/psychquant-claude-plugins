@@ -50,7 +50,7 @@
     },
     {
       "name": "che-apple-notes-mcp",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Apple Notes MCP server — 18 tools. SQLite 快讀（<10ms）+ AppleScript 寫入（CloudKit-safe），FDA fallback。Folders/notes CRUD、search、batch、undo/redo，雙軌 body（plaintext 或 HTML）。",
       "author": {
         "name": "Che Cheng"
