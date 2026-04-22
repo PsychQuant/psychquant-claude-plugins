@@ -33,6 +33,7 @@ allowed-tools:
 TaskCreate(name="identify_plugin", description="Step 1: 從 $ARGUMENTS 找 plugin 目錄")
 TaskCreate(name="preflight_checks", description="Step 2: 跑必要 + 建議項目檢查")
 TaskCreate(name="mcp_binary_check", description="Step 2.5: 若是 MCP plugin，驗證 binary 在 GitHub Release 裡（不在則 BLOCK）")
+TaskCreate(name="readme_freshness_gate", description="Step 2.6: README 是否跟上 plugin.json 版本 / 新工具；minor/major bump stale → BLOCK")
 TaskCreate(name="present_checklist", description="Step 3: 顯示結果，讓使用者決定繼續或修問題")
 TaskCreate(name="fix_issues", description="Step 4: 若使用者選修問題，處理 README/LICENSE/hooks 等")
 TaskCreate(name="version_bump", description="Step 5: patch/minor/major bump plugin.json + marketplace.json")
@@ -44,7 +45,7 @@ TaskCreate(name="verify", description="Step 9: claude plugin list 驗證版本")
 
 完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
 
-**為什麼強制**：plugin-deploy 有 9 個步驟，MCP plugin 還要加 Step 2.5 blocker check。沒 task list 容易漏 Step 2.5（會導致新使用者裝了 plugin 但 wrapper 下載不到 binary）。
+**為什麼強制**：plugin-deploy 有 10 個步驟，其中兩個是容易被跳過的關卡——Step 2.5（MCP binary 沒發布會讓新使用者下載失敗）和 Step 2.6（README 沒同步會讓使用者看到舊文件 + 新版本號的矛盾訊息）。沒 task list 容易靜默略過。
 
 ### Step 1: Identify Plugin
 
@@ -70,6 +71,7 @@ PLUGIN_DIR="$MARKETPLACE_ROOT/plugins/$PLUGIN_NAME"
 | 至少一個 skill 或 command | 掃描 `skills/` 和 `commands/` | 必要 |
 | 每個 SKILL.md 有 description | 讀取 frontmatter | 必要 |
 | README.md 存在 | 檔案存在 | 建議 |
+| **README.md 與新版本同步** | 見 Step 2.6 | **minor / major bump 必要**；patch 建議 |
 | CLAUDE.md 存在 | 檔案存在 | 建議 |
 | 無硬編碼絕對路徑 | grep `/Users/` 等 | 建議 |
 | hooks 用 ${CLAUDE_PLUGIN_ROOT} | grep hooks 中的路徑 | 如有 hooks |
@@ -143,6 +145,48 @@ options:
 
 第一種是 hard failure（使用者完全 blocked），必須 block；第二種是 silent failure（使用者困惑但能跑），可以 warn。
 
+### Step 2.6: README Freshness Gate（正式發布 = README 必須同步）
+
+`plugin-update` 的 Phase 2.5 是 ASK；這裡是 **minor / major bump 的必過關卡**。原因：plugin-deploy 代表正式發布，使用者進 marketplace 裝 plugin 第一眼就是 README，stale README 代表「功能宣稱 v$NEW 但文件還停在舊版」，是公開場合的差評起點。
+
+#### 2.6.1: 分類版本 bump 類型
+
+從 `Step 5: Version Bump` 預期的新版本反推 bump 類型（patch / minor / major）。若尚未決定，可先跳到 Step 5 決定後回來。
+
+| Bump 類型 | README 要求 |
+|-----------|-----------|
+| **major** (x+1.0.0) | **MUST** — README 必須更新到新版本（通常含 breaking changes 描述） |
+| **minor** (x.y+1.0) | **MUST** — 新 skill / 新工具 / 新 command 幾乎必然需要改 README |
+| **patch** (x.y.z+1) | **SHOULD** — bug fix 若會改變行為則需更新；純內部修補可略 |
+
+#### 2.6.2: Staleness 偵測（同 plugin-update Phase 2.5 Step 1）
+
+掃三個信號：
+1. README 沒出現新版本字串
+2. README mtime 早於 skills/hooks/plugin.json 最近修改
+3. CHANGELOG.md 最新 entry 版本在 README 中找不到
+
+#### 2.6.3: 行為決策
+
+```
+若 bump = major / minor 且 stale：
+    AskUserQuestion: "正式 deploy v$NEW 前 README 必須同步。選擇處理方式："
+    options:
+      - "現在更新 README" — 我幫忙起草 → Edit → commit 後繼續 Step 3 Present Checklist
+      - "改為 patch bump，README 暫不動" — 確認此變更不含對外 surface 變動
+      - "中止 deploy" — 手動處理後再跑 plugin-deploy
+
+若 bump = patch 且 stale：
+    顯示 warning 但不 block，繼續 Step 3 Checklist
+```
+
+#### 2.6.4: 為什麼 plugin-deploy 比 plugin-update 嚴格
+
+| Skill | README stale 時 |
+|-------|---------------|
+| `plugin-update`（日常）| 三選項，略過 OK（開發過程中 README 落後一版很常見）|
+| `plugin-deploy`（發版）| minor/major bump BLOCK；patch warn（發版 = 對外承諾，文件必須 match）|
+
 ### Step 3: Present Checklist
 
 ```markdown
@@ -170,6 +214,7 @@ options:
 
 如果有問題，幫使用者修正：
 - 缺 README.md → 從 CLAUDE.md 和 skills 自動產生
+- **README 已過時**（Step 2.6 標記 stale）→ 讀 CHANGELOG.md + `git log --oneline -n 10 -- plugins/{name}/` 當素材，提出 README diff → 使用者審閱 → Edit → commit
 - 缺 LICENSE → 建立 MIT LICENSE
 - 硬編碼路徑 → 提示修正
 

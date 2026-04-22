@@ -20,10 +20,22 @@ Claude Code Plugin 完整生命週期工具。
 | Skill | 用途 |
 |-------|------|
 | `plugin-create` | 建立新 plugin 或從現有 skill 轉換（含 marketplace 同步、CLAUDE.md、GitHub Issue） |
+| `plugin-upgrade` | 改善現有 plugin 的能力（匯入 rules/skills、補 hooks 格式、重生 CLAUDE.md）|
 | `plugin-deploy` | 發布到 Anthropic 官方 marketplace（pre-flight check + 開啟提交頁） |
 | `plugin-update` | 修改 plugin 後同步到 marketplace + 更新安裝 |
 | `plugin-health` | 檢查所有已安裝 plugin 的健康狀態 |
 | `plugin-debug` | 深度除錯單一 plugin 的問題 |
+
+### README Freshness Gate（v1.13.0）
+
+`plugin-update` 和 `plugin-deploy` 都會檢查 `README.md` 是否跟上 `plugin.json` 版本 / 新工具 / CHANGELOG：
+
+| Skill | Stale 時行為 | 理由 |
+|-------|-----------|------|
+| `plugin-update` Phase 2.5 | **ASK**（三選項：更新 / 已 OK / 稍後）| 日常同步常有 README 暫時落後 |
+| `plugin-deploy` Step 2.6 | minor/major bump → **BLOCK**；patch → warn | 正式發布 = 文件必須對齊版本號 |
+
+偵測信號：README 沒提到新版本字串、README mtime 早於 code 改動、CHANGELOG 最新 entry 版本沒進 README。
 
 ## Plugin Lifecycle
 
