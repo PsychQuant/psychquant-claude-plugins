@@ -30,8 +30,8 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.21.0",
-      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. v2.21.0: idd-issue now fork-aware — when no config exists and the local repo is a fork, the skill detects upstream via gh repo view and forces an AskUserQuestion choice between upstream / own fork / both (cross-linked) before filing. Decision is persisted to .claude/issue-driven-dev.local.md so subsequent runs stay silent. v2.18.0 bootstrap Step 0 discipline retained: every stage skill opens with TaskCreate for each sub-step so silent skipping is impossible. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Skip/won't-fix marks (- [~] / - [-]) require reasons. Commit convention: use (#NNN) or Refs #NNN, NEVER Closes/Fixes/Resolves trailers (they bypass idd-close gate). Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
+      "version": "2.22.0",
+      "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. v2.22.0: per-repo config file switched from .claude/issue-driven-dev.local.md (YAML frontmatter) to .claude/issue-driven-dev.local.json. Config is config — any rationale belongs in commits, not embedded in the config file. All 8 idd-* skills updated to read the JSON path. No automatic migration; users with old .local.md can delete it and let fork-aware detection re-prompt, or manually rename + convert. v2.21.0 fork-aware behavior retained: AskUserQuestion three-way choice (upstream / own fork / both) on first run inside a fork. v2.18.0 bootstrap Step 0 discipline retained. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Commit convention: use (#NNN) or Refs #NNN, NEVER Closes/Fixes/Resolves trailers (they bypass idd-close gate). Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
       "author": {
         "name": "Che Cheng"
       },
