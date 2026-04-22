@@ -161,10 +161,35 @@ options:
 
 #### 2.6.2: Staleness 偵測（同 plugin-update Phase 2.5 Step 1）
 
-掃三個信號：
+掃四個信號（第 4 條見 `rules/tool-readme-sync.md`）：
 1. README 沒出現新版本字串
 2. README mtime 早於 skills/hooks/plugin.json 最近修改
 3. CHANGELOG.md 最新 entry 版本在 README 中找不到
+4. **Component inventory mismatch** — 實際 `skills/` `agents/` `commands/` 目錄內容與 README 列表不符
+
+#### 2.6.2b: Component inventory 檢查
+
+```bash
+PLUGIN_DIR="plugins/$PLUGIN_NAME"
+
+# 實際有的
+ACTUAL_SKILLS=$(ls "$PLUGIN_DIR/skills/" 2>/dev/null | sort)
+ACTUAL_AGENTS=$(ls "$PLUGIN_DIR/agents/"*.md 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
+ACTUAL_COMMANDS=$(ls "$PLUGIN_DIR/commands/"*.md 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
+
+# README 有沒有提到
+for s in $ACTUAL_SKILLS; do
+    grep -q "\`$s\`\|/$s\b" "$PLUGIN_DIR/README.md" 2>/dev/null || echo "⚠️ skill '$s' 不在 README"
+done
+for a in $ACTUAL_AGENTS; do
+    grep -q "\`$a\`\|$a\b" "$PLUGIN_DIR/README.md" 2>/dev/null || echo "⚠️ agent '$a' 不在 README"
+done
+for c in $ACTUAL_COMMANDS; do
+    grep -q "/$c\b\|\`$c\`" "$PLUGIN_DIR/README.md" 2>/dev/null || echo "⚠️ command '$c' 不在 README"
+done
+```
+
+有任何 ⚠️ 都視為 stale 訊號 4。
 
 #### 2.6.3: 行為決策
 

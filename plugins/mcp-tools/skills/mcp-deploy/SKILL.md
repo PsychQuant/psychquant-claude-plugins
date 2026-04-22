@@ -276,6 +276,35 @@ chmod +x mcpb/server/run.sh
 
 **提醒**：所有語言版本的 README 都要同步更新。
 
+### Step 4.6: Tool-list ↔ README 一致性檢查（🔴 BLOCKING）
+
+規則見 `rules/tool-readme-sync.md`。這步是上兩步 README 更新的**驗證**，不是重複。
+
+```bash
+# 1. 實際 tool count（從 Server source 數，或啟動後打 tools/list）
+ACTUAL_COUNT=$(grep -oE 'name:\s*"[a-z_]+"' Sources/*/Server.swift 2>/dev/null | sort -u | wc -l | tr -d ' ')
+# 若 Python / TS project，改用對應抓法
+
+# 2. README 宣稱的 count
+README_COUNT_EN=$(grep -oE '[0-9]+ (MCP )?[Tt]ools' README.md | head -1 | grep -oE '[0-9]+')
+README_COUNT_ZH=$(grep -oE '[0-9]+ 個 MCP 工具' README_zh-TW.md 2>/dev/null | head -1 | grep -oE '[0-9]+')
+
+echo "Actual: $ACTUAL_COUNT / README EN: $README_COUNT_EN / README zh-TW: $README_COUNT_ZH"
+
+# 3. Comparison table 的數字
+grep -E 'Tools Count|工具數量' README*.md
+```
+
+**BLOCKING**：如果 actual ≠ README（任何一種語言），**停止 deploy**，要求先更新 README。
+使用者可明確覆蓋（「我知道這次 tool count 沒變」）才繼續。
+
+補救清單（出現不一致時）：
+- [ ] Features 列表的 "X MCP Tools"
+- [ ] Available Tools (X Total) heading
+- [ ] 分類工具表格每一列（新增的 tool）
+- [ ] Comparison table 的 Tools Count 行
+- [ ] 雙語 README 同步
+
 ### Step 5: 清理舊的 mcpb 檔案
 
 ```bash

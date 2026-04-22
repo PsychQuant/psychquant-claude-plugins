@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "mcp-tools",
-      "version": "1.14.0",
+      "version": "1.15.0",
       "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-issue",
       "author": {
         "name": "Che Cheng"
@@ -20,7 +20,7 @@
     },
     {
       "name": "plugin-tools",
-      "version": "1.13.0",
+      "version": "1.14.0",
       "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug",
       "author": {
         "name": "Che Cheng"
@@ -340,7 +340,7 @@
     },
     {
       "name": "cli-tools",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "CLI tool lifecycle management — build, deploy, install, upgrade Swift CLI tools via GitHub Releases",
       "author": {
         "name": "Che Cheng"

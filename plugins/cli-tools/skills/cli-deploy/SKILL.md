@@ -98,6 +98,36 @@ echo "Binary: $BINARY_NAME"
 
 如果 README.md 有 Version History 區塊，加入新版本。
 
+**CLI 特化檢查項目**（逐一核對；任何有改動的都必須連動 README）：
+
+| 改動 | README 需要同步的位置 |
+|------|--------------------|
+| 新增 / 移除 subcommand | Usage 表格、Examples section |
+| 改 flag / 預設值翻轉 | Flag 說明表、所有範例命令 |
+| 位置參數順序變 | 所有範例命令 |
+| 新增外部依賴（如 playwright） | Prerequisites / Installation |
+| 新增輸出格式 / format matrix 變動 | Format matrix / Supported Formats 表 |
+
+### Step 3.5: CLI surface ↔ README 一致性檢查（🔴 BLOCKING）
+
+規則見 `rules/tool-readme-sync.md`。
+
+```bash
+# 先 build，能跑 --help 再檢查
+swift build -c release 2>/dev/null || cargo build --release 2>/dev/null || true
+
+# 1. 抓實際 subcommand 集合
+ACTUAL=$(./.build/release/$BINARY_NAME --help 2>&1 | awk '/SUBCOMMANDS|Subcommands|COMMANDS/{flag=1;next} /^$/{flag=0} flag && /^  [a-z]/{print $1}' | sort -u)
+
+# 2. 抓 README 文件化的 subcommand（基於 $BINARY_NAME xxx 這種 pattern）
+DOCUMENTED=$(grep -oE "$BINARY_NAME [a-z-]+" README.md | awk '{print $2}' | sort -u)
+
+# 3. diff
+diff <(echo "$ACTUAL") <(echo "$DOCUMENTED") && echo "✅ README subcommand 對齊" || echo "⚠️ README 與 --help 不一致"
+```
+
+**BLOCKING**：不一致就停止 deploy，要求先更新 README（或使用者明確覆蓋）。
+
 ---
 
 ## Phase 2: 編譯 Universal Binary
