@@ -1,6 +1,6 @@
 {
   "name": "che-pixel-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pixel MCP Server — Swift 原生 Core Image 操作，36 個工具，200+ 濾鏡，Session-based 點陣圖形編輯",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
