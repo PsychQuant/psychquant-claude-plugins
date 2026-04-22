@@ -1,6 +1,6 @@
 {
   "name": "che-duckdb-mcp",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Swift-native DuckDB MCP — dual-source docs (llms.txt + full docs) with TF-IDF search and fuzzy function matching, plus 6 local DB tools (14 total). Pinned duckdb-swift, surfaces real DuckDB error messages. SessionStart hook for version check.",
   "author": { "name": "Che Cheng" },
   "license": "MIT",

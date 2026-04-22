@@ -1,6 +1,6 @@
 {
   "name": "che-xcode-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "App Store Connect MCP Server — 103 tools across 16 domain managers covering the full ASC API + Xcode Organizer crash logs",
   "author": { "name": "Che Cheng" },
   "license": "MIT",

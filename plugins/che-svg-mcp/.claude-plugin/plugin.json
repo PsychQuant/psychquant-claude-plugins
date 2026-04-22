@@ -1,6 +1,6 @@
 {
   "name": "che-svg-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SVG MCP Server — Swift 原生 XML 操作，33 個工具，Session-based 向量圖形編輯",
   "author": { "name": "Che Cheng" },
   "license": "MIT",

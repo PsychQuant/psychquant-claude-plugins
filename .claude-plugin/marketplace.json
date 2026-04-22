@@ -40,7 +40,7 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "2.5.0",
+      "version": "2.5.1",
       "description": "Apple Mail MCP server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作. v2.5.0: 四個 composing 工具 (compose/draft/reply/forward) 新增 format 參數支援 markdown/HTML body (Closes #14 #15 via upstream v2.3.0 binary). 疊加 v2.4.0 archive-mail 搜尋擴展 + Coverage Audit.",
       "author": {
         "name": "Che Cheng"
@@ -50,7 +50,7 @@
     },
     {
       "name": "che-apple-notes-mcp",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "Apple Notes MCP server — 18 tools. SQLite 快讀（<10ms）+ AppleScript 寫入（CloudKit-safe），FDA fallback。Folders/notes CRUD、search、batch、undo/redo，雙軌 body（plaintext 或 HTML）。",
       "author": {
         "name": "Che Cheng"
@@ -100,7 +100,7 @@
     },
     {
       "name": "che-things-mcp",
-      "version": "1.6.1",
+      "version": "1.6.2",
       "description": "Things 3 任務管理 MCP Server - 47 個工具支援完整 GTD 工作流程",
       "author": {
         "name": "Che Cheng"
@@ -110,7 +110,7 @@
     },
     {
       "name": "che-ical-mcp",
-      "version": "1.7.1",
+      "version": "1.7.2",
       "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，28 個工具，支援 attendees/organizer、undo/redo、每事件時區、--cli 模式、--setup TCC 授權、彈性日期解析、模糊匹配、batch 操作",
       "author": {
         "name": "Che Cheng"
@@ -120,7 +120,7 @@
     },
     {
       "name": "che-duckdb-mcp",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "description": "Swift-native DuckDB MCP + guidance Skill — dual-source docs (llms.txt + full) with TF-IDF search + fuzzy function matching, plus 6 local DB tools (14 total). Pinned duckdb-swift, real DuckDB error messages, SessionStart hook for version check.",
       "author": {
         "name": "Che Cheng"
@@ -160,7 +160,7 @@
     },
     {
       "name": "che-xcode-mcp",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "App Store Connect MCP Server — 99 tools across 15 domain managers covering the full ASC API",
       "author": {
         "name": "Che Cheng"
@@ -210,7 +210,7 @@
     },
     {
       "name": "che-svg-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "SVG MCP Server — Swift 原生 XML 操作，33 個工具，Session-based 向量圖形編輯",
       "author": {
         "name": "Che Cheng"
@@ -220,7 +220,7 @@
     },
     {
       "name": "che-pixel-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Pixel MCP Server — Swift 原生 Core Image 操作，36 個工具，200+ 濾鏡，Session-based 點陣圖形編輯",
       "author": {
         "name": "Che Cheng"
@@ -260,7 +260,7 @@
     },
     {
       "name": "che-zotero-mcp",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "description": "Zotero reference manager + academic search + knowledge graph MCP Server",
       "author": {
         "name": "Che Cheng"
