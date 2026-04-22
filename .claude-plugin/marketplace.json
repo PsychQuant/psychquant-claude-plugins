@@ -130,7 +130,7 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "2.0.1",
+      "version": "2.1.0",
       "description": "Word MCP Server - Swift 原生 OOXML 操作，148 個工具，支援 Dual-Mode + Session 狀態管理（dirty tracking, autosave, finalize）",
       "author": {
         "name": "Che Cheng"
