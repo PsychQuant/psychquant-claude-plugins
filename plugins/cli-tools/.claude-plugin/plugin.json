@@ -1,7 +1,7 @@
 {
   "name": "cli-tools",
   "description": "CLI tool lifecycle management — build, deploy, install, upgrade Swift CLI tools via GitHub Releases",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": {
     "name": "Che Cheng"
   }
