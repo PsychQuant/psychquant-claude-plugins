@@ -305,6 +305,52 @@ grep -E 'Tools Count|工具數量' README*.md
 - [ ] Comparison table 的 Tools Count 行
 - [ ] 雙語 README 同步
 
+### Step 4.7: GitHub repo About metadata audit（WARN，不 BLOCK）
+
+規則見 `rules/tool-readme-sync.md` 的 GitHub Repo About Metadata 章節。
+非 BLOCKING，但 minor / major bump 時強烈建議同步；patch 一般可略。
+
+```bash
+# 先確認 gh 已登入，且這個 repo 在 GitHub 上
+gh auth status >/dev/null 2>&1 || { echo "⚠️ gh 未登入，跳過 metadata audit"; exit 0; }
+
+REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+[ -z "$REPO_SLUG" ] && { echo "⚠️ 非 GitHub repo 或無權限"; exit 0; }
+
+# 1. Description 長度與時效
+DESC=$(gh repo view --json description -q .description)
+DESC_LEN=${#DESC}
+echo "Description ($DESC_LEN chars): $DESC"
+[ "$DESC_LEN" -lt 50 ] && echo "⚠️ Description 太短（<50 chars），建議補到 200-350 chars"
+
+# 2. Description 是否反映目前 tool count
+TOOL_COUNT=$(grep -oE 'name:\s*"[a-z_]+"' Sources/*/Server.swift 2>/dev/null | sort -u | wc -l | tr -d ' ')
+if [ "$TOOL_COUNT" -gt 0 ]; then
+    echo "$DESC" | grep -qE "$TOOL_COUNT (MCP |tools|tool)" || echo "⚠️ Description 未反映 $TOOL_COUNT tools"
+fi
+
+# 3. Topics
+TOPIC_COUNT=$(gh repo view --json repositoryTopics -q '.repositoryTopics | length')
+echo "Topics: $TOPIC_COUNT 個"
+[ "$TOPIC_COUNT" -lt 5 ] && echo "⚠️ Topics 太少（$TOPIC_COUNT < 5），search visibility 幾乎是零"
+[ "$TOPIC_COUNT" -lt 15 ] && echo "💡 建議補到 15-20 個 topics"
+
+# 4. Homepage URL
+HOMEPAGE=$(gh repo view --json homepageUrl -q .homepageUrl)
+[ -z "$HOMEPAGE" ] && echo "💡 建議設 Homepage = https://github.com/$REPO_SLUG/releases"
+```
+
+發現問題時，詢問使用者要不要順手 `gh repo edit` 更新：
+
+```bash
+AskUserQuestion "Repo metadata 和 README 不一致，要順便更新嗎？"
+  - 是，現在更新（我提供新 description + topics 草案）
+  - 否，deploy 後手動處理
+  - Dry run 看草案再決定
+```
+
+AI 草擬 description + topics 時的模板見 `rules/tool-readme-sync.md`。
+
 ### Step 5: 清理舊的 mcpb 檔案
 
 ```bash

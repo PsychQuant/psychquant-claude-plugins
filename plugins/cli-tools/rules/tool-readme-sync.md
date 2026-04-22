@@ -84,10 +84,87 @@ done
 3. 若 repo 有 E2E test，檢查 test 裡的指令與 README 是否一致（通常 test 才是最新）
 4. 雙語 README 記得同步
 
+## GitHub Repo About Metadata（和 README 同等級的使用者第一印象）
+
+README 是 repo 內部文件；**GitHub repo 首頁右側的 About 面板** 是外部的「名片」。Search engine、Topics 瀏覽頁、marketplace 聚合器都讀這塊，不讀 README。
+
+CLI surface 變動時，這三項也要檢查：
+
+| 欄位 | 位置 | CLI 特有的同步時機 |
+|------|------|-----------------|
+| **Description**（~350 字短介紹）| `gh repo view --json description` | 新增 subcommand、新增主要 flag、新增支援格式 / 平台 |
+| **Topics**（最多 20 個標籤）| `gh repo view --json repositoryTopics` | 加了新功能領域（例如原本 PDF 轉檔 → 加了 OCR 能力） |
+| **Homepage URL** | `gh repo view --json homepageUrl` | 通常指 `releases` 頁；改過 binary 發布位置時才動 |
+
+### Description 的三層結構模板
+
+```
+[What] {CLI tool for X} —
+[Differentiator] {native Swift, no Python/Node, single binary} —
+[Features] {Subcmd A, Subcmd B, Subcmd C} —
+[Use case] {Optimized for Y workflow}
+```
+
+範例（假設 macdoc CLI）：
+
+> macOS-native document conversion CLI — Swift-only, no Pandoc. 16 conversion routes (Word, HTML, Markdown, PDF, TeX, SRT, BibLaTeX). Textutil-compatible syntax, streaming converters, OCR pipeline with MLX + Ollama backends. Optimized for academic and thesis document workflows.
+
+### 建議 Topics 數量
+
+- **目標：15-20 個**（GitHub 上限 20）
+- 少於 5 個 = search visibility 等於零
+- `null` / 空陣列 = 完全沒出現在 `topic:xxx` 搜尋頁
+
+### 必備 Topic 類別（CLI 特化）
+
+| 類別 | Topic 範例 |
+|------|----------|
+| 語言 | `swift`, `rust`, `go` |
+| 類型 | `cli`, `command-line`, `command-line-tool`, `terminal` |
+| 平台 | `macos`, `linux`, `cross-platform`, `native` |
+| 發布 | `single-binary`, `homebrew`, `github-releases` |
+| 功能域 | 依 CLI 主要處理對象命名（`pdf`, `markdown`, `ocr`, `video`…） |
+| 用途 | `automation`, `developer-tools`, `productivity` |
+| 生態相容 | `textutil`, `pandoc-alternative`, `jq-like` 等（方便比較搜尋） |
+
+### `gh repo edit` 參考指令
+
+```bash
+# 一次更新 description + homepage
+gh repo edit {OWNER}/{REPO} \
+  --description "..." \
+  --homepage "https://github.com/{OWNER}/{REPO}/releases"
+
+# 加 topics
+gh repo edit {OWNER}/{REPO} \
+  --add-topic cli \
+  --add-topic command-line-tool \
+  --add-topic swift \
+  --add-topic macos
+
+# 查核目前狀態
+gh repo view {OWNER}/{REPO} --json description,homepageUrl,repositoryTopics
+```
+
+### Deploy 前的審計
+
+```bash
+# description 是否反映目前主要能力
+CURRENT_DESC=$(gh repo view --json description -q .description)
+MAJOR_SUBCMDS=$(./$BINARY --help | awk '/SUBCOMMANDS/{f=1;next} f&&/^  [a-z]/{print $1}' | head -5 | xargs)
+for s in $MAJOR_SUBCMDS; do
+    echo "$CURRENT_DESC" | grep -qi "$s" || echo "⚠️ Description 未提到主要 subcommand: $s"
+done
+
+# topics 數量
+TOPIC_COUNT=$(gh repo view --json repositoryTopics -q '.repositoryTopics | length')
+[ "$TOPIC_COUNT" -ge 5 ] || echo "⚠️ Topics 只有 $TOPIC_COUNT 個（建議 15-20）"
+```
+
 ## 例外
 
-- 純 bug fix（flag / subcommand / 預設值都沒動）→ CHANGELOG 即可
-- 未上架 release 的 development build → README 可延後；但 tag 前必須齊
+- 純 bug fix（flag / subcommand / 預設值都沒動）→ CHANGELOG 即可，README / Description / Topics 皆不用
+- 未上架 release 的 development build → 都可以延後；但 tag 前必須齊
 
 ## 和其他 skill 的關係
 

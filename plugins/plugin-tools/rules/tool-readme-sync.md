@@ -77,10 +77,58 @@ done
 3. **Agent 描述重建** — agent 描述是判斷「這個 agent 是否應該被叫」的關鍵，對照 README 確保對齊
 4. **Version History 表格補齊** — 把中間遺漏的 minor 版本補上，寫明當時加了什麼
 
+## GitHub Repo About Metadata（和 README 同等級的使用者第一印象）
+
+**重要提醒**：多數 plugin 沒有自己的 repo（都住在 `psychquant-claude-plugins` 這個 monorepo 底下）。這個章節主要適用於：
+
+1. **Marketplace repo 本身**（`psychquant-claude-plugins`）— 整個 marketplace 的 About
+2. **含 binary 的 plugin 家族** — 例如 `che-word-mcp` plugin 對應的 `PsychQuant/che-word-mcp` repo
+3. **從 monorepo 拆出去的獨立 plugin repo** — 極少數情況
+
+對於住在 monorepo 裡的 plugin，plugin 自身沒有 repo metadata 可改；但 plugin 的存在**可能要反映到 marketplace repo 的 description**（例如 marketplace 裡裝的 plugin 從 15 個變 25 個，description 可能要更新）。
+
+### Plugin 對應的 binary repo（最常見的情況）
+
+當 plugin 包 MCP binary（`che-word-mcp-wrapper.sh` → `~/bin/CheWordMCP`）時，**binary repo 的 About metadata** 才是使用者主要會看到的。規則見 `mcp-tools/rules/tool-readme-sync.md` 的 GitHub Repo About Metadata 章節。
+
+### Marketplace repo 的 About（如果你是 maintainer）
+
+| 欄位 | 位置 | 應該同步的時機 |
+|------|------|-------------|
+| **Description** | `gh repo view PsychQuant/psychquant-claude-plugins --json description` | 加了新 plugin 類別（如第一個 OCR plugin、第一個 bioinformatics plugin）|
+| **Topics** | 同上 | 隨 plugin 家族成長；例如首次加入 `rust-plugin` 類型就該加 `rust` topic |
+| **Homepage URL** | 同上 | 通常指 marketplace 首頁或 docs 網站 |
+
+範例 marketplace description 模板：
+
+```
+Curated Claude Code plugins marketplace with N plugins — MCP servers (Word / PPTX / Calendar / ...), dev tools (IDD / Spectra / TDD), CLI toolkits. Swift / TypeScript / Python. Optimized for {domain focus}.
+```
+
+### 為什麼這條對 plugin-tools 特別重要
+
+`plugin-deploy` / `plugin-update` skill 跑完後通常會 push 到 marketplace repo。當 plugin 數量從 20 → 30 時，marketplace description 不會自己更新——必須有人記得。本 rule 就是那個「記得」的點。
+
+### Deploy 前的 marketplace 審計
+
+```bash
+# 抓實際 plugin 數量
+PLUGIN_COUNT=$(ls -d /Users/che/Developer/psychquant-claude-plugins/plugins/*/ | wc -l | tr -d ' ')
+
+# marketplace repo description 是否反映
+CURRENT_DESC=$(gh repo view PsychQuant/psychquant-claude-plugins --json description -q .description)
+echo "$CURRENT_DESC" | grep -qE "[0-9]+ plugins" || echo "⚠️ Marketplace description 沒提到 plugin 總數"
+
+# topics 數量
+TOPIC_COUNT=$(gh repo view PsychQuant/psychquant-claude-plugins --json repositoryTopics -q '.repositoryTopics | length')
+[ "$TOPIC_COUNT" -ge 5 ] || echo "⚠️ Marketplace topics 只有 $TOPIC_COUNT 個（建議 15-20）"
+```
+
 ## 例外
 
-- 純 rule 修改或 bug fix（SKILL.md 內部小改，沒加減 component）→ README 可不動
+- 純 rule 修改或 bug fix（SKILL.md 內部小改，沒加減 component）→ README / Description / Topics 皆不用動
 - 未發佈到 marketplace 的 WIP plugin → README 可延後；但 push 前要補
+- 住在 monorepo 裡的 plugin（沒獨立 repo）→ 不需要自己改 About metadata，但要注意 marketplace repo 是否被此 plugin 的加入改變了定位
 
 ## 和其他 skill 的關係
 
