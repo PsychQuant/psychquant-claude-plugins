@@ -28,7 +28,27 @@ macOS Apple Mail MCP server with native AppleScript integration.
 > filters / output_dir / last_archived / exclude_mailboxes. Do **not** call it
 > without args today — it requires a filter parameter.
 
+每封 md 帶 YAML frontmatter（`message_id` / `thread_key` / `in_reply_to` / `date` / `sender` / `direction`），並同步維護 `.email_index.json`（Message-ID 去重）與 `.threads.json`（thread 關係索引）。
+
 詳細 spec 見 [`commands/archive-mail.md`](commands/archive-mail.md)。
+
+### `/archive-mail-view` — 生成 thread 聚合視圖（v2.6.0+）
+
+```bash
+/archive-mail-view "SE manuscript 10xx-2025"
+/archive-mail-view "SE manuscript" communications
+```
+
+讀 `.threads.json` + per-email md，依時序聚合成一個 thread 視圖檔（存在 `.threads/` 子目錄）。視圖是 derived 資料，原始 md 不變，可重複生成。
+
+### `/archive-mail-rebuild-threads` — 從 md 重建 thread 索引（v2.6.0+）
+
+```bash
+/archive-mail-rebuild-threads
+/archive-mail-rebuild-threads communications
+```
+
+掃所有 md 的 YAML frontmatter 重建 `.threads.json`。用在索引損壞、手動改過 thread_key、或舊 archive 升級後的 sanity check。
 
 ## Installation
 

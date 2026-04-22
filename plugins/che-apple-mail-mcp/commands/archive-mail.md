@@ -34,9 +34,18 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 mkdir -p "${output_dir}"
 ```
 
-讀取索引檔 `${output_dir}/.email_index.json`：
+**讀取兩個索引檔**（v2.6.0+）：
+
+`${output_dir}/.email_index.json` — Message-ID 去重索引（canonical key）：
 - 若存在，載入已歸檔的 Message-ID
 - 若不存在，建立空索引 `{"version": "1.0", "emails": {}}`
+
+`${output_dir}/.threads.json` — Thread 關係索引（append-only thread view）：
+- 若存在，載入既有 thread 結構
+- 若不存在，建立空索引 `{"version": "1.0", "threads": {}}`
+- 格式見 Step 5.7
+
+兩個索引**獨立維護**，thread 索引純粹為了快速查詢 thread 關係，不影響單封信的儲存。若 `.threads.json` 損壞，可用 `/archive-mail-rebuild-threads` 從 md frontmatter 重建。
 
 **讀取附件設定**（可選）：檢查 `.claude/emails.md` 是否有 `attachment_routing` YAML front matter 區塊。
 若有，載入自訂規則（all-or-nothing 取代，不做 merge）。若無，使用以下內建預設：
@@ -176,8 +185,18 @@ Subject → filename 轉換規則（依此順序執行）：
 
 > **歷史相容 note**：`communications/` 有少量 `-a` / `-b` 字母後綴（如 `2024-07-14_...-a.md`）。新規不遷移舊檔，但新檔**一律用 `-1` `-2` `-3` 數字後綴**。若混用造成困擾，另開 follow-up issue。
 
-**內容格式**：
+**內容格式**（v2.6.0+：加入 YAML frontmatter，便於 thread 索引重建）：
+
 ```markdown
+---
+message_id: "<9c7a43db76e94a64a51f85d04c3bf01b@ntu.edu.tw>"
+thread_key: "SE manuscript 10xx-2025"
+in_reply_to: "<eddba65d53754587aeee5d86ff631d2c@ntu.edu.tw>"
+date: 2026-01-28T08:35:34Z
+sender: yfhsu@ntu.edu.tw
+direction: received
+---
+
 # [主題] - YYYY-MM-DD HH:MM
 
 ## 元數據
@@ -209,6 +228,20 @@ Subject → filename 轉換規則（依此順序執行）：
 
 *歸檔日期：YYYY-MM-DD*
 ```
+
+**Frontmatter 欄位說明**：
+- `message_id`: 該封信的 RFC 5322 Message-ID（用引號包住，避免 YAML 解析角括號）
+- `thread_key`: 依下列規則計算的 bare subject：
+  1. 去掉前綴 `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:`（重複出現多次也全部去除）
+  2. 去除首尾空白
+  3. 保留原始大小寫和標點
+  4. 若結果為空，用 `no-subject`
+- `in_reply_to`: 若有，來自郵件的 `In-Reply-To` header；若 MCP 未暴露，從 body 的 quote intro 嘗試提取第一個 Message-ID，否則留空
+- `date`: ISO 8601 UTC 時間
+- `sender`: 寄件人 email 地址（display name 剝除）
+- `direction`: `received` 或 `sent`
+
+這些 frontmatter 欄位是 **canonical truth**——`.threads.json` 僅為衍生索引。
 
 ### Step 5.5: 下載並分流附件
 
@@ -286,9 +319,56 @@ Subject → filename 轉換規則（依此順序執行）：
 
 7. **累計計數**：記錄 `data_count` 和 `document_count`，供 Step 7 報告用。
 
-### Step 6: 更新索引
+### Step 5.7: 維護 `.threads.json`（v2.6.0+）
 
-將新歸檔的郵件加入索引：
+每封新歸檔的 md 寫出後，同步更新 `.threads.json`：
+
+**格式**：
+
+```json
+{
+  "version": "1.0",
+  "last_updated": "2026-04-22T15:01:09Z",
+  "threads": {
+    "SE manuscript 10xx-2025": {
+      "messages": [
+        {
+          "message_id": "<7F43E052-EA1B-432D-AF0C-64F0CDBD8B32@ntu.edu.tw>",
+          "file": "2026-01-28_Re--SE-manuscript-10xx-2025.md",
+          "date": "2026-01-28T08:00:24Z",
+          "sender": "d06227105@ntu.edu.tw",
+          "in_reply_to": "<eddba65d53754587aeee5d86ff631d2c@ntu.edu.tw>"
+        }
+      ],
+      "participants": ["yfhsu@ntu.edu.tw", "d06227105@ntu.edu.tw", "d11227103@ntu.edu.tw"],
+      "first_message": "2025-12-19T06:19:30Z",
+      "last_message": "2026-01-28T08:00:24Z",
+      "message_count": 1
+    }
+  }
+}
+```
+
+**更新演算法**（對每封新歸檔的信）：
+
+1. 從 md frontmatter 讀 `thread_key`
+2. 若 `.threads.json` 裡沒有此 thread_key，建立新 entry：
+   ```
+   {"messages": [], "participants": [], "first_message": null, "last_message": null, "message_count": 0}
+   ```
+3. 在 `messages` 陣列**尾端** append 新 message（保持時間序；若日期早於 last_message，可插入正確位置，但一般 append 即可）
+4. 更新 `participants` 集合（加入 sender + to + cc 的 email，去重）
+5. 更新 `first_message` = `min(first_message, new.date)`，`last_message` = `max(last_message, new.date)`
+6. `message_count += 1`
+7. 更新頂層 `last_updated` 為目前時間
+
+**Append-only 原則**：此索引只做新增，不修改、不刪除既有 entry。若 thread 需要分割或合併，用 `/archive-mail-rebuild-threads` 重建。
+
+**同 thread 不同時段的處理**：若 bare subject 相同但兩組訊息時間相差 > 90 天，**仍歸在同一 thread**（因為我們尊重使用者的 subject 選擇）。若要拆分，使用者需手動改 md frontmatter 的 `thread_key`（例如加 `-2026` 後綴），然後跑 rebuild。
+
+### Step 6: 更新 Message-ID 索引
+
+將新歸檔的郵件加入 `.email_index.json`：
 
 ```json
 {
@@ -298,11 +378,14 @@ Subject → filename 轉換規則（依此順序執行）：
     "message-id@example.com": {
       "file": "2026-01-13_Meeting-notes.md",
       "date": "2026-01-13 14:30",
-      "subject": "郵件主旨"
+      "subject": "郵件主旨",
+      "thread_key": "Meeting notes"
     }
   }
 }
 ```
+
+v2.6.0+ 在每個 email entry 多記一個 `thread_key`，方便反向查詢。
 
 ### Step 7: 輸出報告
 
@@ -321,6 +404,10 @@ Archive Mail 完成
 
 跳過（已歸檔）: 12 封
 
+Thread 索引: 2 new threads, 3 existing threads updated
+  - "Meeting notes": 3 new messages (total 5)
+  - "Report feedback": 2 new messages (total 2, new thread)
+
 附件: 15 個下載
   → 4 to data/raw
   → 11 to correspondence/attachments
@@ -329,6 +416,7 @@ Archive Mail 完成
 ```
 
 若無附件：`附件: 0 個下載`（不顯示分類明細）。
+Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 
 ### Step 8: 覆蓋率稽核（Coverage Audit）（v2.4.0+）
 
@@ -382,6 +470,7 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 - 寄出的郵件不產生「重點摘要」和「待辦事項」
 - **附件自動下載**（v2.3.0+）：每封歸檔信件的附件會自動下載到分類目錄。研究資料檔（csv / sav / xlsx 等）放到 `data/raw/`；文件附件（pdf / docx 等）放到 `correspondence/attachments/{email_stem}/`。可透過 `.claude/emails.md` 的 `attachment_routing` 區塊自訂規則。
 - **搜尋擴展 + 覆蓋率稽核**（v2.4.0+）：除了 sender 搜尋，可設定 `subject_keywords` 補抓 internal threads。每次歸檔後自動跑 Coverage Audit 檢查附件完整性和 thread 覆蓋率。
+- **Thread 索引**（v2.6.0+）：歸檔時自動維護 `.threads.json`，記錄每個 thread 包含哪些 messages、參與者、時間範圍。每封 md 的 YAML frontmatter 也帶有 `thread_key` / `in_reply_to`，為 canonical truth。搭配 `/archive-mail-view <thread_key>` 生成聚合 thread 視圖，`/archive-mail-rebuild-threads` 從 md 重建索引。
 
 ## 附件分類設定範例
 
