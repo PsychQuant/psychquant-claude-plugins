@@ -65,10 +65,85 @@ README_COUNT=$(grep -oE '[0-9]+ MCP Tools' README.md | head -1 | grep -oE '[0-9]
 3. **Comparison table / feature bullets 全面重掃** — 這些是最容易過時的位置
 4. **雙語版同步** — 如果有 README_zh-TW.md 或其他語言，一次全改
 
+## GitHub Repo About Metadata（和 README 同等級的使用者第一印象）
+
+README 是 repo 內部文件；**GitHub repo 首頁右側的 About 面板** 是外部的「名片」。Search engine、Topics 瀏覽頁、marketplace 聚合器都讀這塊，不讀 README。
+
+Tool 集合變動時，**這三項也要檢查**：
+
+| 欄位 | 位置 | 應該同步的時機 |
+|------|------|-------------|
+| **Description**（~350 字短介紹）| `gh repo view --json description` | Tool 總數改變、加了新 category（如 session state、readback）、或 BREAKING 變更 |
+| **Topics**（最多 20 個標籤）| `gh repo view --json repositoryTopics` | 加了新功能領域（例如原本純 MCP → 加了 manuscript-review 類 tool）|
+| **Homepage URL** | `gh repo view --json homepageUrl` | 通常指 `releases` 頁；改過 binary 發布位置時才動 |
+
+### Description 的三層結構模板
+
+```
+[What] {Swift-native MCP server for X with N tools} —
+[Differentiator] {first direct OOXML library / native EventKit / no X process required} —
+[Features] {Feature A, Feature B, Feature C, Feature D} —
+[Use case] {Optimized for Y workflow}
+```
+
+範例（che-word-mcp v3.1.0）：
+
+> Swift-native MCP server for Microsoft Word (.docx) with 165 tools — first direct OOXML library (no Microsoft Word process required). Text-anchor insert, batch replace/search, session state with SHA256 drift detection, F9-equivalent field recount, OMML math AST, Caption/Equation CRUD. Optimized for thesis and manuscript review workflows.
+
+### 建議 Topics 數量
+
+- **目標：15-20 個**（GitHub 上限 20）
+- 少於 5 個 = search visibility 等於零
+- `null` / 空陣列 = 完全沒出現在 `topic:xxx` 搜尋頁
+
+### 必備 Topic 類別
+
+| 類別 | Topic 範例 |
+|------|----------|
+| 語言 | `swift`, `rust`, `typescript`, `python` |
+| 協議 | `mcp`, `mcp-server`, `model-context-protocol` |
+| 客戶端 | `claude`, `claude-ai`, `claude-code`, `claude-desktop` |
+| 平台 | `macos`, `linux`, `native`, `cross-platform` |
+| 功能域 | 依 MCP 主要操作對象命名（`docx`, `calendar`, `pdf`, `markdown`…）|
+| 用途 | `ai-tools`, `automation`, `productivity`, `developer-tools` |
+| 競品/生態 | `microsoft-word`, `office`, `apple-notes` 等（方便比較搜尋）|
+
+### `gh repo edit` 參考指令
+
+```bash
+# 一次更新 description + homepage
+gh repo edit {OWNER}/{REPO} \
+  --description "..." \
+  --homepage "https://github.com/{OWNER}/{REPO}/releases"
+
+# 加 topics（可累積多次呼叫）
+gh repo edit {OWNER}/{REPO} \
+  --add-topic swift \
+  --add-topic mcp \
+  --add-topic mcp-server \
+  --add-topic claude-code
+
+# 查核目前狀態
+gh repo view {OWNER}/{REPO} --json description,homepageUrl,repositoryTopics
+```
+
+### Deploy 前的審計
+
+```bash
+# description 長度 + 是否包含最新 tool 總數
+CURRENT_DESC=$(gh repo view --json description -q .description)
+TOOL_COUNT=$(...從 source 或 tools/list 抓)
+echo "$CURRENT_DESC" | grep -q "$TOOL_COUNT tools" || echo "⚠️ Description 未反映 $TOOL_COUNT tools"
+
+# topics 數量
+TOPIC_COUNT=$(gh repo view --json repositoryTopics -q '.repositoryTopics | length')
+[ "$TOPIC_COUNT" -ge 5 ] || echo "⚠️ Topics 只有 $TOPIC_COUNT 個（建議 15-20）"
+```
+
 ## 例外
 
-- 純 bug fix（patch release，tool 集合完全沒動）→ 只需 CHANGELOG，README 不用
-- 私有測試版本（未上架 release）→ README 可以延後，但 release 前必須補
+- 純 bug fix（patch release，tool 集合完全沒動）→ 只需 CHANGELOG，README / Description / Topics 皆不用
+- 私有測試版本（未上架 release）→ 都可以延後，但 release 前必須補
 
 ## 和其他 skill 的關係
 

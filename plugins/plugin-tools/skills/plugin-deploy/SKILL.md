@@ -191,6 +191,45 @@ done
 
 有任何 ⚠️ 都視為 stale 訊號 4。
 
+#### 2.6.2c: Marketplace repo About metadata 審計（WARN，不 BLOCK）
+
+多數 plugin 住在 `psychquant-claude-plugins` monorepo 底下，plugin 自己沒有獨立 repo metadata。
+但 plugin 的加入或大改可能影響 **marketplace repo** 的 About 是否還準確。
+
+```bash
+gh auth status >/dev/null 2>&1 || { echo "⚠️ gh 未登入，跳過 marketplace metadata audit"; exit 0; }
+
+cd "$MARKETPLACE_ROOT"
+MARKETPLACE_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+[ -z "$MARKETPLACE_SLUG" ] && { echo "⚠️ 非 GitHub repo 或無權限"; exit 0; }
+
+PLUGIN_COUNT=$(ls -d plugins/*/ 2>/dev/null | wc -l | tr -d ' ')
+DESC=$(gh repo view --json description -q .description)
+DESC_LEN=${#DESC}
+
+echo "Marketplace: $MARKETPLACE_SLUG"
+echo "Plugin count: $PLUGIN_COUNT"
+echo "Description ($DESC_LEN chars): $DESC"
+
+# 是否提到 plugin 總數（允許範圍模糊，不要一個個 pin 住）
+echo "$DESC" | grep -qE "[0-9]+ plugins" || echo "💡 Marketplace description 沒提到 plugin 總數，加入 '$PLUGIN_COUNT plugins' 讓新訪客秒懂規模"
+
+# Topics
+TOPIC_COUNT=$(gh repo view --json repositoryTopics -q '.repositoryTopics | length')
+[ "$TOPIC_COUNT" -lt 5 ] && echo "⚠️ Marketplace topics 太少（$TOPIC_COUNT < 5）"
+[ "$TOPIC_COUNT" -lt 15 ] && echo "💡 建議 15-20 個 topics"
+```
+
+如果這次 deploy 新增了一個**新類型**的 plugin（例如首個 Rust-based plugin、首個 Zotero 整合），
+強烈建議用 `gh repo edit --add-topic` 把對應 topic 加到 marketplace。
+
+#### 2.6.2d: Plugin 對應的 binary repo metadata（若有）
+
+當 plugin 是 MCP wrapper（`bin/*-wrapper.sh` 下載 binary）時，
+binary 對應的獨立 repo（如 `PsychQuant/che-word-mcp`）才是使用者主要看到的 About。
+這類 repo 的 metadata 屬於 `mcp-tools/rules/tool-readme-sync.md` 範疇——在 `mcp-deploy` Step 4.7 會處理。
+這裡只需確認 plugin wrapper 版本和 binary repo 對齊。
+
 #### 2.6.3: 行為決策
 
 ```
