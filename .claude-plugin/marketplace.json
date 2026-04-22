@@ -30,7 +30,7 @@
     },
     {
       "name": "issue-driven-dev",
-      "version": "2.20.0",
+      "version": "2.20.1",
       "description": "Issue-driven development methodology: idd-issue → idd-diagnose → idd-implement → idd-verify → idd-close with enforced checklist gate. v2.18.0: every stage skill now opens with a mandatory Step 0 Bootstrap Stage Task List (TaskCreate for each sub-step) so silent skipping is impossible. idd-implement bootstraps TaskList from Strategy bullets; idd-close refuses to close any issue with unchecked - [ ]. Skip/won't-fix marks (- [~] / - [-]) require reasons. Commit convention: use (#NNN) or Refs #NNN, NEVER Closes/Fixes/Resolves trailers (they bypass idd-close gate). Plus idd-list, idd-comment, idd-edit, idd-update, idd-report.",
       "author": {
         "name": "Che Cheng"
@@ -350,7 +350,7 @@
     },
     {
       "name": "parallel-ai-agents",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "description": "Ensemble 審閱：4 Claude + Codex 交叉比對，支援 independent/hybrid/mix N 三種模式",
       "author": {
         "name": "Che Cheng"
