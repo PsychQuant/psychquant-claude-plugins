@@ -21,12 +21,13 @@ allowed-tools:
 
 ## 為什麼需要這個？
 
-Plugin 修改後有 5 個環節容易漏掉：
+Plugin 修改後有 6 個環節容易漏掉：
 1. 忘了更新 `marketplace.json` 中的版本號（新 plugin 忘了加 entry）
 2. 忘了 commit/push 到 git remote
 3. 忘了同步 marketplace cache（`claude plugin marketplace update`）
 4. 忘了 update 已安裝的 plugin（`claude plugin update`）
 5. 忘了重啟 Claude Code 使快取生效
+6. **忘了同步 `README.md`**（版本 bump 但 README 仍在舊版、沒提新工具 / 新 skill，使用者看文件以為功能沒做完）
 
 此 skill 自動檢查並執行所有步驟。
 
@@ -41,6 +42,7 @@ TaskCreate(name="detect_marketplace", description="Phase 0: 找到 plugin 所屬
 TaskCreate(name="detect_changes", description="Phase 1: 確認 plugin + git status + 最近 commits")
 TaskCreate(name="check_external_deps", description="Phase 1.5: 偵測 MCP/CLI 依賴，不同步時 AskUserQuestion")
 TaskCreate(name="sync_marketplace_json", description="Phase 2: 比對 plugin.json 和 marketplace.json 版本，commit+push")
+TaskCreate(name="check_readme_freshness", description="Phase 2.5: 檢查 README 是否跟上版本 / 新工具，過時時 AskUserQuestion")
 TaskCreate(name="marketplace_update", description="Phase 3: claude plugin marketplace update")
 TaskCreate(name="plugin_install_or_update", description="Phase 4: claude plugin install/update @marketplace")
 TaskCreate(name="verify_and_report", description="Phase 5: claude plugin list 驗證 + 提醒重啟")
@@ -278,6 +280,83 @@ git add .claude-plugin/marketplace.json
 git commit -m "chore: update marketplace.json for {plugin_name} v{version}"
 git push
 ```
+
+---
+
+## Phase 2.5: README Freshness Check
+
+版本 bump 後，`README.md` 常常被遺忘。這個 phase 在 marketplace sync 之前做最後一道檢查：**使用者看到的文件有沒有跟上程式碼**。
+
+### 為什麼要做這步
+
+`plugin.json` / `marketplace.json` 的版本升了，但 README 還寫著舊工具數量、舊 feature 列表——使用者從 marketplace 裝 plugin 看到的是 stale README，會以為新功能沒做完。這不是 hard failure（plugin 還是能跑），但是 silent UX failure（使用者困惑）。
+
+### Step 1: Staleness 偵測
+
+掃 `plugins/{plugin_name}/README.md`，三個訊號任一命中 = 可疑 stale：
+
+```bash
+PLUGIN_DIR="{marketplace_repo_path}/plugins/{plugin_name}"
+README="$PLUGIN_DIR/README.md"
+NEW_VERSION=$(python3 -c "import json; print(json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json'))['version'])")
+
+# 信號 1: README 沒出現新版本字串（前提：README 有「Version History」或類似版本標記）
+if ! grep -q "v$NEW_VERSION\|$NEW_VERSION" "$README" 2>/dev/null; then
+    echo "⚠️  README doesn't mention v$NEW_VERSION"
+    STALE_README=true
+fi
+
+# 信號 2: README 最後一次修改早於 plugin.json / skills / hooks 最近修改
+README_MTIME=$(git log -1 --format=%ct -- "$PLUGIN_DIR/README.md" 2>/dev/null)
+CODE_MTIME=$(git log -1 --format=%ct -- "$PLUGIN_DIR/.claude-plugin/plugin.json" "$PLUGIN_DIR/skills" "$PLUGIN_DIR/hooks" "$PLUGIN_DIR/agents" "$PLUGIN_DIR/rules" 2>/dev/null)
+if [ -n "$README_MTIME" ] && [ -n "$CODE_MTIME" ] && [ "$README_MTIME" -lt "$CODE_MTIME" ]; then
+    echo "⚠️  README last touched before code changes"
+    STALE_README=true
+fi
+
+# 信號 3: 若有 CHANGELOG.md，檢查最新 entry 是否已出現在 README
+CHANGELOG="$PLUGIN_DIR/CHANGELOG.md"
+if [ -f "$CHANGELOG" ]; then
+    LATEST_CL_VERSION=$(grep -oE '^## \[?[0-9]+\.[0-9]+\.[0-9]+\]?' "$CHANGELOG" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    if [ -n "$LATEST_CL_VERSION" ] && ! grep -q "$LATEST_CL_VERSION" "$README"; then
+        echo "⚠️  CHANGELOG latest v$LATEST_CL_VERSION not in README"
+        STALE_README=true
+    fi
+fi
+```
+
+### Step 2: 行為決策 — AskUserQuestion
+
+偵測到 stale 時，**不要直接繼續**。用 AskUserQuestion 讓使用者決定：
+
+```
+question: "README.md 看起來沒跟上 v$NEW_VERSION（沒提到新版本 / 新工具 / 比程式碼舊）。要怎麼處理？"
+options:
+  - "更新 README" — 我會讀 CHANGELOG + recent commits 幫忙起草，你審閱後 commit
+  - "已經沒問題" — README 其實是對的（純內部重構、不對外新增 surface），繼續 deploy
+  - "先略過，稍後手動處理" — 繼續 deploy 但留一條 warning 在最終 report
+```
+
+| 選項 | 行為 |
+|------|------|
+| 更新 README | Read CHANGELOG.md + `git log --oneline -n 10 -- plugins/{name}/` → 提出 README diff → 使用者確認後 Edit + commit + push |
+| 已經沒問題 | 繼續 Phase 3，不記 warning |
+| 先略過 | 繼續 Phase 3，**Phase 5 最終 report 要顯眼標註** README 待補 |
+
+### 狀況表
+
+| 狀況 | 動作 |
+|------|------|
+| README 不存在 | 跳過（plugin-deploy 才會強制補） |
+| README 存在且 fresh（三個信號都通過）| 顯示 ✅，繼續 Phase 3 |
+| README 存在但 stale | **AskUserQuestion**（三選項） |
+
+### 為什麼是 ASK 而不是 BLOCK
+
+| Skill | 觸發頻率 | README 行為 | 理由 |
+|-------|---------|-----------|------|
+| `plugin-update` Phase 2.5 | 頻繁（日常同步）| **ASK** | 有時純修 typo / hook / internal refactor，不需要動 README |
+| `plugin-deploy` Step 2 | 偶爾（發版時）| **列入 checklist 並 offer 修復** | 正式發布時使用者第一眼看 README，stale 就是差的第一印象 |
 
 ---
 
