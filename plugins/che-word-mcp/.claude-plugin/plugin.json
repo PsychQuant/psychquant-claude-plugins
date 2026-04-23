@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.4.0",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.2.0+ insert_equation 支援完整 LaTeX 子集；v3.3.0+ 內建 preserve-by-default round-trip fidelity + theme/header/footer/watermark 工具；v3.4.0+ comment-thread/people/notes/web-settings 工具。",
+  "version": "3.5.0",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.2.0+ insert_equation 完整 LaTeX 子集；v3.3.0+ preserve-by-default round-trip fidelity；v3.4.0+ comment-thread/people/notes/web-settings；v3.5.0+ true byte-preservation via dirty tracking — Reader-loaded NTPU 論文 no-op save 後完整保留 13 fontTable + 6 distinct headers + 4 footers + three-segment PAGE field + <w15:presenceInfo> identity。Closes #23 round-2 + #32 #33 #34。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
