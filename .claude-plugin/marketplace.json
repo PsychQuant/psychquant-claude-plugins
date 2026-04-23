@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.6.0",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.6.0 autosave + checkpoint + recover_from_autosave（closes #37）— open_document 加 autosave_every: Int；每 N 次 mutation 寫 checkpoint 到 <path>.autosave.docx。新增 checkpoint / recover_from_autosave 工具。get_session_state 加 autosave_detected/autosave_path 欄位。v3.5.5 keep_bak opt-in（closes #38）。v3.5.4 actor refactor（closes #39）。v3.5.3 atomic-rename save（closes #36）。基於 ooxml-swift 0.13.2。",
+      "version": "3.7.0",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.7.0 autosave Design B + insert crash 防護（closes #40 #41）— autosave_every snapshot 改在每個 mutation 開始前觸發（Design B），預設 0→1（最高安全性）。CHE_WORD_MCP_LOG_LEVEL=debug 加 Phase A 結構化診斷。基於 ooxml-swift 0.13.3（serial DocxReader + allocator-based image rId）。v3.6.0 autosave/checkpoint/recover（#37）。v3.5.5 keep_bak（#38）。v3.5.4 actor（#39）。v3.5.3 atomic-rename save（#36）。",
       "author": {
         "name": "Che Cheng"
       },
