@@ -2,7 +2,7 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，171+ 個工具，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity。
 
-當前版本：**v3.4.0**（v3.0.0+ session state API、v3.1.0+ 9 個 readback CRUD 工具、v3.2.0+ 完整 LaTeX 子集、v3.3.0+ Phase 2A theme/header/footer/watermark 工具、v3.4.0+ Phase 2B+2C comment-thread/people/notes/web-settings 工具）。
+當前版本：**v3.5.0**（v3.0.0+ session state API、v3.1.0+ 9 個 readback CRUD 工具、v3.2.0+ 完整 LaTeX 子集、v3.3.0+ Phase 2A theme/header/footer/watermark 工具、v3.4.0+ Phase 2B+2C comment-thread/people/notes/web-settings 工具、v3.5.0+ true byte-preservation via dirty tracking）。
 
 ## 兩種操作模式
 
@@ -29,11 +29,15 @@ close_document: { "doc_id": "mydoc" }
 
 v3.0.0+ 加入 session state 追蹤：dirty tracking、autosave、`finalize_document`、disk drift 偵測。
 
-## Round-trip fidelity (v3.3.0+)
+## Round-trip fidelity (v3.3.0+ → v3.5.0 true byte-preservation)
 
-底層 `ooxml-swift v0.12.0+` 採用 **preserve-by-default** 架構：`open_document` 保留原始 archive tempDir，`save_document` overlay 模式只覆寫 typed-model 改動的 part，其他 part（`word/theme/`、`webSettings.xml`、`people.xml`、`commentsExtended/Extensible/Ids`、`glossary/`、`customXml/` 等）byte-for-byte 保留。
+底層 `ooxml-swift v0.13.0+` 採用 **preserve-by-default + dirty tracking** 架構：`open_document` 保留原始 archive tempDir；`save_document` overlay 模式透過 `WordDocument.modifiedParts: Set<String>` 精確判斷哪些 part 真正被改動，**未改動的 typed-managed part 完全不重寫**——byte-for-byte 保留 `word/theme/`、`webSettings.xml`、`people.xml`、`commentsExtended/Extensible/Ids`、`glossary/`、`customXml/`、**以及 `word/document.xml`、`styles.xml`、`fontTable.xml`、`header*.xml`、`footer*.xml`、`comments.xml`、`footnotes.xml`、`endnotes.xml`** 等所有 typed parts。
 
-**修復的問題**：v3.2.0 之前 `save_document` 會把 6 個 header / 4 個 footer / theme / fontTable 等全部 strip → NTPU 學位論文模板的中文字體（DFKai-SB / 華康中楷體）會 fallback 到 Times New Roman。v3.3.0+ 不再發生。
+**v3.2.0–v3.4.0 修復進程**：
+- v3.2.0 之前 `save_document` 會把 6 個 header / 4 個 footer / theme / fontTable 等全部 strip → NTPU 學位論文模板的中文字體（DFKai-SB / 華康中楷體）會 fallback 到 Times New Roman。
+- v3.3.0+ preserve-by-default 修復了**未知 part**（theme / customXml / glossary）的保留。
+- v3.4.0+ 仍有 round-2 bug：**typed-managed parts**（fontTable、styles、header/footer）每次 save 都被重寫，13 個自訂字體仍會被收斂成 hardcoded 3-entry default。
+- **v3.5.0 終結**：dirty tracking 確保未改動的 typed parts 也跳過重寫。Reader-loaded NTPU 論文 no-op `save_document` 後 13 fontTable + 6 distinct headers + 4 footers + three-segment PAGE field + `<w15:presenceInfo>` identity 全部完整保留。Closes [#23 round-2](https://github.com/PsychQuant/che-word-mcp/issues/23) + [#32](https://github.com/PsychQuant/che-word-mcp/issues/32) + [#33](https://github.com/PsychQuant/che-word-mcp/issues/33) + [#34](https://github.com/PsychQuant/che-word-mcp/issues/34)。
 
 ## Direct Mode 支援的工具
 
@@ -111,8 +115,12 @@ v3.0.0+ 加入 session state 追蹤：dirty tracking、autosave、`finalize_docu
 - 讀取：`list_comments` ⚡
 - Thread 管理（v3.4.0+，#29）：`list_comment_threads`, `get_comment_thread`, `sync_extended_comments`
 
-### People (comment authors，v3.4.0+，#30)
-- `list_people`, `add_person`, `update_person`, `delete_person`
+### People (comment authors，v3.4.0+，#30 → v3.5.0 dual identity #34)
+- `list_people` — v3.5.0 解析完整 `<w15:presenceInfo>` 子元素，回傳 dual identity：
+  - `person_id` (GUID, 來自 `userId="S::email::guid"` 第三段)，rename 跨版本穩定
+  - `display_name_id` (= author，v3.4.0 legacy id)
+  - `display_name`, `email`, `color`, `provider_id`
+- `add_person`, `update_person`, `delete_person` — v3.5.0 update/delete 接受 GUID **或** legacy author 任一形式（向後相容 v3.4.0）
 
 ### 修訂
 - `enable_track_changes`, `disable_track_changes`
@@ -158,13 +166,13 @@ v3.0.0+ 加入 session state 追蹤：dirty tracking、autosave、`finalize_docu
 
 - **語言**: Swift（macOS 13.0+）
 - **MCP SDK**: swift-sdk 0.12+
-- **OOXML 引擎**: [`ooxml-swift v0.12.0+`](https://github.com/PsychQuant/ooxml-swift)（preserve-by-default round-trip 架構）
+- **OOXML 引擎**: [`ooxml-swift v0.13.0+`](https://github.com/PsychQuant/ooxml-swift)（preserve-by-default + dirty tracking 架構）
 - **LaTeX parser**: [`latex-math-swift v0.1.0+`](https://github.com/PsychQuant/latex-math-swift)（v3.2.0+）
 - **Markdown export**: [`word-to-md-swift`](https://github.com/PsychQuant/word-to-md-swift) + [`markdown-swift`](https://github.com/PsychQuant/markdown-swift)
 
 ## 版本
 
-- **當前版本**: v3.4.0
+- **當前版本**: v3.5.0
 - **GitHub**: https://github.com/PsychQuant/che-word-mcp
 - **完整 CHANGELOG**: https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md
 - **專案位置**（開發者）: `/Users/che/Developer/macdoc/mcp/che-word-mcp`
@@ -176,9 +184,11 @@ v3.0.0+ 加入 session state 追蹤：dirty tracking、autosave、`finalize_docu
 - **v3.2.0** — `insert_equation` LaTeX parser delegated to `latex-math-swift`，支援完整 LaTeX 子集 — closes #22
 - **v3.3.0** — Phase 2A: 12 個 theme/header/footer/watermark 工具 — closes #26 #27 #28
 - **v3.4.0** — Phase 2B+2C: 13 個 comment-thread/people/notes-update/web-settings 工具 — closes #24 #25 #29 #30 #31
+- **v3.5.0** — true byte-preservation via dirty tracking — Reader-loaded 文件 no-op save 後完整保留 13 fontTable + 6 distinct headers + 4 footers + three-segment PAGE field + `<w15:presenceInfo>` identity；Server.swift archive-write helpers 全面 wire `markPartDirty`；`extractPeople` 多行 regex 支援 GUID dual identity — closes #23 round-2 + #32 #33 #34
 
 ### 底層架構里程碑
 
+- **`ooxml-swift v0.13.0`** — true byte-preservation via dirty tracking（`modifiedParts: Set<String>` + `Header.originalFileName` + overlay-mode skip-when-not-dirty），closes #23 round-2
 - **`ooxml-swift v0.12.0`** — preserve-by-default 架構（PreservedArchive + RelationshipIdAllocator + ContentTypesOverlay），closes #23 P0 round-trip fidelity bug
 - **`ooxml-swift v0.11.0`** — `MathAccent` for OMML accent decorators
 - **`ooxml-swift v0.10.0`** — `FieldParser` + `OMMLParser` readback primitives
