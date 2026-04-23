@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.5.5",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.5.5 keep_bak opt-in（closes #38）— save_document 加 keep_bak: bool；true 時 server 在覆蓋前把舊檔搬到 <path>.bak 作為 rollback escape hatch（單一槽，預設 false）。v3.5.4 actor refactor（closes #39）。v3.5.3 atomic-rename save（closes #36）。基於 ooxml-swift 0.13.2。",
+  "version": "3.6.0",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.6.0 autosave + checkpoint + recover_from_autosave（closes #37）— open_document 加 autosave_every: Int；每 N 次 mutation 寫 checkpoint 到 <path>.autosave.docx。新增 checkpoint / recover_from_autosave 工具。get_session_state 加 autosave_detected/autosave_path 欄位。v3.5.5 keep_bak opt-in（closes #38）。v3.5.4 actor refactor（closes #39）。v3.5.3 atomic-rename save（closes #36）。基於 ooxml-swift 0.13.2。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
