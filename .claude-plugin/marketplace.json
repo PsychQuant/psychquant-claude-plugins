@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.1.0",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，148 個工具，支援 Dual-Mode + Session 狀態管理（dirty tracking, autosave, finalize）",
+      "version": "3.4.0",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.2.0+ insert_equation 支援完整 LaTeX 子集（透過 latex-math-swift）。v3.3.0+ 內建 preserve-by-default round-trip fidelity（基於 ooxml-swift 0.12+），新增 12 個 theme/header/footer/watermark 工具修復中文字體與頁面設定。v3.4.0+ 新增 13 個 comment-thread/people/notes/web-settings 工具。",
       "author": {
         "name": "Che Cheng"
       },
