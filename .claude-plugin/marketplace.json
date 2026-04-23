@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.5.4",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.5.4 actor refactor（closes #39）— class WordMCPServer → actor，compiler-enforced 並行安全；消除 Dictionary 並發 mutation 競態。v3.5.3 atomic-rename save（closes #36）。v3.5.2 rels overlay merge（closes #35）。v3.5.1 universal binary。基於 ooxml-swift 0.13.2。",
+      "version": "3.5.5",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.5.5 keep_bak opt-in（closes #38）— save_document 加 keep_bak: bool；true 時 server 在覆蓋前把舊檔搬到 <path>.bak 作為 rollback escape hatch（單一槽，預設 false）。v3.5.4 actor refactor（closes #39）。v3.5.3 atomic-rename save（closes #36）。基於 ooxml-swift 0.13.2。",
       "author": {
         "name": "Che Cheng"
       },
