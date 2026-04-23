@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.5.2",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.5.2 rels overlay merge — Reader-loaded NTPU 論文 no-op save 後完整保留 theme/webSettings/people/customXml/commentsExtended/commentsIds rels（closes #35）。v3.5.1 universal binary（x86_64+arm64）。v3.5.0 true byte-preservation via dirty tracking。Closes #23 round-2 + #32 #33 #34 #35。基於 ooxml-swift 0.13.1。",
+  "version": "3.5.3",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，171+ 個工具。v3.5.3 atomic-rename save（closes #36）— DocxWriter.write 改為 <url>.tmp.<UUID> + fsync + replaceItemAt，任何 throw 或 process kill 都保留原始 byte。v3.5.2 rels overlay merge（closes #35）。v3.5.1 universal binary（x86_64+arm64）。v3.5.0 true byte-preservation。基於 ooxml-swift 0.13.2。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
