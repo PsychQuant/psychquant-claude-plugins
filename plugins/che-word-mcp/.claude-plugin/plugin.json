@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.7.1",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.7.1 update_all_fields 不再 strip headers/footers（closes #42）— ooxml-swift 0.13.4 honest dirty-bit；無 SEQ 的 header/footer byte-preserved。v3.7.0 autosave Design B + insert crash 防護（#40 #41）。v3.6.0 autosave/checkpoint/recover（#37）。v3.5.5 keep_bak（#38）。v3.5.4 actor（#39）。v3.5.3 atomic-rename save（#36）。",
+  "version": "3.7.2",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.7.2 #42 verify 三個 follow-ups bundle（closes #53 #54 #55）— ooxml-swift 0.13.5 path traversal 防護 + multi-instance Header/Footer auto-suffix + updateAllFields coverage。v3.7.1 update_all_fields header preservation（#42）。v3.7.0 autosave Design B + insert crash 防護（#40 #41）。v3.6.0 autosave/checkpoint/recover（#37）。v3.5.x keep_bak（#38）actor（#39）atomic-rename save（#36）。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
