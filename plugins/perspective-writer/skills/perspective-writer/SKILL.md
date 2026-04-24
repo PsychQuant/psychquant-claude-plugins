@@ -255,7 +255,10 @@ Before presenting the draft, check for these AI writing tells and remove every i
 | Starting paragraphs with "在...方面" | Formulaic topic sentence structure | Vary your openings |
 | "不僅...更..." "不僅...也..." | AI loves this construction. Humans use it sparingly. | Use it at most once per document |
 | Ending with "期盼" "期許" "展望" | Overly formal, sounds like a press release | End like a person: "謝謝老師" or "希望有機會跟老師聊聊" |
-| Extra `---` / `***` hrules inside letter body | AI uses horizontal rules to segment emails into card-like sections. Humans don't—they just use paragraph breaks. | Delete every hrule except the Phase 5b wrapper pair. One paragraph = one idea; adjacent paragraphs separated by blank lines, not hrules |
+| Extra `---` / `***` hrules inside letter body | AI uses horizontal rules to segment emails into card-like sections. Humans don't—they use paragraph breaks. | Delete every hrule except the Phase 5b wrapper pair. One paragraph = one idea; adjacent paragraphs separated by blank lines, not hrules |
+| **Adjacent structural dividers** | Two lines with only whitespace between (e.g., section-closing rule + next-section-opening rule, or heading-trailing rule right before `---`). This is the *actual* AI tell—not the total count of lines but the back-to-back pair. | Remove one side of the pair. Default to keeping the semantically stronger line (e.g., keep the wrapper; remove the heading-trailing decorative `::after` rule) |
+| `2px double` borders (in HTML/PDF drafts) | Double-line borders are AI design reflex for emphasis (e.g., total row, CTA divider) | Use `1px solid`. Emphasis comes from *weight difference* against neighboring soft rules, not from doubling the line itself |
+| Decorative `::before` / `::after` rules on every heading | AI adds trailing horizontal lines after `I SCOPE · 關於本工作坊`-style labels to "make it look editorial" | Remove. Small-caps labels with proper letter-spacing carry enough visual weight alone |
 
 ## Phase 5b: Output Format
 
@@ -299,6 +302,40 @@ they probably belong in **two separate messages**, not one email with hrules.
 **When you present the draft, count your `---`. There should be exactly 2.** More than 2
 means you've accidentally built a template aesthetic into what should feel like a personal
 letter. Delete the extras before showing the user.
+
+### The Adjacency Principle (generalizes beyond `---`)
+
+The real AI tell isn't "too many dividers"—it's **two dividers appearing back-to-back**
+with nothing meaningful between them. This generalizes beyond markdown hrules to any
+formatted output:
+
+| Medium | Adjacent-pair anti-pattern |
+|--------|---------------------------|
+| Markdown letter/email | `---` then blank line then another `---` (both wrapping something trivial) |
+| Markdown with sections | `---` section divider immediately after a `## heading` line |
+| HTML / PDF drafts | `border-bottom` on one section + `border-top` on the next section with only margin between |
+| HTML / PDF tables | Last `.row { border-bottom }` soft + `.total { border-top }` strong = double line above total |
+| HTML / PDF typography | `::after { background }` decorative rule after heading + next section's `border-top` |
+
+**Fix pattern**: remove one side of the pair. Default: keep the semantically stronger/structural
+line, drop the decorative one. For table footers specifically: `.row:has(+ .row.total) { border-bottom: none }`.
+
+### Default bias: human-messier > AI-tidy
+
+When in doubt, **cut the divider**. Real human writing is structurally messier than AI
+output—paragraphs end, new paragraphs start, and the reader infers structure from the
+writing itself. AI compulsively adds visual scaffolding (hrules, borders, ::before rules,
+card wrappers) because it feels "organized." Humans don't care, and the pattern betrays
+the generator.
+
+Heuristic: if you can remove a divider (hrule, border, `::after`, wrapper) and the adjacent
+content is still comprehensible, **remove it**. Your default should skew toward "too few
+dividers" rather than "just enough." Err on the side of typography doing the work, not
+visual bars.
+
+This heuristic applies not just to `---` in markdown but to **every CSS border declaration**
+when generating HTML/PDF drafts (DMs, proposals, reports). Count rendered horizontal lines
+per page; pairs with nothing meaningful between them are the AI tell to fix.
 
 ## Phase 6: Present and Iterate
 
