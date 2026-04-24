@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.8.0",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，173+ 個工具。v3.8.0 header/footer raw-element preservation + counter-isolation（closes #52）— ooxml-swift 0.14.0 Run.rawElements carrier 保留 VML 浮水印/OLE 物件穿越 update_all_fields；新增 update_all_fields(isolate_per_container) opt-in 旗標符合 Word F9 per-container 計數語意。v3.7.2 #42 verify follow-ups bundle（#53 #54 #55）。v3.7.1 update_all_fields header preservation（#42）。v3.7.0 autosave Design B + insert crash 防護（#40 #41）。v3.6.0 autosave/checkpoint/recover（#37）。v3.5.x keep_bak（#38）actor（#39）atomic-rename save（#36）。",
+      "version": "3.9.0",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，180+ 個工具。v3.9.0 Content Controls (SDT) 讀寫工具組（closes #44）— 8 個新工具（list/get/list_repeating_section_items + update_text/replace_content/delete + update_repeating_section_item + list_custom_xml_parts stub）+ insert_content_control 擴充（4 新類型 + list_items/date_format/lock_type 參數）。基於 ooxml-swift v0.15.1 SDTParser + WordDocument mutation methods。v3.8.0 header/footer raw-element preservation（#52）。v3.7.2 #42 verify follow-ups。v3.7.1 update_all_fields header preservation（#42）。v3.7.0 autosave Design B + insert crash 防護（#40 #41）。",
       "author": {
         "name": "Che Cheng"
       },
