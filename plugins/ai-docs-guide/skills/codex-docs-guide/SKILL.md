@@ -5,7 +5,7 @@ description: |
   Use this skill proactively when the conversation involves:
   - Codex CLI installation, setup, or authentication
   - Codex CLI configuration (config.toml, AGENTS.md, profiles)
-  - Codex models (GPT-5.4, GPT-5.3-Codex, Codex-Spark)
+  - Codex models (GPT-5.5, GPT-5.3-Codex, Codex-Spark)
   - Codex CLI commands, flags, slash commands
   - Codex features (fast mode, web search, multi-agent, MCP, skills)
   - Codex speed/reasoning settings
@@ -47,7 +47,7 @@ When the user asks about or the conversation involves:
 |-----------|--------|---------|
 | Config valid values, schema | Repo: config.schema.json | "What values does reasoning_effort accept?" |
 | CLI flags, options | Repo: main.rs or docs/ | "What flags does `codex` accept?" |
-| Model definitions, defaults | Repo: models.json | "What's the default reasoning effort for gpt-5.4?" |
+| Model definitions, defaults | Repo: models.json | "What's the default reasoning effort for gpt-5.5?" |
 | Protocol types, enums | Repo: protocol src | "What ReasoningEffort variants exist?" |
 | SDK types, interfaces | Repo: sdk/ | "What options does exec() accept?" |
 | Conceptual guides, tutorials | WebFetch docs site | "How does sandboxing work?" |
@@ -139,7 +139,7 @@ brew install codex              # Homebrew
 ### Key CLI flags
 | Flag | Purpose |
 |------|---------|
-| `-m, --model` | Override model (e.g. `gpt-5.4`) |
+| `-m, --model` | Override model (e.g. `gpt-5.5`) |
 | `-a, --ask-for-approval` | `untrusted` / `on-request` / `never` |
 | `-s, --sandbox` | `read-only` / `workspace-write` / `danger-full-access` |
 | `-i, --image` | Attach image files |

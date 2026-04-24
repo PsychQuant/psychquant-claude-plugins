@@ -83,7 +83,7 @@ allowed-tools:
 OUTPUT_FILE=$(mktemp /tmp/codex_stmt_XXXXX)
 
 codex exec \
-  -c 'model="gpt-5.4"' \
+  -c 'model="gpt-5.5"' \
   -c 'model_reasoning_effort="xhigh"' \
   -c 'service_tier="fast"' \
   -s read-only \
@@ -217,7 +217,7 @@ FOR each MANUAL target:
 ```bash
 # 非互動模式（用於 STUB 和 TACTIC）
 codex exec \
-  -c 'model="gpt-5.4"' \
+  -c 'model="gpt-5.5"' \
   -c 'model_reasoning_effort="xhigh"' \
   -c 'service_tier="fast"' \
   -s read-only \

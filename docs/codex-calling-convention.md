@@ -62,7 +62,9 @@ node codex-companion.mjs cancel $JOB_ID
 
 ```bash
 codex exec --full-auto \
-  -c 'model_reasoning_effort="high"' \
+  -c 'model="gpt-5.5"' \
+  -c 'model_reasoning_effort="xhigh"' \
+  -c 'service_tier="fast"' \
   -o reviews/codex-review.md \
   "審閱 solution.tex，從 methodology/writing/references 三角度。用繁體中文。"
 ```
