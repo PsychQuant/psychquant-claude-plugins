@@ -1,7 +1,7 @@
 ---
 description: |
   Generate and run batch Codex CLI jobs — split a large reference document into chunks,
-  parallel-execute codex exec (GPT-5.4 xhigh) with structured prompts, monitor progress.
+  parallel-execute codex exec (GPT-5.5 xhigh) with structured prompts, monitor progress.
   Use when: "batch generate", "codex batch", "parallel codex", "generate solutions/summaries/translations for each chapter"
 argument-hint: "[task description]"
 allowed-tools: Bash, Read, Write, Glob, Grep, Agent(general-purpose)
@@ -27,7 +27,7 @@ Ask the user for these parameters (skip any they've already provided in the argu
 4. **Output directory** — where to save results
 
 ### Optional (with defaults)
-5. **Model** — default: `gpt-5.4`
+5. **Model** — default: `gpt-5.5`
 6. **Reasoning effort** — default: `xhigh`
 7. **Output filename pattern** — default: `ch${ch}_output.tex`
 8. **Parallel execution** — default: `true` (all chunks at once)
@@ -135,5 +135,5 @@ output: ch${ch}_summary.tex
 | Network stream disconnection | Delete empty output, `FORCE=1 ./generate.sh <ch>` |
 | Output has `\documentclass` preamble | `sed -i '' '/^\\documentclass/,/^\\begin{document}/d; /^\\end{document}/d'` |
 | Undefined commands from stripped preamble | Find `\newcommand` in deleted preamble, replace usages |
-| codex hangs | Check `~/.codex/config.toml`, try with explicit `-m gpt-5.4` |
+| codex hangs | Check `~/.codex/config.toml`, try with explicit `-m gpt-5.5` |
 | Rate limiting | Reduce parallel count or add delay between launches |

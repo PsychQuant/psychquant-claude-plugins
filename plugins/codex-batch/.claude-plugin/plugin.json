@@ -1,8 +1,8 @@
 {
   "name": "codex-batch",
   "version": "1.0.0",
-  "description": "Batch content generation using Codex CLI (GPT-5.4) — generate shell scripts for parallel codex exec jobs with large reference documents as context",
+  "description": "Batch content generation using Codex CLI (GPT-5.5) — generate shell scripts for parallel codex exec jobs with large reference documents as context",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
-  "keywords": ["codex", "gpt-5.4", "batch", "parallel", "latex", "solutions", "generation"]
+  "keywords": ["codex", "gpt-5.5", "batch", "parallel", "latex", "solutions", "generation"]
 }
