@@ -255,6 +255,7 @@ Before presenting the draft, check for these AI writing tells and remove every i
 | Starting paragraphs with "在...方面" | Formulaic topic sentence structure | Vary your openings |
 | "不僅...更..." "不僅...也..." | AI loves this construction. Humans use it sparingly. | Use it at most once per document |
 | Ending with "期盼" "期許" "展望" | Overly formal, sounds like a press release | End like a person: "謝謝老師" or "希望有機會跟老師聊聊" |
+| Extra `---` / `***` hrules inside letter body | AI uses horizontal rules to segment emails into card-like sections. Humans don't—they just use paragraph breaks. | Delete every hrule except the Phase 5b wrapper pair. One paragraph = one idea; adjacent paragraphs separated by blank lines, not hrules |
 
 ## Phase 5b: Output Format
 
@@ -281,6 +282,23 @@ Signature
 
 ---
 ```
+
+### Only TWO `---` allowed per draft (before + after). Zero internal hrules.
+
+Common AI mistakes (all are AI signatures — real people don't do any of these):
+
+- ❌ Adding `---` between body paragraphs as section dividers
+- ❌ Adding `---` before the signature line
+- ❌ Using `---` or `***` to separate "main content" from "postscript"
+- ❌ Using `---` to replace a period or comma transition
+
+If the draft needs to signal structural shift, let paragraphs do it: blank line between
+two paragraphs is enough. If two topics feel like they need a hard divider between them,
+they probably belong in **two separate messages**, not one email with hrules.
+
+**When you present the draft, count your `---`. There should be exactly 2.** More than 2
+means you've accidentally built a template aesthetic into what should feel like a personal
+letter. Delete the extras before showing the user.
 
 ## Phase 6: Present and Iterate
 
