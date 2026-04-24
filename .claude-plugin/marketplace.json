@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.11.0",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，215+ 個工具。v3.11.0 Tables / Hyperlinks / Headers 擴充（closes #49 #50 #51）— 16 新 MCP 工具：表格條件式格式 / 巢狀表格 / 表頭列重複 / 表格縮排 / 3 種類型化超連結（auto-style）/ 偶奇頁頁首 / section header map。基於 ooxml-swift v0.17.0。v3.10.0 Styles + Numbering + Sections 基礎設施（#46 #47 #48）。v3.9.0 Content Controls (SDT) 讀寫（#44）。v3.8.0 header/footer raw-element preservation（#52）。",
+      "version": "3.12.0",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，218+ 個工具。v3.12.0 Programmatic Track Changes 生成（closes #45）— 3 新 MCP 工具（insert_text_as_revision / delete_text_as_revision / move_text_as_revision）+ 2 擴充 args（format_text / set_paragraph_format 加上 as_revision: bool）。完成 Office.js OOXML Roadmap P0 全部七題（100%）。基於 ooxml-swift v0.18.0。v3.11.0 Tables / Hyperlinks / Headers（#49 #50 #51）。v3.10.0 Styles + Numbering + Sections（#46 #47 #48）。v3.9.0 Content Controls (SDT)（#44）。",
       "author": {
         "name": "Che Cheng"
       },
