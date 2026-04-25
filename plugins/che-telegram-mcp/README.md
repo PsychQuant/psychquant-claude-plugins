@@ -59,7 +59,7 @@ chmod +x ~/bin/CheTelegramAllMCP ~/bin/CheTelegramBotMCP
 xattr -dr com.apple.quarantine ~/bin/CheTelegramAllMCP ~/bin/CheTelegramBotMCP
 ```
 
-> **arm64-only**: prebuilt binaries are Apple Silicon. Intel Mac users should build from source: `git clone https://github.com/PsychQuant/che-msg.git && cd che-msg/che-telegram-all-mcp && swift build -c release`.
+> **Universal binary**: prebuilt binaries are Mach-O universal (arm64 + x86_64), so they run on both Apple Silicon and Intel Macs. Building from source: `git clone https://github.com/PsychQuant/che-msg.git && cd che-msg/che-telegram-all-mcp && swift build -c release`.
 
 ## How It Works
 
