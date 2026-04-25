@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.13.1",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.1 hot-fix：bump ooxml-swift v0.19.0→v0.19.1 修正 pPr double-emission silent regression（NTPU thesis 驗證時抓到，無 source 變更）。v3.13.0 document.xml lossless round-trip（closes #56 P0）— 保留所有 source xmlns:* + mc:Ignorable，解析 bookmarks / hyperlinks / fldSimple / AlternateContent，sort-by-position Writer emit，replace_text 走 wrapper-internal runs（無 silent failure）。v3.12.0 Programmatic Track Changes 生成（#45）。v3.11.0 Tables / Hyperlinks / Headers（#49 #50 #51）。v3.10.0 Styles + Numbering + Sections（#46 #47 #48）。v3.9.0 Content Controls (SDT)（#44）。基於 ooxml-swift v0.19.1。",
+      "version": "3.13.2",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.2 bump ooxml-swift v0.19.1→v0.19.2 — 修正 #56 verification 找到的 4 個 blocking findings：F1 Hyperlink.toXML 真正 emit Reader 解出的 runs/rawAttributes/rawChildren、F2 addBookmark/deleteBookmark 同步 bookmarkMarkers、F3 ins/del/moveFrom/moveTo round-trip 保留 position+revisionId 與 wrapper、F4 namespace 保留從 document.xml 擴展到 header/footer/footnote/endnote（無 source 變更）。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Programmatic Track Changes 生成（#45）。v3.11.0 Tables / Hyperlinks / Headers（#49 #50 #51）。v3.10.0 Styles + Numbering + Sections（#46 #47 #48）。v3.9.0 Content Controls (SDT)（#44）。基於 ooxml-swift v0.19.2。",
       "author": {
         "name": "Che Cheng"
       },
