@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.13.2",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.2 bump ooxml-swift v0.19.1→v0.19.2 — 修正 #56 verification 找到的 4 個 blocking findings：F1 Hyperlink.toXML 真正 emit Reader 解出的 runs/rawAttributes/rawChildren、F2 addBookmark/deleteBookmark 同步 bookmarkMarkers、F3 ins/del/moveFrom/moveTo round-trip 保留 position+revisionId 與 wrapper、F4 namespace 保留從 document.xml 擴展到 header/footer/footnote/endnote（無 source 變更）。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Programmatic Track Changes 生成（#45）。v3.11.0 Tables / Hyperlinks / Headers（#49 #50 #51）。v3.10.0 Styles + Numbering + Sections（#46 #47 #48）。v3.9.0 Content Controls (SDT)（#44）。基於 ooxml-swift v0.19.2。",
+  "version": "3.13.3",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.3 bump ooxml-swift v0.19.2→v0.19.3 — 修完 #56 round 2 verify 的 8 P0 + 3 must-fix P1（無 source 變更）。Batch A Hyperlink（P0-1 API path 視覺樣式恢復、P0-2 tgtFrame/docLocation Reader filter 修正、P0-3 ordered children 保留 source order、P1-7 Hyperlink.id 唯一）。Batch B Sort path（P0-4 contentControls emit、P0-5 commentIds/footnoteIds/endnoteIds/hasPageBreak emit、P0-8 hyperlink-only paragraph 路由）。Batch C Revision（P0-6 非文字 wrapper 保留、P0-7 nested hyperlink/SDT/fieldSimple 完整 round-trip）。Batch D Bookmark（P1-1 nextBookmarkId 校準、P1-4 API path 段落 wrap-around 還原）。v3.13.2 round 1 F1-F4 hot-fix。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Track Changes（#45）。基於 ooxml-swift v0.19.3。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
