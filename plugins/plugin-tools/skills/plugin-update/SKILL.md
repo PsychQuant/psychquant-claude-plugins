@@ -352,10 +352,15 @@ if [ -f "$CHANGELOG" ]; then
     fi
 fi
 
-# 信號 4: Component inventory drift（v1.15.0 新增；港自 plugin-deploy）
+# 信號 4: Component inventory drift（v1.15.0 新增；移植自 plugin-deploy）
 # 實際 skills / agents / commands 是否都在 README 提到。
 # 漏掉 = 使用者看 README 不知道有這個 skill。
-ACTUAL_SKILLS=$(ls "$PLUGIN_DIR/skills/" 2>/dev/null | sort)
+#
+# 篩選規則（v1.15.0）：只計算「真實組件」 —
+#   skills/<name>/   必須含 SKILL.md（空目錄是實驗殘留，不算 skill）
+#   agents/*.md      檔案必須存在
+#   commands/*.md    檔案必須存在
+ACTUAL_SKILLS=$(find "$PLUGIN_DIR/skills/" -maxdepth 2 -name 'SKILL.md' 2>/dev/null | xargs -n1 dirname 2>/dev/null | xargs -n1 basename 2>/dev/null | sort)
 ACTUAL_AGENTS=$(find "$PLUGIN_DIR/agents/" -maxdepth 1 -name '*.md' 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
 ACTUAL_COMMANDS=$(find "$PLUGIN_DIR/commands/" -maxdepth 1 -name '*.md' 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
 MISSING_COMPONENTS=()
