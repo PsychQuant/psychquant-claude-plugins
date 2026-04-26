@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.13.5",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.5 bump ooxml-swift v0.19.3→v0.19.5（v0.19.4 held-back per verify-gate）— closes R5 stack-completion (6 P0 + 5 P1 + R5-CONT 7 P0 + 5 P1 + R5-CONT-2 5 P0 + 4 P1 + R5-CONT-3 1 P0 + 4 P1 + R5-CONT-4 1 P0 + 3 P1 from #56 rounds 4-8 verify) via spectra-driven per-task verify gates（無 source 變更）。Round 4 walker symmetry across headers/footers/footnotes/endnotes（accept_revision/reject_revision/get_hyperlinks/replace_text 在所有 part 找到目標）。Round 5 per-container relationships round-trip（update_hyperlink URL sync 對應 owning part rels）。Round 6 delete_hyperlink mirror + reject_revision .insertion source-routing。Round 7 reject_revision typed clearMarker（file/API state 收斂）。Round 8 accept_revision typed clearMarker mirror + matrix-pin asymmetry-guard removal + Document.repairContainerFileNames 標記 document.xml.rels + [Content_Types].xml dirty。Convergence: Devil's Advocate 寫了 5 個 adversarial tests, 全部 PASSED。v3.13.3 round 2 verify 8 P0 + 3 P1。v3.13.2 round 1 F1-F4 hot-fix。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Track Changes（#45）。基於 ooxml-swift v0.19.5。",
+      "version": "3.13.6",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.6 bump ooxml-swift v0.19.5→v0.19.6 + word-to-md-swift v0.6.0→v0.6.1 — closes #58 (sub-stack A of #58/#59/#60 document-content-preservation): body-level <w:bookmarkStart>/<w:bookmarkEnd>（TOC _Toc<digits> 多段落跨段錨點）現在能在 body-mutating save 後完整保留。架構原則「if not typed, preserve as raw」— BodyChild enum 擴增 .bookmarkMarker（typed）+ .rawBlockElement（generic catch-all）。Cross-cutting matrix-pin testDocumentContentEqualityInvariant 加入 bookmarkStart count parity（45=45 thesis fixture）。B（v3.13.7 / #59 whitespace overlay）+ C（v3.14.0 / #60 RunProperties audit）後續發布。v3.13.5 R5 stack-completion（30 findings closed across rounds 4-8 6-AI verify）。基於 ooxml-swift v0.19.6 + word-to-md-swift v0.6.1。",
       "author": {
         "name": "Che Cheng"
       },
