@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.13.3",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.3 bump ooxml-swift v0.19.2→v0.19.3 — 修完 #56 round 2 verify 的 8 P0 + 3 must-fix P1（無 source 變更）。Batch A Hyperlink（P0-1 API path 視覺樣式恢復、P0-2 tgtFrame/docLocation Reader filter 修正、P0-3 ordered children 保留 source order、P1-7 Hyperlink.id 唯一）。Batch B Sort path（P0-4 contentControls emit、P0-5 commentIds/footnoteIds/endnoteIds/hasPageBreak emit、P0-8 hyperlink-only paragraph 路由）。Batch C Revision（P0-6 非文字 wrapper 保留、P0-7 nested hyperlink/SDT/fieldSimple 完整 round-trip）。Batch D Bookmark（P1-1 nextBookmarkId 校準、P1-4 API path 段落 wrap-around 還原）。v3.13.2 round 1 F1-F4 hot-fix。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Track Changes（#45）。基於 ooxml-swift v0.19.3。",
+      "version": "3.13.5",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.5 bump ooxml-swift v0.19.3→v0.19.5（v0.19.4 held-back per verify-gate）— closes R5 stack-completion (6 P0 + 5 P1 + R5-CONT 7 P0 + 5 P1 + R5-CONT-2 5 P0 + 4 P1 + R5-CONT-3 1 P0 + 4 P1 + R5-CONT-4 1 P0 + 3 P1 from #56 rounds 4-8 verify) via spectra-driven per-task verify gates（無 source 變更）。Round 4 walker symmetry across headers/footers/footnotes/endnotes（accept_revision/reject_revision/get_hyperlinks/replace_text 在所有 part 找到目標）。Round 5 per-container relationships round-trip（update_hyperlink URL sync 對應 owning part rels）。Round 6 delete_hyperlink mirror + reject_revision .insertion source-routing。Round 7 reject_revision typed clearMarker（file/API state 收斂）。Round 8 accept_revision typed clearMarker mirror + matrix-pin asymmetry-guard removal + Document.repairContainerFileNames 標記 document.xml.rels + [Content_Types].xml dirty。Convergence: Devil's Advocate 寫了 5 個 adversarial tests, 全部 PASSED。v3.13.3 round 2 verify 8 P0 + 3 P1。v3.13.2 round 1 F1-F4 hot-fix。v3.13.1 pPr double-emission hot-fix。v3.13.0 document.xml lossless round-trip（closes #56 P0）。v3.12.0 Track Changes（#45）。基於 ooxml-swift v0.19.5。",
       "author": {
         "name": "Che Cheng"
       },
