@@ -161,11 +161,15 @@ options:
 
 #### 2.6.2: Staleness 偵測（同 plugin-update Phase 2.5 Step 1）
 
-掃四個信號（第 4 條見 `rules/tool-readme-sync.md`）：
-1. README 沒出現新版本字串
-2. README mtime 早於 skills/hooks/plugin.json 最近修改
+掃六個信號（v1.15.0 起；第 4 條詳見 `rules/tool-readme-sync.md`）：
+1. README 沒出現新版本字串（套用 Suppression A：README 完全沒版本標記時跳過）
+2. README mtime 早於 skills/hooks/plugin.json 最近修改（套用 Suppression A + B：wrapper-only / marketplace 同步 commits 不算）
 3. CHANGELOG.md 最新 entry 版本在 README 中找不到
 4. **Component inventory mismatch** — 實際 `skills/` `agents/` `commands/` 目錄內容與 README 列表不符
+5. **Tool count drift** — README 標題寫的工具數（"Available Tools (N)"）跟 plugin.json description 宣稱的工具數對不上
+6. **Version history gap** — git log 顯示 shipped 過的版本中，有 2+ 個沒出現在 README 的 Version History 表格
+
+每個信號的 bash 偵測碼跟 `plugin-update/SKILL.md` Phase 2.5 Step 1 完全一致，避免兩處邏輯漂移。
 
 #### 2.6.2b: Component inventory 檢查
 

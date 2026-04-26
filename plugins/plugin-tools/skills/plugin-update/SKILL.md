@@ -293,25 +293,53 @@ git push
 
 ### Step 1: Staleness 偵測
 
-掃 `plugins/{plugin_name}/README.md`，三個訊號任一命中 = 可疑 stale：
+掃 `plugins/{plugin_name}/README.md`，**六個訊號任一命中 = 可疑 stale**。
+新增的信號 4-6 是 v1.15.0 從跨 28 plugin 大規模 audit 中萃取的盲點 —
+舊三信號漏掉「tool count drift / component inventory drift / multi-version
+catch-up gap」這三類常見 staleness。
 
 ```bash
 PLUGIN_DIR="{marketplace_repo_path}/plugins/{plugin_name}"
 README="$PLUGIN_DIR/README.md"
 NEW_VERSION=$(python3 -c "import json; print(json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json'))['version'])")
 
-# 信號 1: README 沒出現新版本字串（前提：README 有「Version History」或類似版本標記）
-if ! grep -q "v$NEW_VERSION\|$NEW_VERSION" "$README" 2>/dev/null; then
-    echo "⚠️  README doesn't mention v$NEW_VERSION"
+# README 是否有任何版本追蹤標記（給 Suppression A 用）
+HAS_VERSION_SECTION=false
+if grep -qE '## (Version|Changelog)|# Changelog|v[0-9]+\.[0-9]+' "$README" 2>/dev/null; then
+    HAS_VERSION_SECTION=true
+fi
+
+# 信號 1: README 沒出現新版本字串
+if [ "$HAS_VERSION_SECTION" = "true" ] && ! grep -q "v$NEW_VERSION\|$NEW_VERSION" "$README" 2>/dev/null; then
+    echo "⚠️  signal-1: README has version markers but doesn't mention v$NEW_VERSION"
     STALE_README=true
 fi
 
 # 信號 2: README 最後一次修改早於 plugin.json / skills / hooks 最近修改
+# 套用兩個 suppression 避免誤判：
+#   A. README 完全沒有版本追蹤內容 → mtime drift 沒意義（純 skill plugin / glue plugin）
+#   B. 所有「比 README 新的 commits」都是 wrapper-only / marketplace.json sync 等
+#      不影響使用者可見 surface 的 plumbing 改動 → 不算 stale
 README_MTIME=$(git log -1 --format=%ct -- "$PLUGIN_DIR/README.md" 2>/dev/null)
-CODE_MTIME=$(git log -1 --format=%ct -- "$PLUGIN_DIR/.claude-plugin/plugin.json" "$PLUGIN_DIR/skills" "$PLUGIN_DIR/hooks" "$PLUGIN_DIR/agents" "$PLUGIN_DIR/rules" 2>/dev/null)
+CODE_MTIME=$(git log -1 --format=%ct -- "$PLUGIN_DIR/.claude-plugin/plugin.json" "$PLUGIN_DIR/skills" "$PLUGIN_DIR/hooks" "$PLUGIN_DIR/agents" "$PLUGIN_DIR/rules" "$PLUGIN_DIR/commands" 2>/dev/null)
 if [ -n "$README_MTIME" ] && [ -n "$CODE_MTIME" ] && [ "$README_MTIME" -lt "$CODE_MTIME" ]; then
-    echo "⚠️  README last touched before code changes"
-    STALE_README=true
+    if [ "$HAS_VERSION_SECTION" = "false" ]; then
+        # Suppression A — 沒版本追蹤標記，mtime drift 沒意義
+        :
+    else
+        # Suppression B — 過濾掉純 wrapper / marketplace 同步 commits
+        # 找出 README mtime 之後、touch 此 plugin 的所有 commits
+        SUBSTANTIVE_COMMITS=$(git log --since="@$README_MTIME" --format='%s' \
+            -- "$PLUGIN_DIR/" 2>/dev/null | \
+            grep -vE '^(fix|chore|docs)\(.*\): (add version-aware auto-download|sync marketplace\.json|update repo URLs|bump.*version|wrapper)' | \
+            grep -vE 'wrapper.sh\b|marketplace\.json sync|plugin\.json version' | \
+            head -5)
+        if [ -n "$SUBSTANTIVE_COMMITS" ]; then
+            echo "⚠️  signal-2: README older than substantive code changes:"
+            echo "$SUBSTANTIVE_COMMITS" | sed 's/^/      /'
+            STALE_README=true
+        fi
+    fi
 fi
 
 # 信號 3: 若有 CHANGELOG.md，檢查最新 entry 是否已出現在 README
@@ -319,11 +347,87 @@ CHANGELOG="$PLUGIN_DIR/CHANGELOG.md"
 if [ -f "$CHANGELOG" ]; then
     LATEST_CL_VERSION=$(grep -oE '^## \[?[0-9]+\.[0-9]+\.[0-9]+\]?' "$CHANGELOG" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     if [ -n "$LATEST_CL_VERSION" ] && ! grep -q "$LATEST_CL_VERSION" "$README"; then
-        echo "⚠️  CHANGELOG latest v$LATEST_CL_VERSION not in README"
+        echo "⚠️  signal-3: CHANGELOG latest v$LATEST_CL_VERSION not in README"
+        STALE_README=true
+    fi
+fi
+
+# 信號 4: Component inventory drift（v1.15.0 新增；港自 plugin-deploy）
+# 實際 skills / agents / commands 是否都在 README 提到。
+# 漏掉 = 使用者看 README 不知道有這個 skill。
+ACTUAL_SKILLS=$(ls "$PLUGIN_DIR/skills/" 2>/dev/null | sort)
+ACTUAL_AGENTS=$(find "$PLUGIN_DIR/agents/" -maxdepth 1 -name '*.md' 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
+ACTUAL_COMMANDS=$(find "$PLUGIN_DIR/commands/" -maxdepth 1 -name '*.md' 2>/dev/null | xargs -n1 basename -s .md 2>/dev/null | sort)
+MISSING_COMPONENTS=()
+# 認可的引用格式（任一命中即視為「README 提到這個 component」）：
+#   `name`              — backtick-quoted reference
+#   /name               — bare slash command form
+#   /plugin-name:name   — plugin-namespace form (typical in installed clients)
+#   @name               — agent reference
+#   - **name**          — markdown bold list entry
+for s in $ACTUAL_SKILLS; do
+    grep -qE "\`$s\`|/${s}\b|/[a-z0-9_-]+:${s}\b|^- \*\*$s\*\*" "$README" 2>/dev/null || MISSING_COMPONENTS+=("skill:$s")
+done
+for a in $ACTUAL_AGENTS; do
+    grep -qE "\`$a\`|@$a\b|/[a-z0-9_-]+:${a}\b|^- \*\*$a\*\*" "$README" 2>/dev/null || MISSING_COMPONENTS+=("agent:$a")
+done
+for c in $ACTUAL_COMMANDS; do
+    grep -qE "/${c}\b|\`/${c}\`|/[a-z0-9_-]+:${c}\b" "$README" 2>/dev/null || MISSING_COMPONENTS+=("command:$c")
+done
+if [ ${#MISSING_COMPONENTS[@]} -gt 0 ]; then
+    echo "⚠️  signal-4: README missing ${#MISSING_COMPONENTS[@]} components: ${MISSING_COMPONENTS[*]}"
+    STALE_README=true
+fi
+
+# 信號 5: Tool count drift（v1.15.0 新增）
+# README 多半會在標題寫「(N tools)」「N MCP Tools」「Tool 數量: N」。
+# 把這個 N 抓出來跟 plugin.json description 中宣稱的 tool 數比對。
+# README 落後最容易在這露餡（che-ical-mcp v0.8.2 → v1.7.2 README 寫 20 tools 實際 28）。
+DESC=$(python3 -c "import json; print(json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json')).get('description', ''))")
+DESC_TOOLS=$(echo "$DESC" | grep -oE '[0-9]+ ?(?:個 )?(?:MCP )?(?:tools|工具)' | head -1 | grep -oE '^[0-9]+')
+README_TOOLS=$(grep -oE 'Available Tools \([0-9]+\)|\([0-9]+ (?:MCP )?tools\)|\*\*[0-9]+ MCP Tools\*\*|[0-9]+ 個工具' "$README" 2>/dev/null | grep -oE '[0-9]+' | head -1)
+if [ -n "$DESC_TOOLS" ] && [ -n "$README_TOOLS" ] && [ "$DESC_TOOLS" != "$README_TOOLS" ]; then
+    echo "⚠️  signal-5: README tool count ($README_TOOLS) != plugin.json description ($DESC_TOOLS)"
+    STALE_README=true
+fi
+
+# 信號 6: Version history multi-version gap（v1.15.0 新增）
+# 如果 README 有 Version History 表格，掃「最近 90 天」的 git log 找出 bump commits，
+# 確保表格涵蓋這段時間出貨的版本 — 不只是「latest 有沒有」（信號 1）而是「中間是否漏版本」。
+# 範圍只看 90 天避免 major rewrite（plugin v1.x → v2.x README 改寫）誤觸發。
+if grep -q '## Version History\|### Changelog' "$README" 2>/dev/null; then
+    SHIPPED_VERSIONS=$(git log --since="90 days ago" --format='%s' -- "$PLUGIN_DIR/" 2>/dev/null | \
+        grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | sort -uV | tail -8)
+    MISSING_VERSIONS=()
+    for v in $SHIPPED_VERSIONS; do
+        v_clean=${v#v}
+        grep -q "$v_clean\|v$v_clean" "$README" 2>/dev/null || MISSING_VERSIONS+=("$v_clean")
+    done
+    # 進一步限制：只計算「同 major 版本」的 missing（避免 major rewrite 誤判）
+    CURRENT_MAJOR=$(echo "$NEW_VERSION" | cut -d. -f1)
+    SAME_MAJOR_MISSING=()
+    for v in "${MISSING_VERSIONS[@]}"; do
+        v_major=$(echo "$v" | cut -d. -f1)
+        [ "$v_major" = "$CURRENT_MAJOR" ] && SAME_MAJOR_MISSING+=("$v")
+    done
+    if [ ${#SAME_MAJOR_MISSING[@]} -gt 1 ]; then
+        # 容忍漏 1 個（可能是 patch/internal），漏 2+ 個就明顯 stale
+        echo "⚠️  signal-6: README Version History missing ${#SAME_MAJOR_MISSING[@]} same-major versions: ${SAME_MAJOR_MISSING[*]}"
         STALE_README=true
     fi
 fi
 ```
+
+**設計理由速覽**：
+
+| 信號 | 解決的 false negative | 觀察來源 |
+|------|---------------------|---------|
+| 1 (legacy) | README 整個版本記錄沒同步 | 原始版本 |
+| 2 (legacy + suppressions) | mtime drift；現避免誤判 wrapper-only 改動 | 大規模 audit 發現 4/11 是 false positive |
+| 3 (legacy) | CHANGELOG bump 但 README 沒同步 | 原始版本 |
+| 4 (new) | 新增的 skill / agent / command 沒寫進 README | issue-driven-dev：5 個 skill 列表，實際 10 個 |
+| 5 (new) | README 寫的工具數比實際少 | che-ical-mcp：寫 20 工具，實際 28 |
+| 6 (new) | Version History 表格漏中間 N 個版本 | che-duckdb-mcp：v2.0 → v2.2.1 中間漏 4 版 |
 
 ### Step 2: 行為決策 — AskUserQuestion
 
@@ -348,8 +452,9 @@ options:
 | 狀況 | 動作 |
 |------|------|
 | README 不存在 | 跳過（plugin-deploy 才會強制補） |
-| README 存在且 fresh（三個信號都通過）| 顯示 ✅，繼續 Phase 3 |
+| README 存在且 fresh（六個信號都通過）| 顯示 ✅，繼續 Phase 3 |
 | README 存在但 stale | **AskUserQuestion**（三選項） |
+| 只有 signal-2 命中且 Suppression A/B 啟動 | 視為 fresh（避免誤判 wrapper-only / no-version-section plugins） |
 
 ### 為什麼是 ASK 而不是 BLOCK
 

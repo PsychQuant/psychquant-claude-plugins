@@ -51,6 +51,7 @@ Claude Code Plugin 完整生命週期工具。
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.15.0 | 2026-04-26 | README Freshness Gate v2 — 從 3 信號擴展到 **6 信號 + 2 suppressions**。新增：(4) component inventory drift（skills/agents/commands 沒進 README）、(5) tool count drift（README 寫 "20 tools" 但 plugin.json description 說 28）、(6) Version History multi-version gap（漏中間版本，不只 latest）。新增 suppressions：A) README 沒版本標記時不誤判 mtime drift；B) Wrapper-only / marketplace.json sync commits 不算 substantive 改動。從跨 28 plugin 大規模 audit 萃取的盲點。 |
 | v1.14.1 | 2026-04-22 | tool-readme-sync rule 擴充到 GitHub repo About metadata |
 | v1.14.0 | 2026-04-22 | tool-readme-sync rule（codify tool list ↔ README sync 跨 mcp-tools/cli-tools/plugin-tools）|
 | v1.13.0 | 2026-04-22 | README Freshness Gate（plugin-update Phase 2.5 ASK / plugin-deploy Step 2.6 BLOCK）|

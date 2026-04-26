@@ -20,8 +20,8 @@
     },
     {
       "name": "plugin-tools",
-      "version": "1.14.1",
-      "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug",
+      "version": "1.15.0",
+      "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug. v1.15.0: README Freshness Gate 從 3 信號擴展到 6（新增 component inventory drift / tool count drift / version history multi-version gap）+ 2 suppressions（no-version-section / wrapper-only commits）— 從跨 28 plugin 大規模 audit 萃取的盲點。",
       "author": {
         "name": "Che Cheng"
       },
