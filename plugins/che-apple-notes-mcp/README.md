@@ -92,6 +92,7 @@ This:
 
 See [CHANGELOG.md](https://github.com/PsychQuant/che-apple-notes-mcp/blob/main/CHANGELOG.md) on the upstream repo.
 
+- **v0.2.1** (2026-04-22) — Plugin wrapper now version-aware (re-downloads `~/bin/CheAppleNotesMCP` when binary lags upstream release)
 - **v0.2.0** (2026-04-22) — 6 new tools for Apple Notes sharing, `shared: Bool` on all reads, 112 unit + 11 E2E tests
 - **v0.1.0** (2026-04-21) — initial release, 18 tools, dual-track architecture
 

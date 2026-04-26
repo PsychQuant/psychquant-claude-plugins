@@ -37,6 +37,30 @@ Claude Code Plugin 完整生命週期工具。
 
 偵測信號：README 沒提到新版本字串、README mtime 早於 code 改動、CHANGELOG 最新 entry 版本沒進 README。
 
+### Tool README Sync Rule（v1.14.x）
+
+跨 `mcp-tools` / `cli-tools` / `plugin-tools` 共用的 rule：每次新增 / 重命名 / 刪除工具時，必須同步：
+
+1. Plugin 內的 `skills/<name>/SKILL.md`
+2. 該 plugin 的 `README.md` 工具表格（含工具數）
+3. GitHub repo 的 About metadata（v1.14.1 擴充涵蓋）
+
+`plugin-deploy` 與 `plugin-update` 的 readme-freshness check 會掃這三個來源。
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1.14.1 | 2026-04-22 | tool-readme-sync rule 擴充到 GitHub repo About metadata |
+| v1.14.0 | 2026-04-22 | tool-readme-sync rule（codify tool list ↔ README sync 跨 mcp-tools/cli-tools/plugin-tools）|
+| v1.13.0 | 2026-04-22 | README Freshness Gate（plugin-update Phase 2.5 ASK / plugin-deploy Step 2.6 BLOCK）|
+| v1.12.0 | 2026-04-17 | Step 0 TaskCreate bootstrap across all skills |
+| v1.11.1 | 2026-04-17 | plugin-update Phase 1.5 WARN → ASK + AUTO-SYNC |
+| v1.11.0 | 2026-04-17 | plugin-update Phase 1.5 external binary dependency check |
+| v1.10.0 | 2026-04-16 | plugin-deploy ↔ mcp-deploy integration |
+| v1.9.0 | 2026-04-16 | mcp-binary-distribution rule |
+| v1.8.0 | 2026-04-02 | plugin-upgrade skill |
+
 ## Plugin Lifecycle
 
 ```

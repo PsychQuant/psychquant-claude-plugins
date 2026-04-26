@@ -51,6 +51,16 @@ cp .build/release/CheDuckDBMCP ~/bin/
 
 然後再 `/plugin install` 即可（wrapper 會偵測到 `~/bin/CheDuckDBMCP` 已存在）。
 
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v2.2.1 | 2026-04-22 | Wrapper auto-download now version-aware (re-downloads `~/bin/CheDuckDBMCP` when binary lags upstream) |
+| v2.2.0 | 2026-04-14 | SessionStart hook for binary version check + MCP server key rename for namespace consistency |
+| v2.1.1 | 2026-04-14 | Rename MCP server to `che-duckdb-mcp` for namespace unification across plugin / wrapper / settings |
+| v2.1.0 | 2026-04-14 | Add `che-duckdb-mcp` guidance Skill — auto-loads when conversation mentions DuckDB / SQL queries / 文檔 |
+| v2.0.0 | 2026-04-14 | TF-IDF search engine + dual-source docs (llms.txt + full) + Levenshtein fuzzy matching + pinned duckdb-swift + native error messages |
+
 ## v2.0.0 重點
 
 - **TF-IDF 搜尋引擎**：倒排索引 + cosine similarity，比 substring match 精準一個數量級
