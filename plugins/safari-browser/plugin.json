@@ -1,6 +1,6 @@
 {
   "name": "safari-browser",
-  "description": "macOS native browser automation via Safari + AppleScript — permanent login, upload --native, site-specific playbook skills",
+  "description": "macOS native browser automation via Safari + AppleScript — permanent login, upload --native, site-specific playbook skills, persistent daemon (Phase 1 commands ~50ms vs ~370ms stateless), exec script v2 (single-invocation multi-step JSON), --mark-tab opt-in tab ownership marker, daemon security hardening (socket/pid 0600, log redaction, stale-pid liveness, dirty-build handshake, lifecycle bypass).",
   "version": "2.6.0",
   "author": {
     "name": "Che Cheng"
