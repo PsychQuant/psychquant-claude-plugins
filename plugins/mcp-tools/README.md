@@ -319,6 +319,15 @@ open "x-apple.systempreferences:com.apple.preference.security?Privacy_Reminders"
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.15.1 | 2026-04-22 | tool-readme-sync rule 擴充到 GitHub repo About metadata（跨 mcp-tools / cli-tools / plugin-tools 共用規則）|
+| v1.15.0 | 2026-04-22 | tool-readme-sync rule（codify tool list ↔ README sync 規則）|
+| v1.14.0 | 2026-04-17 | Step 0 TaskCreate bootstrap across all 13 skills（每個 skill 強制建 stage-level todo list）|
+| v1.13.1 | 2026-04-14 | hooks.json 改用 record 格式（從 array 遷移）|
+| v1.13.0 | 2026-03-29 | PostToolUse hook 提醒 git push 後跑 mcp-deploy |
+| v1.12.0 | 2026-03-19 | 新增 mcp-issue skill（在 MCP repo 快速開 GitHub issue）|
+| v1.11.0 | 2026-03-14 | mcp-to-plugin 改 reference plugin-tools 做 marketplace deploy |
+| v1.10.0 | 2026-03-14 | 重構：plugin-update 抽出獨立 plugin-tools plugin（解耦 MCP-only vs plugin-lifecycle）|
+| v1.9.0 | 2026-03-07 | mcp-publish 加入版本更新流程 + Glama / 第三方平台支援；指令前綴統一改成 `mcp-` |
 | v1.8.0 | 2026-02-20 | 新增 clone 命令（給 URL 直接 clone + 自動分析可升級功能）；新增 mcp-clone-references 命令（搜尋競品批次 clone）|
 | v1.7.0 | 2026-02-01 | 新增 mcpb-sync 命令；mcp-deploy 加入 Phase 3.5 Binary 一致性驗證；mcp-upgrade 加入 Binary 檢查；debug 重建後自動同步 |
 | v1.6.0 | 2026-01-27 | mcp-deploy 新增 Plugin 發布；mcp-upgrade 可串接 deploy |

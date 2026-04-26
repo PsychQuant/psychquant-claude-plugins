@@ -165,7 +165,12 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 1.6.1 (matches MCP server version)
+Plugin version: 1.6.2 (matches MCP server version)
+
+### Changelog
+
+- **1.6.2** (2026-04-22) — Wrapper auto-download now version-aware (re-downloads when `~/bin/CheThingsMCP` lags upstream)
+- **1.6.1** — Earlier patch releases tracked in [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
 
 ## Author
 
