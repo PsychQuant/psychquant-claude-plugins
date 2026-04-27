@@ -2,34 +2,35 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.14.1**（Plugin shell + Binary 同步）— sub-stack C-CONT P0 hotfix
+當前版本：**v3.14.2**（Plugin shell + Binary 同步）— sub-stack D paragraph-mark RunProperties (#65)
 
-**v3.14.1 sub-stack C-CONT closes triple-confirmed P0** (R2 + R5 + Codex 6-AI verify)：v3.14.0 的 `recognizedRprChildren` Set 列了 ~16+ rPr child kinds 為 'recognized' 但 parseRunProperties 沒有 typed extraction → silent drop on read。受影響的常見元素：`<w:spacing>`（character spacing）、`<w:caps>`/`<w:smallCaps>`、`<w:position>`、`<w:shd>`（run shading）、`<w:bdr>`、`<w:em>`（CJK emphasis marks）、`<w:effect>`、`<w:vanish>`/`<w:specVanish>`/`<w:webHidden>`、`<w:outline>`/`<w:shadow>`/`<w:emboss>`/`<w:imprint>`、`<w:bCs>`/`<w:iCs>`/`<w:dstrike>`。Fix：trim Set 到 ONLY actually-typed-extracted-or-emitted kinds，其他全部 fall through to rawChildren → byte-equivalent round-trip。Round-trip size loss: pre-fix 32% → v3.14.0 17.75% → v3.14.1 16.66%。Methodology lesson (6th refinement)：P2 from one reviewer can become P0 when another applies real-world impact lens.
+**v3.14.2 sub-stack D of paragraph-level content-equality (closes [#65](https://github.com/PsychQuant/che-word-mcp/issues/65))**：`ParagraphProperties` 新增 `markRunProperties: RunProperties?` 欄位，提取並 round-trip `<w:rPr>` direct child of `<w:pPr>` — paragraph-mark formatting per ECMA-376 §17.3.1.27 CT_PPrBase（控制 pilcrow ¶ 字符外觀的字型 / 顏色 / 語言 / 字距）。Reuses `parseRunProperties` verbatim — schema 跟 run-level CT_RPr 一致，所以 sub-stack C 的 typed extraction（rFonts 4-axis / noProof / kern / lang 3-axis）和 rawChildren passthrough（w14:* 效果）全部免費繼承，**zero schema duplication**。
 
+**用戶可見影響 (vs v3.14.1)**：
 
+| Preservation class | Pre-D | Post-D | 改善 |
+|---|---|---|---|
+| `<w:lang>` 保留率 | 50% | **98.89%** | +48.89 pp |
+| `<w:rFonts>` 保留率 | 88% | 98.77% | +10.77 pp |
+| `<w:noProof>` 保留率 | 92% | 100% | +8 pp |
+| `<w:kern>` 保留率 | 84% | 99.93% | +15.93 pp |
+| `document.xml` 大小流失 | 16.66% | **10.95%** | -5.71 pp |
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.14.0 — sub-stack C of [#58/#59/#60](https://github.com/PsychQuant/che-word-mcp/issues/60) document content preservation。**Architectural completion of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → sub-stack B (#59 WhitespaceOverlay) → sub-stack C (#60 RunProperties) 一路完成。
+**Matrix-pin floor 同步抬升**（lockstep ratchet）：`<w:lang>` 0.45 → 0.95；`<w:rFonts>` / `<w:noProof>` / `<w:kern>` 0.95；`sizeLossRatio` 上限 0.175 → 0.12。任何未來 run-level OR paragraph-level RunProperties handling 的 regression 都會 trip matrix-pin。
 
-Bumps ooxml-swift v0.19.13 → v0.20.0 closing [#60](https://github.com/PsychQuant/che-word-mcp/issues/60)。**新增 typed fields**：4-axis rFonts (ascii/hAnsi/eastAsia/cs/hint — 之前被收斂成單一值)、noProof、kern、3-axis lang (val/eastAsia/bidi)，加上 **rawChildren passthrough** 處理 unrecognized rPr children（w14:textOutline / w14:textFill / w14:glow / w14:shadow / 等）。
+Bumps `ooxml-swift` v0.20.1 → v0.20.2。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — `markRunProperties` 是 optional（default nil），writer empty-gate 防止 synthetic empty `<w:rPr/>` 發射。
 
-**用戶可見影響 (vs v3.13.13)**：
-- **`<w:rFonts>` 4-axis preservation** — Chinese theses, multi-script documents 使用不同字型給 Latin / High-ANSI / East-Asian / Complex Script axes 在 round-trip 後正確保留。Pre-fix `eastAsia="DFKai-SB"`（繁體中文）會 silently 被 `ascii` 值替換掉。
-- **`<w:noProof/>`** preserved through round-trip
-- **`<w:kern w:val="N"/>`** preserved
-- **`<w:lang>` 3-axis preservation**
-- **`<w14:*>` namespace effects** preserved as raw rPr children
+**Coming next (v3.14.3)**：sub-stack E (#66 `w14:paraId`/`w14:textId` on `<w:p>`) 接著 ship，把流失壓到 < 5%，達成「edit 一個字 → document.xml shrinks <1%」strong demo。
 
-**Matrix-pin extension (LOAD-BEARING)**：`testDocumentContentEqualityInvariant` 加上 preservation-class-3 ratio-floor assertions。任何未來 run-level rPr preservation 的 regression 都會 trip matrix-pin。
+---
 
-**Round-trip size impact**：Thesis fixture document.xml — pre-fix 32% 損失 → post-sub-stack-C **17.75% 損失**（改善 14.25 percentage points）。剩餘 17.75% 是 paragraph-mark rPr + w14:paraId/textId drops（separate out-of-scope follow-up SDD）。
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.2 — sub-stack D of paragraph-level content-equality（#65 paragraph-mark rPr）→ v3.14.3 即將 ship sub-stack E（#66 w14:paraId/textId）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → E (#66 w14:* attrs) 完整覆蓋 paragraph + run scope。
 
-**Out-of-scope (separate follow-up)**：matrix-pin 揭露兩個 pre-existing bugs NOT in #60 scope：
-1. `ParagraphProperties` 缺 `markRunProperties` field — `<w:pPr><w:rPr>` paragraph-mark formatting silently dropped
-2. `Paragraph` parser 不 preserve `w14:paraId`/`w14:textId` attributes on `<w:p>`
+**前次 milestones**：
 
-No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.20.0。**Backward compatible** — 保留 legacy fontName，mirror rFonts.ascii。
-
-**前次 milestones**：v3.13.13 CRITICAL HOTFIX (sub-stack B-CONT-2-CONT)；v3.13.12 (DO NOT USE — 刪除 `<w:del>` 內容)；v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版；v3.13.9 A-CONT-3 silent correctness regression；v3.13.6-v3.13.8 sub-stack A cycles；v3.13.5 R5 stack-completion — 詳見 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
+- **v3.14.1** sub-stack C-CONT — closes triple-confirmed P0 (R2 + R5 + Codex 6-AI verify)：trim `recognizedRprChildren` Set 到 actually-extracted kinds（修了 `<w:spacing>` / `<w:caps>` / `<w:position>` / `<w:shd>` / `<w:em>` 等的 silent drop）。Round-trip size loss 17.75% → 16.66%。
+- **v3.14.0** sub-stack C of [#60](https://github.com/PsychQuant/che-word-mcp/issues/60) — `RunProperties` 新增 4-axis rFonts / noProof / kern / 3-axis lang typed fields + rawChildren passthrough（w14:textOutline / textFill / glow 等）。Pre-fix `eastAsia="DFKai-SB"`（繁體中文）會 silently 被 `ascii` 值替換掉；v3.14.0 完整保留 4 個 axis。
+- **v3.13.13** CRITICAL HOTFIX (sub-stack B-CONT-2-CONT)；v3.13.12 (DO NOT USE — 刪除 `<w:del>` 內容)；v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版 (#59 WhitespaceOverlay)；v3.13.9 A-CONT-3 silent correctness regression；v3.13.6-v3.13.8 sub-stack A cycles (#58 BodyChild)；v3.13.5 R5 stack-completion — 詳見 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
 
 ## 兩種操作模式
 
