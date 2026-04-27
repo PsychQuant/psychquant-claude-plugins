@@ -30,7 +30,6 @@ psychquant-claude-plugins/
 │   ├── che-things-mcp/          # Things 3 任務管理
 │   ├── che-word-mcp/            # Word 文件處理
 │   ├── che-xcode-mcp/           # Xcode / App Store Connect
-│   ├── claude-config-guide/     # [deprecated] → ai-docs-guide
 │   ├── claude-switch/           # Claude Code 多帳號管理
 │   ├── codex-batch/             # Codex CLI 批次生成
 │   ├── mcp-tools/               # MCP Server 開發工具集
@@ -115,13 +114,12 @@ psychquant-claude-plugins/
 **用途**: Auto-triggered Skills，自動 WebFetch Claude Code 和 OpenAI 官方文檔
 
 **Skills**:
-- `claude-docs-guide` — Claude Code CLI 設定（MCP、settings、hooks、skills）、Claude API/SDK
+- `claude-code-guide` — Claude Code CLI 設定（MCP、settings、hooks、skills）、Claude API/SDK
 - `openai-docs-guide` — OpenAI API（Responses API、Chat Completions、models）、Agents SDK、Realtime API
 
 **背景**:
 - OpenAI Docs MCP 的 `fetch_openai_doc` tool 壞掉（server-side bug），所有 URL 回 404
 - 此 plugin 繞過壞掉的 MCP fetch，直接 WebFetch `https://developers.openai.com/docs/...`
-- 取代了舊的 `claude-config-guide` plugin
 
 ### che-dropbox-ignore (scaffold)
 

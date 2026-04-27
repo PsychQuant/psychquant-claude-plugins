@@ -89,16 +89,6 @@
       "category": "productivity"
     },
     {
-      "name": "claude-config-guide",
-      "version": "1.0.0",
-      "description": "[Deprecated — replaced by ai-docs-guide] Claude Code 設定查詢助手",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": "./plugins/claude-config-guide",
-      "category": "productivity"
-    },
-    {
       "name": "che-things-mcp",
       "version": "1.6.2",
       "description": "Things 3 任務管理 MCP Server - 47 個工具支援完整 GTD 工作流程",
