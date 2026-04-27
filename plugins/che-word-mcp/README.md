@@ -2,19 +2,23 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.13.12**（Plugin shell + Binary 同步）
+當前版本：**v3.13.13**（Plugin shell + Binary 同步）— **CRITICAL HOTFIX for v3.13.12**
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.13.12 — sub-stack B-CONT-2 of [#58/#59/#60](https://github.com/PsychQuant/che-word-mcp/issues/59) document content preservation。Bumps ooxml-swift v0.19.11 → v0.19.12 closing 6 P0 + 3 P1 from [sub-stack B-CONT 6-AI verify](https://github.com/PsychQuant/che-word-mcp/issues/59#issuecomment-4324076688)。Sub-cycle 3 for #59。
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.13.13 — CRITICAL HOTFIX of [#59](https://github.com/PsychQuant/che-word-mcp/issues/59) sub-stack B-CONT-2-CONT。Bumps ooxml-swift v0.19.12 → v0.19.13 reverting v3.13.12 的 TIER-0 over-fix。
 
-**TIER-0 (R5 partial)**: parseRun's `recognizedRunChildren` Set 漏了 `'delText'`。rawElements path 重複 advance `delTextCounter`（每個 delText 計兩次：countDelTextElements + 顯式 loop），多 `<w:del>` 文件第二個 deletion 的 whitespace 靜默遺失。Fix：把 `'delText'` 加進 set。**重要 — R5 預測的 `<w:delText>` 寫入端 duplicate emission 經 code trace + targeted test (§2.33) 證實是 FALSE alarm**：`Paragraph.swift:787` 的 gate（`!run.text.isEmpty || (run.rawElements?.isEmpty ?? true)`）已經阻止了。v3.13.11 並沒有 corrupt `<w:del>` 的 round-trip — 只有底層的 counter desync 是真 bug。
+**⚠️ v3.13.12 silently strips `<w:del>` deleted-text content on every round-trip** — affects ALL tracked-change documents with deletions. R2 + R5 + Codex 三個 reviewer 在 6-AI verify INDEPENDENTLY confirmed。**強制升級至 v3.13.13** 若 v3.13.12 已部署到含 tracked-change deletions 的文件處理流程。
 
-**TIER-1 (R2 + Codex)**: B-CONT 修了 7 個 raw-capture site，但漏了 5 個同類別 sibling — `parseContainerChildBodyChildren` raw fallback、`parseHyperlink` rawChildren、`parseFieldSimple` non-`<w:r>` skip、`parseParagraph` smartTag/customXml/dir/bdo (4 raw-carrier blocks)。每個都加上 `Self.advanceWhitespaceCounter(forSkippedXML: ...)` 呼叫。
+**Bug**: v3.13.12 把 `'delText'` 加進 parseRun's `recognizedRunChildren` 來修 v3.13.11 的 counter desync。Mechanically 正確但破壞了 writer-gate invariant：rawElements 變空 → `Paragraph.swift:787` gate 觸發 synthetic emission with `run.text=""` → 寫出空的 `<w:delText></w:delText>`。
 
-**Methodology refinement (4th refinement)**: adversarial reviewer 可能正確識別 bug class 但因漏看 protective gate 而誤判 severity；verify-cycle 應 TEST predictions，不要 assume。R5 P0-2 (data corruption) 預測經 test §2.33 falsified，避免 misframed BLOCK；test 留作 writer-gate invariant 的 regression guard。
+**Fix**: revert TIER-0，加新的 `includeDelText: Bool = true` 參數到 `advanceWhitespaceCounter(forSkippedXML:)`。parseRun's rawElements loop 對 delText 傳 `includeDelText: false` — explicit `<w:del>` loop 已 advance delTextCounter，所以這樣不再 double-advance 但 delText 還在 rawElements 裡所以 writer 仍 emit 正確 content。
 
-No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.19.12。5 個新 test，suite 678/0/1。
+**新 test**: `testDelTextContentPreservedThroughRoundTrip` 是 **payload-parity** test（assert 實際內容 survives）— 與之前的 counter-parity tests（只 count opening tags）區分開。Suite 679/0/1。
 
-前次 v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版；v3.13.9 A-CONT-3 silent correctness regression；v3.13.8 A-CONT-2；v3.13.7 A-CONT；v3.13.6 sub-stack A initial fix。Sub-stack C unchanged v3.14.0 / [#60](https://github.com/PsychQuant/che-word-mcp/issues/60) RunProperties audit (next)。前次 milestone v3.13.5 R5 stack-completion — 詳見 [v3.13.5 closing summary](https://github.com/PsychQuant/che-word-mcp/issues/56#issuecomment-4322638865) 與 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
+**Methodology lesson (5th refinement, Codex insight)**: counter-desync 透過 'skip element from raw-capture path' 修復時，必須驗證 WRITER 仍有 SOMEWHERE 取得 content。Tests 必須 assert end-to-end content preservation，不只是 tag counts 或 in-memory state。Operationalize 6-AI verify：把未來 test 拆成 **counter-parity** (tag counts) AND **payload-parity** (content)。
+
+No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.19.13。
+
+**v3.13.12 標記為 DO NOT USE** — silently strips `<w:del>` content。v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版；v3.13.9 A-CONT-3 silent correctness regression；v3.13.8 A-CONT-2；v3.13.7 A-CONT；v3.13.6 sub-stack A initial fix。Sub-stack C unchanged v3.14.0 / [#60](https://github.com/PsychQuant/che-word-mcp/issues/60) RunProperties audit (next)。前次 milestone v3.13.5 R5 stack-completion — 詳見 [v3.13.5 closing summary](https://github.com/PsychQuant/che-word-mcp/issues/56#issuecomment-4322638865) 與 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
 
 ## 兩種操作模式
 
