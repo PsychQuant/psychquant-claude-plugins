@@ -1,8 +1,0 @@
-{
-  "name": "claude-config-guide",
-  "version": "1.0.0",
-  "description": "Auto-triggered Skill that forces Claude to WebFetch official docs before answering Claude Code configuration questions",
-  "author": { "name": "Che Cheng" },
-  "license": "MIT",
-  "keywords": ["claude-code", "config", "settings", "mcp", "documentation"]
-}
