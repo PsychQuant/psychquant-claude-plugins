@@ -2,29 +2,34 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.14.2**（Plugin shell + Binary 同步）— sub-stack D paragraph-mark RunProperties (#65)
+當前版本：**v3.14.3**（Plugin shell + Binary 同步）— sub-stack E paragraph w14:* attributes (#66)
 
-**v3.14.2 sub-stack D of paragraph-level content-equality (closes [#65](https://github.com/PsychQuant/che-word-mcp/issues/65))**：`ParagraphProperties` 新增 `markRunProperties: RunProperties?` 欄位，提取並 round-trip `<w:rPr>` direct child of `<w:pPr>` — paragraph-mark formatting per ECMA-376 §17.3.1.27 CT_PPrBase（控制 pilcrow ¶ 字符外觀的字型 / 顏色 / 語言 / 字距）。Reuses `parseRunProperties` verbatim — schema 跟 run-level CT_RPr 一致，所以 sub-stack C 的 typed extraction（rFonts 4-axis / noProof / kern / lang 3-axis）和 rawChildren passthrough（w14:* 效果）全部免費繼承，**zero schema duplication**。
+**v3.14.3 sub-stack E of paragraph-level content-equality (closes [#66](https://github.com/PsychQuant/che-word-mcp/issues/66))**：`Paragraph` 新增 `w14ParaId: String?` 和 `w14TextId: String?` 欄位，提取並 round-trip `<w:p>` opening tag 上的 `w14:paraId` / `w14:textId` 屬性 — Word 用於 collaborative editing 和 comment threading 的 revision-tracking GUIDs（8-char hex tokens，**NOT** RFC 4122 UUIDs，所以 String? 是正確的 typing 選擇）。
 
-**用戶可見影響 (vs v3.14.1)**：
+**Combined sub-stack D + E impact (vs v3.14.1)**：
 
-| Preservation class | Pre-D | Post-D | 改善 |
-|---|---|---|---|
-| `<w:lang>` 保留率 | 50% | **98.89%** | +48.89 pp |
-| `<w:rFonts>` 保留率 | 88% | 98.77% | +10.77 pp |
-| `<w:noProof>` 保留率 | 92% | 100% | +8 pp |
-| `<w:kern>` 保留率 | 84% | 99.93% | +15.93 pp |
-| `document.xml` 大小流失 | 16.66% | **10.95%** | -5.71 pp |
+| Preservation class | v3.14.1 | v3.14.2 (D) | **v3.14.3 (E)** | Total |
+|---|---|---|---|---|
+| `<w:lang>` 保留率 | 50% | 98.89% | 98.89% | (D) +48.89 pp |
+| `<w:rFonts>` 保留率 | 88% | 98.77% | 98.77% | (D) +10.77 pp |
+| `<w:noProof>` 保留率 | 92% | 100% | 100% | (D) +8 pp |
+| `<w:kern>` 保留率 | 84% | 99.93% | 99.93% | (D) +15.93 pp |
+| `w14:` 保留率 | 5% | 10.55% | **93.98%** | (E) +88.98 pp |
+| `document.xml` 大小流失 | 16.66% | 10.95% | **8.02%** | (D+E) -8.64 pp |
 
-**Matrix-pin floor 同步抬升**（lockstep ratchet）：`<w:lang>` 0.45 → 0.95；`<w:rFonts>` / `<w:noProof>` / `<w:kern>` 0.95；`sizeLossRatio` 上限 0.175 → 0.12。任何未來 run-level OR paragraph-level RunProperties handling 的 regression 都會 trip matrix-pin。
+**Matrix-pin floor 同步抬升**（lockstep ratchet）：`w14:` 0.04 → **0.90**；`sizeLossRatio` 上限 0.12 → **0.10**。Matrix-pin `testDocumentContentEqualityInvariant` 現在 **LOAD-BEARING across 5 preservation classes**（rFonts / noProof / lang / kern / w14:）spanning run-level + paragraph-level + paragraph-mark scope — 任何一類 regression 都會 trip。
 
-Bumps `ooxml-swift` v0.20.1 → v0.20.2。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — `markRunProperties` 是 optional（default nil），writer empty-gate 防止 synthetic empty `<w:rPr/>` 發射。
+**Defensive design (R2 review fixes)**：
+- `openingPTag()` helper routes attribute values through `escapeXMLAttribute`（mirrors Paragraph.swift 的 escape 紀律）— 防止 XML injection if caller sets unsanitized GUID。
+- `parseParagraph` rejects `w14:paraId=""` source attrs — schema-invalid per ECMA-376 ST_LongHexNumber，Word's repair path silently drops them。
 
-**Coming next (v3.14.3)**：sub-stack E (#66 `w14:paraId`/`w14:textId` on `<w:p>`) 接著 ship，把流失壓到 < 5%，達成「edit 一個字 → document.xml shrinks <1%」strong demo。
+Bumps `ooxml-swift` v0.20.2 → v0.20.3。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — 兩個 fields 都 optional（default nil），openingPTag empty-attrs gate 防止 synthetic emit。
+
+**剩餘 8% 流失** 主要是其他 w14:* attribute classes（如 w14:* on `<w:r>`）— tracked as separate follow-up SDD 推向 strong demo target「edit 一個字 → document.xml shrinks <1%」。
 
 ---
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.2 — sub-stack D of paragraph-level content-equality（#65 paragraph-mark rPr）→ v3.14.3 即將 ship sub-stack E（#66 w14:paraId/textId）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → E (#66 w14:* attrs) 完整覆蓋 paragraph + run scope。
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.3 — sub-stack E of paragraph-level content-equality（#66 paragraph w14:* attrs）；v3.14.2 — sub-stack D（#65 paragraph-mark rPr）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → **E (#66 paragraph w14:* attrs)** 完整覆蓋 paragraph + run scope。
 
 **前次 milestones**：
 
