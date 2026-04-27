@@ -2,7 +2,17 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.14.3**（Plugin shell + Binary 同步）— sub-stack E paragraph w14:* attributes (#66)
+當前版本：**v3.14.4**（Plugin shell + Binary 同步）— `replace_text` 對 inline `<w:sdt>` content control 的 wrapper coverage gap fix (Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63))
+
+**v3.14.4 fix `replace_text` on inline `<w:sdt>` content controls (Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63))**：`Document.replaceInParagraphSurfaces` 之前覆蓋 `paragraph.runs` / `hyperlinks` / `fieldSimples` / `alternateContents` 但 **沒有** `paragraph.contentControls` — 包在 inline `<w:sdt>` 裡的文字 silently 0-match。外部 converter（pandoc / Quarto / LaTeX→docx）習慣把 cross-ref placeholder（`[tab:foo]` / `[fig:bar]` / `[Smith 2020]`）包成 inline SDT 是常見慣例，所以症狀跟 bracketed text 高度相關，但其實 **brackets 是 coincidence** — bracket-free needle 在 inline SDT 裡也 fail。Issue title「literal `[ ]` brackets」是誤導；differential test（4 wrappers × 4 needles = fldChar / fldSimple / hyperlink / inlineSDT × `[tab:foo]` / `tab:foo` / `[tab:foo` / `tab:foo]`）證實只有 inline SDT case 失敗。
+
+ooxml-swift v0.20.4 新增 `TextReplacementEngine.replaceInContentXML`（XML DOM walker，wrap `ContentControl.content` 在 synthetic root xmlns:w，遍歷所有 `<w:t>` descendants 在 document order，build flat string + offset map mirror `flattenRuns` invariant，splice replacements 回 `<w:t>` element string content）+ `Document.replaceInContentControl`（recursive helper 處理 nested SDT）。設計上跳過：`<w:delText>`（TC deletion text）、`<w:instrText>`（field instruction code）、nested `<w:sdt>` subtrees（避免 double-replacement）。**Round-trip discipline**：只 mutate `<w:t>` element 的 string content；`xml:space="preserve"` 與其他 attribute 完整保留。
+
+Bumps `ooxml-swift` v0.20.3 → v0.20.4。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — surgical fix 只新增 code path，沒改任何既有行為（runs/hyperlinks/fieldSimples/alternateContents replacement path 不動，ContentControl model 維持 raw XML storage 不重構）。Suite 690 → 693 ooxml-swift / 172 → 174 che-word-mcp（0 fail）。
+
+**Out of scope (separate follow-ups)**：ContentControl 從 `content: String` 升級為 typed `[Run]` / mixed-element list（SDD-warranted refactor）；smartTags / bidiOverrides / customXmlBlocks / unrecognizedChildren 維持 raw-carrier passthrough（設計上 byte-equivalent，不該被 replace_text 動到）。
+
+---
 
 **v3.14.3 sub-stack E of paragraph-level content-equality (closes [#66](https://github.com/PsychQuant/che-word-mcp/issues/66))**：`Paragraph` 新增 `w14ParaId: String?` 和 `w14TextId: String?` 欄位，提取並 round-trip `<w:p>` opening tag 上的 `w14:paraId` / `w14:textId` 屬性 — Word 用於 collaborative editing 和 comment threading 的 revision-tracking GUIDs（8-char hex tokens，**NOT** RFC 4122 UUIDs，所以 String? 是正確的 typing 選擇）。
 
@@ -29,10 +39,12 @@ Bumps `ooxml-swift` v0.20.2 → v0.20.3。**No che-word-mcp source changes** —
 
 ---
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.3 — sub-stack E of paragraph-level content-equality（#66 paragraph w14:* attrs）；v3.14.2 — sub-stack D（#65 paragraph-mark rPr）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → **E (#66 paragraph w14:* attrs)** 完整覆蓋 paragraph + run scope。
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.4 — `replace_text` 對 inline `<w:sdt>` content control wrapper coverage gap fix（#63）；v3.14.3 — sub-stack E of paragraph-level content-equality（#66 paragraph w14:* attrs）；v3.14.2 — sub-stack D（#65 paragraph-mark rPr）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → **E (#66 paragraph w14:* attrs)** 完整覆蓋 paragraph + run scope。
 
 **前次 milestones**：
 
+- **v3.14.3** sub-stack E (#66) — paragraph `w14:paraId` / `w14:textId` round-trip；`w14:` retention 5% → 93.98%；document.xml size loss 16.66% → 8.02%。
+- **v3.14.2** sub-stack D (#65) — `ParagraphProperties.markRunProperties` round-trips `<w:rPr>` direct child of `<w:pPr>`（pilcrow ¶ 字符外觀 per ECMA-376 §17.3.1.27）。`<w:lang>` retention 50% → 98.89%。
 - **v3.14.1** sub-stack C-CONT — closes triple-confirmed P0 (R2 + R5 + Codex 6-AI verify)：trim `recognizedRprChildren` Set 到 actually-extracted kinds（修了 `<w:spacing>` / `<w:caps>` / `<w:position>` / `<w:shd>` / `<w:em>` 等的 silent drop）。Round-trip size loss 17.75% → 16.66%。
 - **v3.14.0** sub-stack C of [#60](https://github.com/PsychQuant/che-word-mcp/issues/60) — `RunProperties` 新增 4-axis rFonts / noProof / kern / 3-axis lang typed fields + rawChildren passthrough（w14:textOutline / textFill / glow 等）。Pre-fix `eastAsia="DFKai-SB"`（繁體中文）會 silently 被 `ascii` 值替換掉；v3.14.0 完整保留 4 個 axis。
 - **v3.13.13** CRITICAL HOTFIX (sub-stack B-CONT-2-CONT)；v3.13.12 (DO NOT USE — 刪除 `<w:del>` 內容)；v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版 (#59 WhitespaceOverlay)；v3.13.9 A-CONT-3 silent correctness regression；v3.13.6-v3.13.8 sub-stack A cycles (#58 BodyChild)；v3.13.5 R5 stack-completion — 詳見 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
