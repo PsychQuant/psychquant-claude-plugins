@@ -2,23 +2,30 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.13.13**（Plugin shell + Binary 同步）— **CRITICAL HOTFIX for v3.13.12**
+當前版本：**v3.14.0**（Plugin shell + Binary 同步）— **closes #60 RunProperties + ships matrix-pin**
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.13.13 — CRITICAL HOTFIX of [#59](https://github.com/PsychQuant/che-word-mcp/issues/59) sub-stack B-CONT-2-CONT。Bumps ooxml-swift v0.19.12 → v0.19.13 reverting v3.13.12 的 TIER-0 over-fix。
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.14.0 — sub-stack C of [#58/#59/#60](https://github.com/PsychQuant/che-word-mcp/issues/60) document content preservation。**Architectural completion of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → sub-stack B (#59 WhitespaceOverlay) → sub-stack C (#60 RunProperties) 一路完成。
 
-**⚠️ v3.13.12 silently strips `<w:del>` deleted-text content on every round-trip** — affects ALL tracked-change documents with deletions. R2 + R5 + Codex 三個 reviewer 在 6-AI verify INDEPENDENTLY confirmed。**強制升級至 v3.13.13** 若 v3.13.12 已部署到含 tracked-change deletions 的文件處理流程。
+Bumps ooxml-swift v0.19.13 → v0.20.0 closing [#60](https://github.com/PsychQuant/che-word-mcp/issues/60)。**新增 typed fields**：4-axis rFonts (ascii/hAnsi/eastAsia/cs/hint — 之前被收斂成單一值)、noProof、kern、3-axis lang (val/eastAsia/bidi)，加上 **rawChildren passthrough** 處理 unrecognized rPr children（w14:textOutline / w14:textFill / w14:glow / w14:shadow / 等）。
 
-**Bug**: v3.13.12 把 `'delText'` 加進 parseRun's `recognizedRunChildren` 來修 v3.13.11 的 counter desync。Mechanically 正確但破壞了 writer-gate invariant：rawElements 變空 → `Paragraph.swift:787` gate 觸發 synthetic emission with `run.text=""` → 寫出空的 `<w:delText></w:delText>`。
+**用戶可見影響 (vs v3.13.13)**：
+- **`<w:rFonts>` 4-axis preservation** — Chinese theses, multi-script documents 使用不同字型給 Latin / High-ANSI / East-Asian / Complex Script axes 在 round-trip 後正確保留。Pre-fix `eastAsia="DFKai-SB"`（繁體中文）會 silently 被 `ascii` 值替換掉。
+- **`<w:noProof/>`** preserved through round-trip
+- **`<w:kern w:val="N"/>`** preserved
+- **`<w:lang>` 3-axis preservation**
+- **`<w14:*>` namespace effects** preserved as raw rPr children
 
-**Fix**: revert TIER-0，加新的 `includeDelText: Bool = true` 參數到 `advanceWhitespaceCounter(forSkippedXML:)`。parseRun's rawElements loop 對 delText 傳 `includeDelText: false` — explicit `<w:del>` loop 已 advance delTextCounter，所以這樣不再 double-advance 但 delText 還在 rawElements 裡所以 writer 仍 emit 正確 content。
+**Matrix-pin extension (LOAD-BEARING)**：`testDocumentContentEqualityInvariant` 加上 preservation-class-3 ratio-floor assertions。任何未來 run-level rPr preservation 的 regression 都會 trip matrix-pin。
 
-**新 test**: `testDelTextContentPreservedThroughRoundTrip` 是 **payload-parity** test（assert 實際內容 survives）— 與之前的 counter-parity tests（只 count opening tags）區分開。Suite 679/0/1。
+**Round-trip size impact**：Thesis fixture document.xml — pre-fix 32% 損失 → post-sub-stack-C **17.75% 損失**（改善 14.25 percentage points）。剩餘 17.75% 是 paragraph-mark rPr + w14:paraId/textId drops（separate out-of-scope follow-up SDD）。
 
-**Methodology lesson (5th refinement, Codex insight)**: counter-desync 透過 'skip element from raw-capture path' 修復時，必須驗證 WRITER 仍有 SOMEWHERE 取得 content。Tests 必須 assert end-to-end content preservation，不只是 tag counts 或 in-memory state。Operationalize 6-AI verify：把未來 test 拆成 **counter-parity** (tag counts) AND **payload-parity** (content)。
+**Out-of-scope (separate follow-up)**：matrix-pin 揭露兩個 pre-existing bugs NOT in #60 scope：
+1. `ParagraphProperties` 缺 `markRunProperties` field — `<w:pPr><w:rPr>` paragraph-mark formatting silently dropped
+2. `Paragraph` parser 不 preserve `w14:paraId`/`w14:textId` attributes on `<w:p>`
 
-No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.19.13。
+No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.20.0。**Backward compatible** — 保留 legacy fontName，mirror rFonts.ascii。
 
-**v3.13.12 標記為 DO NOT USE** — silently strips `<w:del>` content。v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版；v3.13.9 A-CONT-3 silent correctness regression；v3.13.8 A-CONT-2；v3.13.7 A-CONT；v3.13.6 sub-stack A initial fix。Sub-stack C unchanged v3.14.0 / [#60](https://github.com/PsychQuant/che-word-mcp/issues/60) RunProperties audit (next)。前次 milestone v3.13.5 R5 stack-completion — 詳見 [v3.13.5 closing summary](https://github.com/PsychQuant/che-word-mcp/issues/56#issuecomment-4322638865) 與 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
+**前次 milestones**：v3.13.13 CRITICAL HOTFIX (sub-stack B-CONT-2-CONT)；v3.13.12 (DO NOT USE — 刪除 `<w:del>` 內容)；v3.13.11 sub-stack B-CONT；v3.13.10 sub-stack B 初版；v3.13.9 A-CONT-3 silent correctness regression；v3.13.6-v3.13.8 sub-stack A cycles；v3.13.5 R5 stack-completion — 詳見 [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)。
 
 ## 兩種操作模式
 
