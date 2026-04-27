@@ -1,7 +1,7 @@
 {
   "name": "che-word-mcp",
-  "version": "3.13.7",
-  "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.7 bump ooxml-swift v0.19.6→v0.19.7 — A-CONT mini-cycle of #58 closes 2 P0 from sub-stack A 6-AI verify（parseContainerChildBodyChildren parser asymmetry: body-level bookmarks in headers/footers/footnotes/endnotes still silently dropped post-v3.13.6; getBookmarks() walker missed body-level entries）。Same convergence-cycle pattern as R5-CONT-4 (#56): per-task gate caught one parser entry point; 6-AI verify caught the symmetric sibling. v3.13.6 sub-stack A 初始 fix（BodyChild enum 擴增 .bookmarkMarker + .rawBlockElement）。B re-numbered to v3.13.8 / #59 whitespace overlay; C unchanged v3.14.0 / #60 RunProperties audit。基於 ooxml-swift v0.19.7。",
+  "version": "3.13.8",
+  "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.8 bump ooxml-swift v0.19.7→v0.19.8 — A-CONT-2 mini-mini-cycle of #58 closes 2 P0 + 1 P1 from sub-stack A-CONT 6-AI verify（getBookmarks() now walks container bodyChildren across headers/footers/footnotes/endnotes; parseContainerChildBodyChildren now has 'case sdt' recursion mirroring parseBodyChildren; deleteBookmark() now symmetric with getBookmarks()）。Sub-cycle 3 for #58 (A → A-CONT → A-CONT-2). Same convergence-cycle pattern as R5→R5-CONT-4 (5 sub-cycles for #56). v3.13.7 A-CONT mini-cycle (parser-side mirror); v3.13.6 sub-stack A 初始 fix。B re-numbered to v3.13.9 / #59 whitespace overlay; C unchanged v3.14.0 / #60。基於 ooxml-swift v0.19.8。",
   "author": { "name": "Che Cheng" },
   "license": "MIT",
   "keywords": ["mcp", "word", "docx", "ooxml", "document", "swift"]
