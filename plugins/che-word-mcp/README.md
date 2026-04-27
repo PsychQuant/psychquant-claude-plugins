@@ -2,7 +2,11 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.14.0**（Plugin shell + Binary 同步）— **closes #60 RunProperties + ships matrix-pin**
+當前版本：**v3.14.1**（Plugin shell + Binary 同步）— sub-stack C-CONT P0 hotfix
+
+**v3.14.1 sub-stack C-CONT closes triple-confirmed P0** (R2 + R5 + Codex 6-AI verify)：v3.14.0 的 `recognizedRprChildren` Set 列了 ~16+ rPr child kinds 為 'recognized' 但 parseRunProperties 沒有 typed extraction → silent drop on read。受影響的常見元素：`<w:spacing>`（character spacing）、`<w:caps>`/`<w:smallCaps>`、`<w:position>`、`<w:shd>`（run shading）、`<w:bdr>`、`<w:em>`（CJK emphasis marks）、`<w:effect>`、`<w:vanish>`/`<w:specVanish>`/`<w:webHidden>`、`<w:outline>`/`<w:shadow>`/`<w:emboss>`/`<w:imprint>`、`<w:bCs>`/`<w:iCs>`/`<w:dstrike>`。Fix：trim Set 到 ONLY actually-typed-extracted-or-emitted kinds，其他全部 fall through to rawChildren → byte-equivalent round-trip。Round-trip size loss: pre-fix 32% → v3.14.0 17.75% → v3.14.1 16.66%。Methodology lesson (6th refinement)：P2 from one reviewer can become P0 when another applies real-world impact lens.
+
+
 
 Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestone v3.14.0 — sub-stack C of [#58/#59/#60](https://github.com/PsychQuant/che-word-mcp/issues/60) document content preservation。**Architectural completion of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → sub-stack B (#59 WhitespaceOverlay) → sub-stack C (#60 RunProperties) 一路完成。
 
