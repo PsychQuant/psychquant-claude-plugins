@@ -130,8 +130,8 @@
     },
     {
       "name": "che-word-mcp",
-      "version": "3.13.9",
-      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.9 bump ooxml-swift v0.19.8→v0.19.9 — A-CONT-3 mini-cycle of #58 closes 3 P0 from sub-stack A-CONT-2 6-AI verify INCLUDING SILENT CORRECTNESS REGRESSION（delete_bookmark for header/footer bookmarks was silently lost on disk in v3.13.8 — must-upgrade）。list_bookmarks now surfaces paragraph-level container bookmarks; insert_bookmark detects duplicate names across all 5 part types。Sub-cycle 4 for #58 (A → A-CONT → A-CONT-2 → A-CONT-3). Same convergence-cycle pattern as R5→R5-CONT-4 (5 sub-cycles for #56). v3.13.8 A-CONT-2 mini-mini-cycle; v3.13.7 A-CONT; v3.13.6 sub-stack A 初始 fix。B re-numbered to v3.13.10 / #59 whitespace overlay; C unchanged v3.14.0 / #60。基於 ooxml-swift v0.19.9。",
+      "version": "3.13.10",
+      "description": "Word MCP Server - Swift 原生 OOXML 操作，233 個工具。v3.13.10 bump ooxml-swift v0.19.9→v0.19.10 — sub-stack B of #58/#59/#60 closes #59（whitespace-only `<w:t xml:space=\"preserve\">` text now round-trips through Foundation XMLDocument 的 whitespace-stripping 限制，via WhitespaceOverlay byte-stream pre-scan）。覆蓋全部 6 個 `<w:t>`-bearing parts：document.xml / header*.xml / footer*.xml / footnotes.xml / endnotes.xml / comments.xml。Thesis-fixture probe：source 346 個 whitespace-only `<w:t>`（683 chars），pre-fix Reader 只復原 190（349 chars）— 334 chars 在 read 階段就靜默遺失；post-fix 100% 復原。No che-word-mcp source changes — fix architecture 全在 ooxml-swift v0.19.10。Methodology lesson 從 sub-stack A 的 4 sub-cycles 帶過來：matrix-pin testWhitespacePreservedAcrossAllSixPartTypes 從 design 階段就用 1 個 fixture 涵蓋所有 6 part types。v3.13.9 A-CONT-3 silent correctness regression；v3.13.8 A-CONT-2；v3.13.7 A-CONT；v3.13.6 sub-stack A 初始 fix。Sub-stack C unchanged v3.14.0 / #60。基於 ooxml-swift v0.19.10。",
       "author": {
         "name": "Che Cheng"
       },
