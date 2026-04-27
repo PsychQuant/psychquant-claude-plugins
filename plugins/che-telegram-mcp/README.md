@@ -181,9 +181,16 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.2.0 (currently bundles `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.4.3 binaries via wrapper auto-download)
+Plugin version: 1.2.1 (currently bundles `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.4.3 binaries via wrapper auto-download)
 
 ### Changelog
+
+**1.2.1** (2026-04-27)
+
+- Fix `hooks/check-mcp.sh` source-build path: previously pointed at `~/Developer/che-mcps/che-msg/.build/release/...`, which doesn't exist (che-msg is a monorepo, the Swift packages live in sub-dirs `che-telegram-all-mcp/` and `che-telegram-bot-mcp/`). Now mirrors the wrapper's exact 5-path search (incl. `~/Developer/che-msg/<package>/.build/release/<binary>`).
+- Fix `check-mcp.sh` build instruction: was `cd che-msg && swift build -c release` (no Package.swift at monorepo root), now `cd ~/Developer/che-msg/<package> && swift build -c release --product <binary>`.
+- `check-mcp.sh` no longer warns about optional Keychain entries (`TELEGRAM_PHONE`, `TELEGRAM_2FA_PASSWORD`); they're shown only when present and silently skipped when absent.
+- `check-mcp.sh` footer now documents `disabledMcpjsonServers` so users running only one server know how to suppress the other's warnings.
 
 **1.2.0** (2026-04-27)
 
