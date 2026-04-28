@@ -1,36 +1,86 @@
 #!/bin/bash
 # Wrapper for che-telegram-bot-mcp (Bot API)
 # Bot token is read from macOS Keychain at runtime.
+#
+# Auto-upgrade design (v1.3.0+):
+# - DESIRED_VERSION below pins the binary version this plugin expects.
+# - ~/bin/.CheTelegramBotMCP.version sidecar tracks what's installed.
+# - On mismatch, re-downloads from GitHub Release (atomic .tmp + mv).
+# - Source builds in $HOME/Developer/... are NEVER auto-replaced.
 
 BINARY_NAME="CheTelegramBotMCP"
 GITHUB_REPO="PsychQuant/che-msg"
-RELEASE_URL="https://github.com/$GITHUB_REPO/releases/latest/download/$BINARY_NAME"
 INSTALL_DIR="$HOME/bin"
+INSTALLED_BINARY="$INSTALL_DIR/$BINARY_NAME"
+VERSION_FILE="$INSTALL_DIR/.${BINARY_NAME}.version"
+DESIRED_VERSION="0.5.0"
+DOWNLOAD_TIMEOUT=180  # bot binary is small (~30MB)
 
 # Find binary
 BINARY=""
-for loc in "$INSTALL_DIR/$BINARY_NAME" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-bot-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-bot-mcp/.build/release/$BINARY_NAME"; do
+for loc in "$INSTALLED_BINARY" "/usr/local/bin/$BINARY_NAME" "$HOME/.local/bin/$BINARY_NAME" "$HOME/Developer/che-msg/che-telegram-bot-mcp/.build/release/$BINARY_NAME" "$HOME/Developer/che-mcps/che-telegram-bot-mcp/.build/release/$BINARY_NAME"; do
     [[ -x "$loc" ]] && BINARY="$loc" && break
 done
 
+# Decide whether to download.
+NEED_DOWNLOAD=false
+REASON=""
+INSTALLED_VERSION=""
+[[ -f "$VERSION_FILE" ]] && INSTALLED_VERSION=$(tr -d '[:space:]' < "$VERSION_FILE" 2>/dev/null || true)
+
 if [[ -z "$BINARY" ]]; then
-    echo "$BINARY_NAME not found. Downloading from GitHub..." >&2
+    NEED_DOWNLOAD=true
+    REASON="binary not installed"
+elif [[ "$BINARY" == "$INSTALLED_BINARY" ]] && [[ "$INSTALLED_VERSION" != "$DESIRED_VERSION" ]]; then
+    NEED_DOWNLOAD=true
+    REASON="plugin wants v${DESIRED_VERSION}, installed is v${INSTALLED_VERSION:-unknown}"
+fi
+
+if $NEED_DOWNLOAD; then
+    echo "$BINARY_NAME: $REASON — downloading from $GITHUB_REPO..." >&2
     mkdir -p "$INSTALL_DIR"
-    URL=$(curl -sL "https://api.github.com/repos/$GITHUB_REPO/releases/latest" \
-        | grep '"browser_download_url"' | grep "/$BINARY_NAME\"" | head -1 \
-        | sed 's/.*"\(https[^"]*\)".*/\1/')
-    if [[ -n "$URL" ]]; then
-        curl -sL "$URL" -o "$INSTALL_DIR/$BINARY_NAME" && chmod +x "$INSTALL_DIR/$BINARY_NAME" \
-            || { echo "ERROR: Download failed." >&2; exit 1; }
-        # Strip macOS quarantine to avoid Gatekeeper prompt
-        xattr -dr com.apple.quarantine "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null || true
-        BINARY="$INSTALL_DIR/$BINARY_NAME"
-        echo "Installed $BINARY_NAME to $INSTALL_DIR/" >&2
+
+    URL=""
+    for API_URL in \
+        "https://api.github.com/repos/$GITHUB_REPO/releases/tags/v$DESIRED_VERSION" \
+        "https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+    do
+        URL=$(curl -sL --max-time 30 "$API_URL" 2>/dev/null \
+            | grep '"browser_download_url"' | grep "/$BINARY_NAME\"" | head -1 \
+            | sed 's/.*"\(https[^"]*\)".*/\1/')
+        [[ -n "$URL" ]] && break
+    done
+
+    if [[ -z "$URL" ]]; then
+        if [[ -x "$INSTALLED_BINARY" ]]; then
+            echo "$BINARY_NAME: WARNING — no download URL found, keeping existing binary" >&2
+            BINARY="$INSTALLED_BINARY"
+        else
+            echo "$BINARY_NAME: ERROR — no release asset found at $GITHUB_REPO." >&2
+            echo "  Install manually: https://github.com/$GITHUB_REPO/releases" >&2
+            echo "  Or build from source:" >&2
+            echo "    git clone https://github.com/$GITHUB_REPO.git ~/Developer/che-msg" >&2
+            echo "    cd ~/Developer/che-msg/che-telegram-bot-mcp && swift build -c release --product $BINARY_NAME" >&2
+            exit 1
+        fi
     else
-        echo "No release found. Build from source:" >&2
-        echo "  git clone https://github.com/$GITHUB_REPO.git" >&2
-        echo "  cd che-telegram-bot-mcp && swift build -c release" >&2
-        exit 1
+        if curl -sL --max-time "$DOWNLOAD_TIMEOUT" "$URL" -o "${INSTALLED_BINARY}.tmp" 2>/dev/null; then
+            chmod +x "${INSTALLED_BINARY}.tmp"
+            xattr -dr com.apple.quarantine "${INSTALLED_BINARY}.tmp" 2>/dev/null || true
+            mv "${INSTALLED_BINARY}.tmp" "$INSTALLED_BINARY"
+            echo "$DESIRED_VERSION" > "$VERSION_FILE"
+            echo "$BINARY_NAME: installed v$DESIRED_VERSION" >&2
+            BINARY="$INSTALLED_BINARY"
+        else
+            rm -f "${INSTALLED_BINARY}.tmp" 2>/dev/null
+            if [[ -x "$INSTALLED_BINARY" ]]; then
+                echo "$BINARY_NAME: WARNING — download failed, keeping existing binary" >&2
+                BINARY="$INSTALLED_BINARY"
+            else
+                echo "$BINARY_NAME: ERROR — download failed" >&2
+                exit 1
+            fi
+        fi
     fi
 fi
 
@@ -46,20 +96,8 @@ if [[ -z "$TELEGRAM_BOT_TOKEN" ]]; then
 fi
 
 # NOTE: bot-mcp 不需要 local resource PID tracking (#12)
-#
-# Bot API 是 HTTPS client，本地端 **沒有** local DB、file lock、binlog
-# 這類 single-instance resource。所以 #8 引入的 PID file + orphan
-# cleanup + ownership check 針對的「orphan 卡住下次啟動」問題，在
-# bot-mcp 不存在。
-#
-# Caveat：`get_updates` 是 long-polling API，Telegram 服務端規定同一個
-# bot token 只能有一個 client 在 polling，第二個會收到
-# "409 Conflict: terminated by other getUpdates request"。所以 **多
-# instance 不會 corrupt local state，但 getUpdates 會在 server side
-# 互踢**。修這個 race 應該用 server-side locking (advisory lock 在
-# getUpdates 呼叫前檢查)，而不是 wrapper PID tracking。見 #10 /
-# Server.swift follow-up。
-#
-# 對照組：che-telegram-all-mcp-wrapper.sh 仍然需要 PID tracking，因為
-# TDLib 用 single-instance binlog/sqlite 無法共享。
+# Bot API 是 HTTPS client，本地端 **沒有** local DB / file lock / binlog
+# 這類 single-instance resource。所以 #8 引入的 PID file + orphan cleanup
+# 對 bot-mcp 不適用。getUpdates long-polling race 應該由 server-side
+# locking 處理，不是 wrapper PID tracking（見 #10 follow-up）。
 exec "$BINARY" "$@"

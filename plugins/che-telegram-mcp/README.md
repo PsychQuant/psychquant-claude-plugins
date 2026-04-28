@@ -88,10 +88,17 @@ The plugin's wrappers (`bin/che-telegram-{all,bot}-mcp-wrapper.sh`) detect your 
 
 If none are found on first invocation, the wrapper **lazy-downloads** the binary from the latest [GitHub Release](https://github.com/PsychQuant/che-msg/releases/latest), strips the macOS quarantine flag, and caches it in `~/bin/`. A disabled server never triggers a download.
 
+### Auto-upgrade (v1.3.0+)
+
+The wrapper pins a **`DESIRED_VERSION`** matching the binary the plugin expects and writes a `~/bin/.${BINARY_NAME}.version` sidecar each time it installs.
+
+When the plugin is updated and the desired version changes, the wrapper detects the sidecar mismatch on the next MCP server spawn and atomically re-downloads (`.tmp` → `mv`) — falling back to the last installed binary if the network fails. Source builds under `~/Developer/...` are never auto-replaced.
+
 A **SessionStart hook** (`hooks/check-mcp.sh`) verifies on every session that:
 
-- Both binaries are installed (or buildable from source)
+- Both binaries are installed (or buildable from source) — printing the installed version next to `✓`
 - Required Keychain entries exist
+- Compares the sidecar against `releases/latest` and prints `⬆️` when a newer release is available (silent when offline / rate-limited)
 
 It prints `⚠️` warnings with copy-pasteable fix commands when something is missing. If you've disabled a server via `disabledMcpjsonServers`, you can ignore its warnings (the hook checks both servers regardless of disable state).
 
@@ -181,9 +188,15 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.2.1 (currently bundles `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.4.3 binaries via wrapper auto-download)
+Plugin version: 1.3.0 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
 
 ### Changelog
+
+**1.3.0** (2026-04-28)
+
+- **Auto-upgrade wrappers**: each wrapper now pins a `DESIRED_VERSION` and writes a `~/bin/.${BINARY_NAME}.version` sidecar on install. When the plugin bumps the desired version, the wrapper detects the sidecar mismatch and atomically re-downloads (`.tmp` → `mv`) on next spawn. Source builds in `~/Developer/...` are never auto-replaced. Falls back to the existing binary on network failure (no brick).
+- **SessionStart hook upgrade notice**: `check-mcp.sh` now reads the sidecar to display installed version, queries `releases/latest`, and prints `⬆️ v0.4.3 → v0.5.0 available` when behind upstream. Silent when offline or rate-limited.
+- Pin telegram-bot binary at v0.5.0 (built from same monorepo as telegram-all v0.5.0).
 
 **1.2.1** (2026-04-27)
 
