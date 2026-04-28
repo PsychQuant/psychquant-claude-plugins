@@ -2,47 +2,39 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
-當前版本：**v3.14.4**（Plugin shell + Binary 同步）— `replace_text` 對 inline `<w:sdt>` content control 的 wrapper coverage gap fix (Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63))
+當前版本：**v3.17.1**（Plugin shell + Binary 同步）— bump `ooxml-swift` dep 到 v0.21.2，pulls in pPr regression-guard + test infrastructure hardening（[ooxml-swift#4](https://github.com/PsychQuant/ooxml-swift/issues/4) walker whitelist + `#if DEBUG` assert / [#13](https://github.com/PsychQuant/ooxml-swift/issues/13) empty `<w:pPr/>` self-closing test gap / [#16](https://github.com/PsychQuant/ooxml-swift/issues/16) `countPPrOpenTags` regex hardening excluding `<w:pPrChange>`）。No public MCP tool change。
 
-**v3.14.4 fix `replace_text` on inline `<w:sdt>` content controls (Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63))**：`Document.replaceInParagraphSurfaces` 之前覆蓋 `paragraph.runs` / `hyperlinks` / `fieldSimples` / `alternateContents` 但 **沒有** `paragraph.contentControls` — 包在 inline `<w:sdt>` 裡的文字 silently 0-match。外部 converter（pandoc / Quarto / LaTeX→docx）習慣把 cross-ref placeholder（`[tab:foo]` / `[fig:bar]` / `[Smith 2020]`）包成 inline SDT 是常見慣例，所以症狀跟 bracketed text 高度相關，但其實 **brackets 是 coincidence** — bracket-free needle 在 inline SDT 裡也 fail。Issue title「literal `[ ]` brackets」是誤導；differential test（4 wrappers × 4 needles = fldChar / fldSimple / hyperlink / inlineSDT × `[tab:foo]` / `tab:foo` / `[tab:foo` / `tab:foo]`）證實只有 inline SDT case 失敗。
+**v3.17.1 bump `ooxml-swift` dep v0.21.0 → v0.21.2** — patch release pulling in upstream test/regression-guard hardening from the post-#56 follow-up bundle. **No public MCP tool change**, no behaviour change for valid input。Pure transitive hardening at the parser invariant layer：
 
-ooxml-swift v0.20.4 新增 `TextReplacementEngine.replaceInContentXML`（XML DOM walker，wrap `ContentControl.content` 在 synthetic root xmlns:w，遍歷所有 `<w:t>` descendants 在 document order，build flat string + offset map mirror `flattenRuns` invariant，splice replacements 回 `<w:t>` element string content）+ `Document.replaceInContentControl`（recursive helper 處理 nested SDT）。設計上跳過：`<w:delText>`（TC deletion text）、`<w:instrText>`（field instruction code）、nested `<w:sdt>` subtrees（避免 double-replacement）。**Round-trip discipline**：只 mutate `<w:t>` element 的 string content；`xml:space="preserve"` 與其他 attribute 完整保留。
+- **[ooxml-swift#4](https://github.com/PsychQuant/ooxml-swift/issues/4)** — `pPr` regression guard. 3-layer defense-in-depth on the v0.19.1 hot-fix invariant：`walkerPreConsumed: Set<String> = ["pPr"]` 在 `parseParagraph` walker loop entry filter；既有 `case "pPr": break` 保留為 belt-and-suspenders；`#if DEBUG assert(name != "pPr", ...)` 在 catch-all default `unrecognizedChildren.append` site 作 dev-time canary。5 regression tests in `Issue4PPrRegressionGuardTests`。
+- **[ooxml-swift#13](https://github.com/PsychQuant/ooxml-swift/issues/13)** — empty `<w:pPr/>` self-closing test gap closed。TDD discovered emitter drops empty pPr blocks（`needsPPr` gate at `Paragraph.swift:335,466`）；test name + assertion direction 反映 empirical OOXML-spec behaviour。
+- **[ooxml-swift#16](https://github.com/PsychQuant/ooxml-swift/issues/16)** — `countPPrOpenTags` helper regex hardening。Substring `<w:pPr` 替換為 `NSRegularExpression #"<w:pPr[\s/>]"#"` — 排除 `<w:pPrChange>`（Track Changes paragraph-property revision element），先前會虛增計數造成 brittle 假失敗。
 
-Bumps `ooxml-swift` v0.20.3 → v0.20.4。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — surgical fix 只新增 code path，沒改任何既有行為（runs/hyperlinks/fieldSimples/alternateContents replacement path 不動，ContentControl model 維持 raw XML storage 不重構）。Suite 690 → 693 ooxml-swift / 172 → 174 che-word-mcp（0 fail）。
+ooxml-swift suite 720 → 722（0 fail）。che-word-mcp suite 不變（pure transitive dep bump）。
 
-**Out of scope (separate follow-ups)**：ContentControl 從 `content: String` 升級為 typed `[Run]` / mixed-element list（SDD-warranted refactor）；smartTags / bidiOverrides / customXmlBlocks / unrecognizedChildren 維持 raw-carrier passthrough（設計上 byte-equivalent，不該被 replace_text 動到）。
-
----
-
-**v3.14.3 sub-stack E of paragraph-level content-equality (closes [#66](https://github.com/PsychQuant/che-word-mcp/issues/66))**：`Paragraph` 新增 `w14ParaId: String?` 和 `w14TextId: String?` 欄位，提取並 round-trip `<w:p>` opening tag 上的 `w14:paraId` / `w14:textId` 屬性 — Word 用於 collaborative editing 和 comment threading 的 revision-tracking GUIDs（8-char hex tokens，**NOT** RFC 4122 UUIDs，所以 String? 是正確的 typing 選擇）。
-
-**Combined sub-stack D + E impact (vs v3.14.1)**：
-
-| Preservation class | v3.14.1 | v3.14.2 (D) | **v3.14.3 (E)** | Total |
-|---|---|---|---|---|
-| `<w:lang>` 保留率 | 50% | 98.89% | 98.89% | (D) +48.89 pp |
-| `<w:rFonts>` 保留率 | 88% | 98.77% | 98.77% | (D) +10.77 pp |
-| `<w:noProof>` 保留率 | 92% | 100% | 100% | (D) +8 pp |
-| `<w:kern>` 保留率 | 84% | 99.93% | 99.93% | (D) +15.93 pp |
-| `w14:` 保留率 | 5% | 10.55% | **93.98%** | (E) +88.98 pp |
-| `document.xml` 大小流失 | 16.66% | 10.95% | **8.02%** | (D+E) -8.64 pp |
-
-**Matrix-pin floor 同步抬升**（lockstep ratchet）：`w14:` 0.04 → **0.90**；`sizeLossRatio` 上限 0.12 → **0.10**。Matrix-pin `testDocumentContentEqualityInvariant` 現在 **LOAD-BEARING across 5 preservation classes**（rFonts / noProof / lang / kern / w14:）spanning run-level + paragraph-level + paragraph-mark scope — 任何一類 regression 都會 trip。
-
-**Defensive design (R2 review fixes)**：
-- `openingPTag()` helper routes attribute values through `escapeXMLAttribute`（mirrors Paragraph.swift 的 escape 紀律）— 防止 XML injection if caller sets unsanitized GUID。
-- `parseParagraph` rejects `w14:paraId=""` source attrs — schema-invalid per ECMA-376 ST_LongHexNumber，Word's repair path silently drops them。
-
-Bumps `ooxml-swift` v0.20.2 → v0.20.3。**No che-word-mcp source changes** — fix architecture 全在 ooxml-swift。**Backward compatible** — 兩個 fields 都 optional（default nil），openingPTag empty-attrs gate 防止 synthetic emit。
-
-**剩餘 8% 流失** 主要是其他 w14:* attribute classes（如 w14:* on `<w:r>`）— tracked as separate follow-up SDD 推向 strong demo target「edit 一個字 → document.xml shrinks <1%」。
+**Verification**：6-reviewer cross-verification on #4（5 Claude teammates + Codex CLI gpt-5.5 xhigh, all PASS unanimous）；5-reviewer on #13/#16 batch（Codex hung, skipped）。
 
 ---
 
-Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.14.4 — `replace_text` 對 inline `<w:sdt>` content control wrapper coverage gap fix（#63）；v3.14.3 — sub-stack E of paragraph-level content-equality（#66 paragraph w14:* attrs）；v3.14.2 — sub-stack D（#65 paragraph-mark rPr）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → **E (#66 paragraph w14:* attrs)** 完整覆蓋 paragraph + run scope。
+**Pre-v3.17.x architectural milestones**（detail in [CHANGELOG](https://github.com/PsychQuant/che-word-mcp/blob/main/CHANGELOG.md)）：sub-stacks A–E 完整覆蓋 paragraph + run scope（`if not typed, preserve as raw` principle）。Combined preservation gains since v3.14.0：`<w:lang>` 50% → 98.89%；`w14:` 5% → 93.98%；`document.xml` size loss 16.66% → 8.02%。Matrix-pin `testDocumentContentEqualityInvariant` 現在 LOAD-BEARING across 5 preservation classes（rFonts / noProof / lang / kern / w14:）spanning run + paragraph + paragraph-mark scope — 任何一類 regression 都會 trip。
+
+---
+
+Office.js OOXML Roadmap **P0 100% 完成**（Umbrella issue [#43](https://github.com/PsychQuant/che-word-mcp/issues/43)）。Latest milestones：v3.17.1 — bump ooxml-swift dep to v0.21.2（pPr regression-guard hardening from ooxml-swift#4/#13/#16）；v3.17.0 — `wrap_caption_seq` MCP tool（[#62](https://github.com/PsychQuant/che-word-mcp/issues/62)，rescues docs pasted from external sources so `insert_table_of_figures` / `insert_table_of_tables` produce populated TOFs）；v3.16.0 — Bundle B anchor DX consistency（[#70](https://github.com/PsychQuant/che-word-mcp/issues/70) [#71](https://github.com/PsychQuant/che-word-mcp/issues/71) [#72](https://github.com/PsychQuant/che-word-mcp/issues/72)，BREAKING input-validation：conflicting anchors + `text_instance ≤ 0` 改 structured error）。**Architectural extension of 'if not typed, preserve as raw' principle** — 從 sub-stack A (#58 BodyChild) → B (#59 WhitespaceOverlay) → C (#60 RunProperties) → D (#65 ParagraphProperties.markRunProperties) → **E (#66 paragraph w14:* attrs)** 完整覆蓋 paragraph + run scope。
 
 **前次 milestones**：
 
+- **v3.17.1** — bump `ooxml-swift` dep v0.21.0 → v0.21.2 (pPr regression-guard + test infra hardening from upstream #4/#13/#16)。No public MCP tool change。
+- **v3.17.0** — `wrap_caption_seq` MCP tool（Refs [#62](https://github.com/PsychQuant/che-word-mcp/issues/62)，Phase 2）：bulk-wraps plain-text caption number portions in SEQ field runs across body paragraphs whose flattened text matches a regex (EXACTLY ONE numeric capture group)。Captured digit becomes SEQ field cachedResult so Word's first-open render preserves user-typed numbering。Idempotent + scope:body-only + bookmark wrap opt-in。Suite 231 → 236 (+5)。Tools 234 → 235。
+- **v3.16.2** — pure dep bump `ooxml-swift` v0.20.5 → v0.21.0 (Refs [#62](https://github.com/PsychQuant/che-word-mcp/issues/62) [#68](https://github.com/PsychQuant/che-word-mcp/issues/68))：picks up `InsertLocation.findBodyChildContainingText` recursing into table cells + block-level SDT (#68) + `WordDocument.wrapCaptionSequenceFields` lib API ready for v3.17.0 MCP wrapper (#62)。
+- **v3.16.1** — anchor-presence whitelist drift prevention（Refs [#80](https://github.com/PsychQuant/che-word-mcp/issues/80)）：pure refactor，static `toolAnchorWhitelists` dict 替換 4 個分散的 literal anchor arrays。4 invariant tests（4 → 8）防將來新增 anchor 漏接 conflict-detection。No runtime behavior change。
+- **v3.16.0** — Bundle B anchor DX consistency（Refs [#70](https://github.com/PsychQuant/che-word-mcp/issues/70) [#71](https://github.com/PsychQuant/che-word-mcp/issues/71) [#72](https://github.com/PsychQuant/che-word-mcp/issues/72)，**BREAKING input validation only**）：(a) conflicting anchors（如 `after_text` + `index`）silent-priority 改成 structured error；(b) explicit `text_instance ≤ 0` 拒絕；(c) 4 個 #61-target tools 統一錯誤格式 `Error: <tool>: <body>` 給 AI-caller 錯誤歸因。Suite 201 → 227 (+26)。
+- **v3.15.3** — Bundle A2 polish（Refs [#76](https://github.com/PsychQuant/che-word-mcp/issues/76) [#77](https://github.com/PsychQuant/che-word-mcp/issues/77) [#78](https://github.com/PsychQuant/che-word-mcp/issues/78) [#79](https://github.com/PsychQuant/che-word-mcp/issues/79))：schema description doc rot 修正 + bookmarkMarker / SDT / TOC bookmark / contentControl 的 append-index regression pin。Suite 196 → 201。
+- **v3.15.2** — Bundle A polish（Refs [#69](https://github.com/PsychQuant/che-word-mcp/issues/69) [#73](https://github.com/PsychQuant/che-word-mcp/issues/73) [#74](https://github.com/PsychQuant/che-word-mcp/issues/74) [#75](https://github.com/PsychQuant/che-word-mcp/issues/75))：`insert_paragraph` append message 改回 body.children index（pre-fix `getParagraphs().count - 1` 在含 tables/SDTs 文件 mis-report）+ debug log label fixes + equation F5 partial-dict regression pin。Suite 194 → 196。
+- **v3.15.1** — Verify findings F1+F2+F3+F5 closed（Refs [#61](https://github.com/PsychQuant/che-word-mcp/issues/61))：`after_image_id` 加到 insert_paragraph + insert_equation (display only) + insert_image_from_path；`into_table_cell` 加到 insert_equation (display only)；equation 成功訊息加 anchor info；malformed `into_table_cell` partial dict 改 structured error。Suite 185 → 194。
+- **v3.15.0** — `insert_paragraph` / `insert_equation` accept anchor parameters（Refs [#61](https://github.com/PsychQuant/che-word-mcp/issues/61)）：closes MCP-side wire-up gap，handler dispatch 之前 silently 丟棄 `after_text` / `before_text` / `text_instance` / `into_table_cell`。Anchor priority `into_table_cell > after_text > before_text > index > append`。Inline equation explicitly 拒絕 anchor。Suite 176 → 185。
+- **v3.14.5** — `findBodyChildContainingText` 涵蓋所有 editable surfaces（Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63) verify F1)：bumps `ooxml-swift` v0.20.4 → v0.20.5。Closes v3.14.4 CHANGELOG over-claim — REPLACE path 已修但 LOOKUP path（`InsertLocation.afterText`）仍只看 `para.runs`。`Paragraph.flattenedDisplayText` 擴充為涵蓋 runs + hyperlinks + fieldSimples + alternateContents + contentControls (recursive into nested SDT)。Suite 174 → 176。
+- **v3.14.4** — `replace_text` on inline `<w:sdt>` content controls fix（Refs [#63](https://github.com/PsychQuant/che-word-mcp/issues/63))：`Document.replaceInParagraphSurfaces` 之前覆蓋 runs / hyperlinks / fieldSimples / alternateContents 但 **沒有** contentControls — 包在 inline `<w:sdt>` 裡的文字 silently 0-match。常見於 pandoc / Quarto / LaTeX→docx cross-ref placeholder。bumps `ooxml-swift` v0.20.3 → v0.20.4。Suite 172 → 174。
 - **v3.14.3** sub-stack E (#66) — paragraph `w14:paraId` / `w14:textId` round-trip；`w14:` retention 5% → 93.98%；document.xml size loss 16.66% → 8.02%。
 - **v3.14.2** sub-stack D (#65) — `ParagraphProperties.markRunProperties` round-trips `<w:rPr>` direct child of `<w:pPr>`（pilcrow ¶ 字符外觀 per ECMA-376 §17.3.1.27）。`<w:lang>` retention 50% → 98.89%。
 - **v3.14.1** sub-stack C-CONT — closes triple-confirmed P0 (R2 + R5 + Codex 6-AI verify)：trim `recognizedRprChildren` Set 到 actually-extracted kinds（修了 `<w:spacing>` / `<w:caps>` / `<w:position>` / `<w:shd>` / `<w:em>` 等的 silent drop）。Round-trip size loss 17.75% → 16.66%。
