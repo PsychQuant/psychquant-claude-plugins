@@ -9,6 +9,8 @@
 # you've intentionally disabled one server, ignore its warnings (the footer
 # note explains how).
 
+GITHUB_REPO="PsychQuant/che-msg"
+
 # Search locations — MUST match the wrapper's `for loc in ...` list.
 # See bin/che-telegram-{all,bot}-mcp-wrapper.sh.
 check_binary() {
@@ -27,12 +29,38 @@ check_binary() {
         fi
     done
     if [[ -n "$found" ]]; then
-        echo "✓ $label installed: $found"
+        # Read sidecar version (only present for $HOME/bin installs).
+        local version_file="$HOME/bin/.${name}.version"
+        local installed_version=""
+        [[ -f "$version_file" ]] && installed_version=$(tr -d '[:space:]' < "$version_file" 2>/dev/null || true)
+        if [[ -n "$installed_version" ]]; then
+            echo "✓ $label v$installed_version installed: $found"
+        else
+            echo "✓ $label installed: $found"
+        fi
     else
         echo "⚠️  $label not found"
         echo "   Wrappers will auto-download on first invocation, or build manually:"
-        echo "     git clone https://github.com/PsychQuant/che-msg.git ~/Developer/che-msg"
+        echo "     git clone https://github.com/$GITHUB_REPO.git ~/Developer/che-msg"
         echo "     cd ~/Developer/che-msg/$pkg_dir && swift build -c release --product $name"
+    fi
+}
+
+# Single GitHub API hit for both binaries (same release / same tag).
+fetch_latest_tag() {
+    curl -sL --max-time 5 "https://api.github.com/repos/$GITHUB_REPO/releases/latest" 2>/dev/null \
+        | grep '"tag_name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/'
+}
+
+notify_if_outdated() {
+    local name="$1" label="$2" latest="$3"
+    [[ -z "$latest" ]] && return  # API failed / offline / rate-limited; stay quiet
+    local version_file="$HOME/bin/.${name}.version"
+    local installed=""
+    [[ -f "$version_file" ]] && installed=$(tr -d '[:space:]' < "$version_file" 2>/dev/null || true)
+    [[ -z "$installed" ]] && return  # not a managed install (source build / manual)
+    if [[ "$installed" != "$latest" ]]; then
+        echo "⬆️  $label v$installed → v$latest available (wrapper auto-upgrades on next plugin update)"
     fi
 }
 
@@ -66,6 +94,11 @@ check_keychain_optional "che-telegram-all-mcp" "TELEGRAM_2FA_PASSWORD" "2FA pass
 # telegram-bot: bot account via Bot API
 check_binary "CheTelegramBotMCP" "che-telegram-bot-mcp" "telegram-bot"
 check_keychain_required "che-telegram-bot-mcp" "TELEGRAM_BOT_TOKEN" "Bot Token"
+
+# Upstream-version notice (single API call, both binaries share one release).
+LATEST=$(fetch_latest_tag)
+notify_if_outdated "CheTelegramAllMCP" "telegram-all" "$LATEST"
+notify_if_outdated "CheTelegramBotMCP" "telegram-bot" "$LATEST"
 
 # Footer: how to silence warnings for a server you don't use.
 echo "ℹ  Using only one server? Add the other to disabledMcpjsonServers in"
