@@ -28,6 +28,33 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 
 如果沒有提供 filter，詢問用戶。
 
+### Step 1.5: Confirmation — Phase 1: Disambiguation（v2.7.0+）
+
+**Skill ref**: `confirmation-protocol`、`email-search-disambiguation`
+
+如果 filter 是模糊詞（中文人名「陳老師」、相對時間「最近」、通用 scope「全部」），**不要直接執行 search**。先用 disambiguation:
+
+```
+「{filter}」可能對應到:
+1. {email_1} ({description_1}, 推薦)
+2. {email_2} ({description_2})
+3. 其他
+
+你要哪一個?
+```
+
+候選來源:
+- `.claude/emails.md` 的 `participant_aliases` 欄位
+- 之前歸檔的 `.threads.json` participants
+- Address book / contacts MCP
+
+**Skip Phase 1**(可直接進 Step 2):
+- Filter 是明確 email 地址(含 `@`)
+- Filter 是 Message-ID
+- 單一 user-typed `--no-confirm` flag 或明確說「直接做」
+
+詳見 `skills/confirmation-protocol/SKILL.md` 和 `skills/email-search-disambiguation/SKILL.md`。
+
 ### Step 2: 建立目錄和索引
 
 ```bash
@@ -135,6 +162,72 @@ search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
 1. 檢查其 Message-ID 是否已在索引中
 2. 若已存在 → 跳過
 3. 若不存在 → 加入待歸檔清單
+
+### Step 4.5: Confirmation — Phase 2 + 3: Search Preview + Operation Confirmation（v2.7.0+）
+
+**Skill ref**: `bulk-operation-preview`、`confirmation-protocol`
+
+如果 Step 4 過濾後的待歸檔清單 **≥ 5 封**(或 ≥ 1 封 destructive op),**不要直接進 Step 5 fetch + write**。先 preview:
+
+#### Phase 2: Search Preview
+
+按 thread 分組,跑 false-positive detection,展示給 user:
+
+```
+搜尋結果:{N} 封 emails (filter: {filter}, output: {output_dir})
+
+Filter:
+  Mail
+    -> filter(sender = '...' OR recipient = '...' OR subject contains '...')
+    -> sort(date desc)
+
+Threads 分布:
+  ✓ [{date}] {thread_key} ({M} msgs)
+       Participants: {p1, p2, p3}
+  ⚠ [{date}] {thread_key} ({M} msgs)  ← potential false positive
+       Reason: sender 不在 filter, 僅 subject 含關鍵字
+
+附件預估:{K} 個 ({total_size})
+```
+
+False-positive flagging 規則見 `rules/false-positive-detection.md`:
+- ✓ sender/recipient 直接匹配 filter
+- ⚠ email 在 thread 但不是 principal
+- ⚠⚠ 只 subject keyword match,sender 不符
+- ❓ metadata 不足以判斷
+
+#### Phase 3: Operation Confirmation
+
+```
+我將執行:
+  - 寫 {N} 個 markdown 檔到 {output_dir}/
+  - 下載 {K} 個 attachments ({total_size}),分流到 {data_dir}/ 和 {documents_dir}/
+  - 建立/更新 .email_index.json 和 .threads.json
+  - 不修改 Mail.app 內容(read-only operation)
+
+⚠ 此操作會建立約 {N+K+2} 個檔案
+確認執行嗎?
+
+選項:
+  (a) 確認,全部歸檔
+  (b) 排除 false positive,歸檔 {N - flagged} 封
+  (c) 修改 filter 重 search
+  (d) 取消
+```
+
+#### Phase 4: User response handling
+
+- 「對」/「a」/「OK」 → 進 Step 5 執行
+- 「b」/「排除 ⚠」 → 從待歸檔清單移除 flagged threads,重 confirm
+- 「c」/「修改 filter」 → 回 Step 1 重新 parse
+- 「d」/「取消」 → abort,不 write 任何檔案
+
+**Skip Phase 2+3**(可直接進 Step 5):
+- 待歸檔清單 < 5 封 且 沒有 false-positive flag
+- User 在 Phase 1 已說「直接做」
+- 配置 `.claude/emails.md` 含 `confirmation: skip`
+
+詳見 `skills/bulk-operation-preview/SKILL.md` 和 `rules/confirmation-triggers.md`。
 
 ### Step 5: 生成 Markdown
 
