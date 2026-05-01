@@ -1,0 +1,7 @@
+{
+  "agent-cacher": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/cacher-mcp-wrapper.sh",
+    "description": "Explicit-lookup cache: cache.lookup / cache.fetch / cache.recent / cache.diff. Call cache.lookup BEFORE running a shell command to see if it was already executed recently."
+  }
+}

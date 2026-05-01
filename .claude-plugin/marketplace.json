@@ -357,6 +357,16 @@
       },
       "source": "./plugins/macdoc",
       "category": "productivity"
+    },
+    {
+      "name": "agent-cacher",
+      "version": "0.1.0",
+      "description": "Explicit-lookup cache for AI agent shell calls — records every invocation to SQLite, exposes cache.{lookup,fetch,recent,diff} via MCP",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/agent-cacher",
+      "category": "development"
     }
   ]
 }

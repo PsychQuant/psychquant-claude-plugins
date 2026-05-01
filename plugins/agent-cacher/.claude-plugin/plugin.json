@@ -1,0 +1,8 @@
+{
+  "name": "agent-cacher",
+  "version": "0.1.0",
+  "description": "Explicit-lookup cache for AI agent shell calls — records every invocation to SQLite, exposes cache.{lookup,fetch,recent,diff} via MCP so the agent decides when to reuse cached output instead of re-running.",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["mcp", "cache", "agent", "shell", "sqlite", "macos", "swift"]
+}
