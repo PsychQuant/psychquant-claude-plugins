@@ -9,9 +9,10 @@ Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol。
 - 提供 44+ tools 操作 Apple Mail.app:list/search/get/compose/move/delete/attachment
 
 ### Commands
-- `/archive-mail` — 歸檔指定聯絡人的郵件到 Markdown(v2.7.0+ 加入 confirmation phases)
-- `/archive-mail-view` — 從 `.threads.json` 生成 thread 聚合視圖
+- `/archive-mail` — 歸檔指定聯絡人的郵件到 Markdown(v2.7.0+ 加入 confirmation phases、v2.8.0+ 用 `.claude/.mail/` namespace)
+- `/archive-mail-view` — 從 `threads.json` 生成 thread 聚合視圖
 - `/archive-mail-rebuild-threads` — 從 per-email md 重建 thread index
+- `/archive-mail-migrate`(v2.8.0+)— 一次性把舊 archive 的 indices + config 搬到 `.claude/.mail/` namespace
 
 ### Skills(v2.7.0+ 新增)
 - `confirmation-protocol` — NSQL-style confirmation workflow,在執行前 show preview 讓 user confirm/correct
@@ -154,8 +155,45 @@ attachment_routing:
 ---
 ```
 
+## File Layout — `.claude/.mail/` Namespace(v2.8.0+)
+
+學 IDD `.claude/.idd/` 的 namespace 收斂 pattern。**Config + state 集中,archive markdown 保持原位**:
+
+```
+{cwd}/
+├── .claude/.mail/                              ← namespace root
+│   ├── config.md                               ← 從 .claude/emails.md 搬過來(YAML frontmatter)
+│   └── state/
+│       └── archives/
+│           └── {slug}/                          ← per-archive-target,slug = output_dir.replace("/", "-")
+│               ├── email_index.json            ← Message-ID 去重
+│               ├── threads.json                ← thread 關係索引
+│               └── threads.json.bak.*          ← rebuild-threads 的備份
+├── communications/emails/                      ← archive markdown 目的地(不變)
+│   ├── 2026-01-13_xxx.md                       ← archive 結果(user-visible)
+│   └── ...
+└── correspondence/attachments/                 ← attachments(不變)
+    └── 2026-01-13_xxx/
+```
+
+### 為什麼這樣分
+
+| 路徑 | 性質 | 為什麼 |
+|------|------|--------|
+| `.claude/.mail/config.md` | Plugin config | User 改的 YAML config,跟工作流綁定 |
+| `.claude/.mail/state/archives/{slug}/` | Plugin state | 自動產生的索引,user 不手動編輯 |
+| `{output_dir}/` | User-visible 歸檔結果 | User 主動 ls 找的 archive markdown |
+| `{attachments_dir}/` | User-visible 附件 | 同上 |
+
+### Auto-migrate(從 v2.7.0 ↓ 升級)
+
+v2.8.0+ 的 `archive-mail` / `view` / `rebuild-threads` **每次跑都會 silent auto-migrate**:若新位置不存在但舊位置有 file,直接 mv 過去並提示「🔄 Migrated X → Y」。
+
+如果想一次 batch migrate 所有 archive targets,跑 `/archive-mail-migrate`(支援 `--dry-run` 預覽)。
+
 ## Version History
 
+- **v2.8.0**(2026-05-01)— **`.claude/.mail/` namespace**:學 IDD 的 `.claude/.idd/` 收斂 config + state。新增 `/archive-mail-migrate`。archive-mail / view / rebuild-threads 都加 auto-migrate。Backward compatible:legacy paths 自動 detect 並搬遷
 - **v2.7.0**(2026-05-01)— **NSQL confirmation protocol**:加 3 skills + 2 rules + CLAUDE.md。archive-mail 預設套用 4-phase confirmation workflow。Backward compatible:精確 filter 仍可直接執行
 - v2.6.0 — archive-mail YAML frontmatter + .threads.json + view/rebuild commands
 - v2.5.0 — composing tools format 參數
