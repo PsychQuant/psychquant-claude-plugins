@@ -32,16 +32,30 @@ allowed-tools: Read, Write, Glob, Bash(mkdir:*)
 
 若目錄不存在，報錯退出。
 
-### Step 2: 備份既有 `.threads.json`
+### Step 2: 解析 namespace 路徑 + 備份既有 `threads.json`（v2.8.0+）
 
 ```bash
-if [ -f "${archive_dir}/.threads.json" ]; then
-  cp "${archive_dir}/.threads.json" "${archive_dir}/.threads.json.bak.$(date +%Y%m%d_%H%M%S)"
-  echo "Backed up existing .threads.json"
+NAMESPACE_DIR=".claude/.mail"
+SLUG=$(echo "${archive_dir}" | tr '/' '-' | sed 's/^[-.]*//;s/[-.]*$//')
+INDEX_DIR="${NAMESPACE_DIR}/state/archives/${SLUG}"
+THREADS_FILE="${INDEX_DIR}/threads.json"
+
+mkdir -p "${INDEX_DIR}"
+
+# Auto-migrate legacy(silent)
+if [ ! -f "${THREADS_FILE}" ] && [ -f "${archive_dir}/.threads.json" ]; then
+  mv "${archive_dir}/.threads.json" "${THREADS_FILE}"
+  echo "🔄 Migrated ${archive_dir}/.threads.json → ${THREADS_FILE}"
+fi
+
+# Backup existing threads.json before rebuild
+if [ -f "${THREADS_FILE}" ]; then
+  cp "${THREADS_FILE}" "${THREADS_FILE}.bak.$(date +%Y%m%d_%H%M%S)"
+  echo "Backed up existing threads.json"
 fi
 ```
 
-備份不刪舊的，方便回滾。
+備份不刪舊的,方便回滾。
 
 ### Step 3: 掃描所有 md 檔
 

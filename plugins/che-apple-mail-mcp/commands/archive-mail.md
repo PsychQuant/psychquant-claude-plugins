@@ -55,26 +55,66 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 
 詳見 `skills/confirmation-protocol/SKILL.md` 和 `skills/email-search-disambiguation/SKILL.md`。
 
-### Step 2: 建立目錄和索引
+### Step 1.6: 解析 namespace 路徑（v2.8.0+,學 IDD `.claude/.idd/` pattern）
+
+統一所有 mail 工作流的 config + state 到 `.claude/.mail/`(學 idd 的 namespace 收斂):
 
 ```bash
-mkdir -p "${output_dir}"
+NAMESPACE_DIR=".claude/.mail"
+
+# Slug for output_dir (用於支援多個 archive target 並存)
+SLUG=$(echo "${output_dir}" | tr '/' '-' | sed 's/^[-.]*//;s/[-.]*$//')
+
+INDEX_DIR="${NAMESPACE_DIR}/state/archives/${SLUG}"
+INDEX_FILE="${INDEX_DIR}/email_index.json"
+THREADS_FILE="${INDEX_DIR}/threads.json"
+CONFIG_FILE="${NAMESPACE_DIR}/config.md"
+
+mkdir -p "${INDEX_DIR}"
 ```
 
-**讀取兩個索引檔**（v2.6.0+）：
+**Auto-migrate from legacy paths**(silent,只在新位置不存在時觸發):
 
-`${output_dir}/.email_index.json` — Message-ID 去重索引（canonical key）：
-- 若存在，載入已歸檔的 Message-ID
-- 若不存在，建立空索引 `{"version": "1.0", "emails": {}}`
+```bash
+# Legacy → new: indices
+if [ ! -f "${INDEX_FILE}" ] && [ -f "${output_dir}/.email_index.json" ]; then
+  mv "${output_dir}/.email_index.json" "${INDEX_FILE}"
+  echo "🔄 Migrated ${output_dir}/.email_index.json → ${INDEX_FILE}"
+fi
+if [ ! -f "${THREADS_FILE}" ] && [ -f "${output_dir}/.threads.json" ]; then
+  mv "${output_dir}/.threads.json" "${THREADS_FILE}"
+  echo "🔄 Migrated ${output_dir}/.threads.json → ${THREADS_FILE}"
+fi
 
-`${output_dir}/.threads.json` — Thread 關係索引（append-only thread view）：
-- 若存在，載入既有 thread 結構
-- 若不存在，建立空索引 `{"version": "1.0", "threads": {}}`
+# Legacy → new: config(global,跨 archive target 共用)
+if [ ! -f "${CONFIG_FILE}" ] && [ -f ".claude/emails.md" ]; then
+  mv ".claude/emails.md" "${CONFIG_FILE}"
+  echo "🔄 Migrated .claude/emails.md → ${CONFIG_FILE}"
+fi
+```
+
+或者用 `/archive-mail-migrate` 批次 migrate 所有舊 archive targets,詳見該 command。
+
+### Step 2: 建立目錄和載入索引
+
+```bash
+mkdir -p "${output_dir}"   # archive markdown 目的地(不變)
+```
+
+**讀取兩個索引檔**(v2.8.0+ 從 `${INDEX_DIR}/` 讀):
+
+`${INDEX_FILE}` (`.claude/.mail/state/archives/${SLUG}/email_index.json`) — Message-ID 去重索引(canonical key):
+- 若存在,載入已歸檔的 Message-ID
+- 若不存在,建立空索引 `{"version": "1.0", "emails": {}}`
+
+`${THREADS_FILE}` (`.claude/.mail/state/archives/${SLUG}/threads.json`) — Thread 關係索引(append-only thread view):
+- 若存在,載入既有 thread 結構
+- 若不存在,建立空索引 `{"version": "1.0", "threads": {}}`
 - 格式見 Step 5.7
 
-兩個索引**獨立維護**，thread 索引純粹為了快速查詢 thread 關係，不影響單封信的儲存。若 `.threads.json` 損壞，可用 `/archive-mail-rebuild-threads` 從 md frontmatter 重建。
+兩個索引**獨立維護**,thread 索引純粹為了快速查詢 thread 關係,不影響單封信的儲存。若 `threads.json` 損壞,可用 `/archive-mail-rebuild-threads` 從 md frontmatter 重建。
 
-**讀取附件設定**（可選）：檢查 `.claude/emails.md` 是否有 `attachment_routing` YAML front matter 區塊。
+**讀取附件設定**(可選):檢查 `${CONFIG_FILE}` (`.claude/.mail/config.md`) 是否有 `attachment_routing` YAML front matter 區塊。
 若有，載入自訂規則（all-or-nothing 取代，不做 merge）。若無，使用以下內建預設：
 
 ```yaml
@@ -412,9 +452,9 @@ direction: received
 
 7. **累計計數**：記錄 `data_count` 和 `document_count`，供 Step 7 報告用。
 
-### Step 5.7: 維護 `.threads.json`（v2.6.0+）
+### Step 5.7: 維護 `threads.json`（v2.6.0+,路徑 v2.8.0+ 改 `${THREADS_FILE}`）
 
-每封新歸檔的 md 寫出後，同步更新 `.threads.json`：
+每封新歸檔的 md 寫出後,同步更新 `${THREADS_FILE}` (`.claude/.mail/state/archives/${SLUG}/threads.json`):
 
 **格式**：
 
@@ -461,7 +501,7 @@ direction: received
 
 ### Step 6: 更新 Message-ID 索引
 
-將新歸檔的郵件加入 `.email_index.json`：
+將新歸檔的郵件加入 `${INDEX_FILE}` (`.claude/.mail/state/archives/${SLUG}/email_index.json`):
 
 ```json
 {

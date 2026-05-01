@@ -1,7 +1,7 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.7.0",
-  "description": "Apple Mail MCP server — 44+ tools, NSQL-derived confirmation protocol (v2.7.0). v2.7.0: 加 3 skills + 2 rules + CLAUDE.md。archive-mail 4-phase confirmation 防 false positive。疊加 v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
+  "version": "2.8.0",
+  "description": "Apple Mail MCP server — 44+ tools, NSQL confirmation protocol + .claude/.mail/ namespace (v2.8.0)。v2.8.0: 學 IDD 的 .claude/.idd/ pattern 收斂 config+state,新增 /archive-mail-migrate。疊加 v2.7.0 NSQL confirmation、v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
   "author": {
     "name": "Che Cheng"
   },
@@ -9,14 +9,15 @@
   "keywords": [
     "apple-mail",
     "applescript",
-    "markdown",
     "archive",
-    "email",
-    "nsql",
-    "macos",
     "confirmation",
-    "threads",
+    "email",
+    "macos",
+    "markdown",
+    "mcp",
+    "namespace",
+    "nsql",
     "preview",
-    "mcp"
+    "threads"
   ]
 }

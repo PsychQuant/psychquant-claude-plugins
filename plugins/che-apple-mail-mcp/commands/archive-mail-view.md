@@ -35,11 +35,22 @@ Usage: /archive-mail-view <thread-key> [archive-dir]
 Try: /archive-mail-view "SE manuscript 10xx-2025"
 ```
 
-### Step 2: 載入索引
+### Step 2: 載入索引（v2.8.0+ 從 `.claude/.mail/state/archives/${SLUG}/`）
 
 ```bash
-[ -f "${archive_dir}/.threads.json" ] || {
-  echo "ERROR: ${archive_dir}/.threads.json not found."
+NAMESPACE_DIR=".claude/.mail"
+SLUG=$(echo "${archive_dir}" | tr '/' '-' | sed 's/^[-.]*//;s/[-.]*$//')
+THREADS_FILE="${NAMESPACE_DIR}/state/archives/${SLUG}/threads.json"
+
+# Auto-migrate from legacy(silent)
+if [ ! -f "${THREADS_FILE}" ] && [ -f "${archive_dir}/.threads.json" ]; then
+  mkdir -p "$(dirname "${THREADS_FILE}")"
+  mv "${archive_dir}/.threads.json" "${THREADS_FILE}"
+  echo "🔄 Migrated ${archive_dir}/.threads.json → ${THREADS_FILE}"
+fi
+
+[ -f "${THREADS_FILE}" ] || {
+  echo "ERROR: ${THREADS_FILE} not found (also no legacy ${archive_dir}/.threads.json)."
   echo "Run /archive-mail first to create the index, or /archive-mail-rebuild-threads to regenerate from existing md files."
   exit 1
 }
