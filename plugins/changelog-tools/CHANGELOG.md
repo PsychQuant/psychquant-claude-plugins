@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-02
+
+### Changed
+- `changelog-validate`: Relaxed the "description must start with `vX.Y.Z:`" check to "description must mention `vX.Y.Z` somewhere in first 400 chars" — PsychQuant convention leads descriptions with product tagline, not version prefix. Drift count drops from ~30 plugins to 0 with this change.
+- `changelog-validate`: Version header parser now accepts placeholder dates like `(date unknown — please fill in)` so init-output entries are still parsed; ISO-format check happens separately and reports placeholder as a violation user can fix later.
+- `changelog-init normalize`: Now also remaps common non-KAC section names (`### Changes` → `### Changed`, `### Migration` → `### Changed`, `### Bug Fixes` → `### Fixed`, etc.) and injects KAC preamble if missing. Three idempotent transforms in one pass: bracket headers + section remap + preamble.
+
+### Fixed
+- `issue-driven-dev` CHANGELOG.md hand-fixed two custom subsection names that don't auto-remap (`### 上下游責任分工` and `### Thesis` → `### Changed` with `<!-- (formerly: ...) -->` comment markers preserving original intent).
+
 ## [0.1.0] - 2026-05-02
 
 ### Added

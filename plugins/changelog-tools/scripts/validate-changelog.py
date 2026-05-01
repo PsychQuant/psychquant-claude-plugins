@@ -36,9 +36,10 @@ from typing import Optional
 # https://keepachangelog.com/en/1.1.0/
 KAC_SECTIONS = {"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"}
 
-# ## [1.2.3] - 2026-05-02   or   ## [Unreleased]
+# ## [1.2.3] - 2026-05-02   or   ## [Unreleased]   or   ## [1.2.3] - (date unknown — fill in)
+# Accept any non-empty trailer after `- `; ISO date check happens during validation pass.
 VERSION_HEADER_RE = re.compile(
-    r"^## \[(?P<version>Unreleased|\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\](?: - (?P<date>\d{4}-\d{2}-\d{2}))?\s*$"
+    r"^## \[(?P<version>Unreleased|\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\](?: - (?P<date>.+?))?\s*$"
 )
 SECTION_HEADER_RE = re.compile(r"^### (?P<name>\w+)\s*$")
 
@@ -260,19 +261,17 @@ def check_three_way_sync(
             f"version mismatch: CHANGELOG latest = [{cv}], marketplace.json version = {marketplace_version}"
         )
 
-    # Description should reference the latest version
-    expected_prefix = f"v{cv}"
-    if plugin_description and not plugin_description.lstrip().startswith(expected_prefix):
-        first_n = plugin_description[:60].replace("\n", " ")
+    # Description should mention the latest version somewhere (looser than "starts with")
+    # — PsychQuant-style descriptions often lead with product tagline, not version.
+    expected_token = f"v{cv}"
+    if plugin_description and expected_token not in plugin_description[:400]:
         drifts.append(
-            f"plugin.json description should start with '{expected_prefix}: ...', got '{first_n}...'"
+            f"plugin.json description does not mention '{expected_token}' in first 400 chars "
+            f"— marketplace consumers won't see what's new in this release"
         )
-    if marketplace_description and not marketplace_description.lstrip().startswith(
-        expected_prefix
-    ):
-        first_n = marketplace_description[:60].replace("\n", " ")
+    if marketplace_description and expected_token not in marketplace_description[:400]:
         drifts.append(
-            f"marketplace.json description should start with '{expected_prefix}: ...', got '{first_n}...'"
+            f"marketplace.json description does not mention '{expected_token}' in first 400 chars"
         )
 
     # plugin.json vs marketplace.json description prefix should match (first sync_chars chars)
