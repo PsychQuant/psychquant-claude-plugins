@@ -20,6 +20,48 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 
 ## 執行步驟
 
+### Step 0: Bootstrap Stage Task List(v2.9.0+ 鐵律,強制)
+
+**在動任何事之前**先用 `TaskCreate` 為這個 stage 建 stage-level todo list，確保每個 sub-step 都被追蹤。學 IDD `idd-implement` 的 enforcement pattern。
+
+```
+TaskCreate(subject="resolve_filter_and_paths",
+           description="Step 1 + 1.6: 解析 $ARGUMENTS → filter + output_dir. 計算 .claude/.mail/state/archives/{slug} 路徑。Auto-migrate legacy .email_index.json / .threads.json / .claude/emails.md。")
+
+TaskCreate(subject="phase1_disambiguation",
+           description="Step 1.5: 若 filter 模糊(中文人名「陳老師」/相對時間「最近」/通用 scope「全部」) → 列候選讓 user 選;明確 email/Message-ID/--no-confirm → skip。由 confirmation-protocol skill Phase 1 + email-search-disambiguation 處理。")
+
+TaskCreate(subject="load_indices_and_config",
+           description="Step 2: 從 ${INDEX_DIR}/ 讀 email_index.json + threads.json + ${CONFIG_FILE} 的 attachment_routing / subject_keywords / participant_aliases。")
+
+TaskCreate(subject="search_emails",
+           description="Step 3 + 3b + 3c + 3d: 對每個帳號跑 sender 搜尋 + subject_keywords 搜尋 + bare-subject thread expansion,三組結果 Message-ID 去重 → corpus。注意 account_name 必須用 display name 不可用 ews:// URL。")
+
+TaskCreate(subject="filter_and_scan_false_positives",
+           description="Step 4 + 強制 false-positive scan(rules/false-positive-detection.md): 過濾出 Message-ID 不在索引的 emails → 待歸檔清單。對每個 thread 跑 flag_thread() → 標 ✓/⚠/⚠⚠/❓。Sibling activity / CC pollution / subject collision 三種 pattern 必須 check。")
+
+TaskCreate(subject="phase2_3_preview_and_confirm",
+           description="Step 4.5: 若待歸檔 ≥ 5 封 OR 有 ⚠⚠ flag OR destructive op → Phase 2 preview (thread breakdown + flags) + Phase 3 operation confirmation (file count + attachment size)。等 user 確認(a)/排除(b)/改 filter(c)/取消(d)。User skip 條件見 confirmation-triggers.md。")
+
+TaskCreate(subject="fetch_and_write_markdown",
+           description="Step 5: 對每封新郵件 get_email(format='text', 用 display name) → YAML frontmatter (message_id/thread_key/in_reply_to/date/sender/direction) + body markdown，按檔名規則(YYYY-MM-DD_subject-hyphenated[-N].md, 截 50 graphemes) 寫到 ${output_dir}/。")
+
+TaskCreate(subject="download_and_classify_attachments",
+           description="Step 5.5: list_attachments → 用 classify() 分 data/document → save_attachment 到 data_dir / documents_dir/{email_stem}/。Markdown 插 Attachments: 區塊。回覆信無 byte 附件但引用原信附件 → cross-reference。")
+
+TaskCreate(subject="update_indices",
+           description="Step 5.7 + Step 6: 對每封新歸檔的信 append 到 ${THREADS_FILE} 的 thread_key entry (messages append, participants set, first/last_message, message_count)。把新 Message-ID + thread_key 加到 ${INDEX_FILE}。Append-only,不修改既有 entry。")
+
+TaskCreate(subject="report_and_audit",
+           description="Step 7 + 8: 輸出歸檔報告(新歸檔/跳過/thread 索引/附件分流)。執行 Coverage Audit (8a 附件完整性 + 8b thread 完整性 → search by bare_subject 比對 archived/total)。")
+```
+
+**完成每一步立即 `TaskUpdate → completed`。靜默完成 = 違規。**
+
+中途若發現要分更多 sub-tasks(例如 Phase 2 preview 需要分批,或 attachment 下載失敗需要 retry),用 `TaskCreate` 補加。
+
+**為什麼**:沒有 Stage TaskList 時,Claude 看 markdown spec 容易跳步驟(例如 false-positive scan 漏跑、Phase 2 preview 用「應該不需要」rationalize 掉)。Stage TaskList 把「跳過」變成顯眼的 incomplete task,user 在 UI 看得到。歷史上 2026-05-01 archive 陳老師信件就是因為沒跑 false-positive scan,265250 false positive 漏網,事後又花一輪 rm + index 修復。
+
 ### Step 1: 解析參數
 
 從 `$ARGUMENTS` 取得：

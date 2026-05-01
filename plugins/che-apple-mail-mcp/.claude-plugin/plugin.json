@@ -1,7 +1,7 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.8.0",
-  "description": "Apple Mail MCP server — 44+ tools, NSQL confirmation protocol + .claude/.mail/ namespace (v2.8.0)。v2.8.0: 學 IDD 的 .claude/.idd/ pattern 收斂 config+state,新增 /archive-mail-migrate。疊加 v2.7.0 NSQL confirmation、v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
+  "version": "2.9.0",
+  "description": "Apple Mail MCP server — 44+ tools, IDD-style task enforcement + NSQL confirmation + .claude/.mail/ namespace (v2.9.0)。v2.9.0: archive-mail 與 confirmation-protocol skill Step 0 強制 TaskCreate bootstrap,靜默 skip = 違規。疊加 v2.8.0 namespace、v2.7.0 NSQL confirmation、v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
   "author": {
     "name": "Che Cheng"
   },
