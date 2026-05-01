@@ -2,6 +2,28 @@
 
 **Word MCP Server** — Swift 原生 OOXML 操作，**233 個工具**，支援 Dual-Mode 存取 + preserve-by-default round-trip fidelity + programmatic Track Changes 生成 + `document.xml` lossless round-trip。
 
+當前版本：**v3.17.8**（Plugin shell + Binary 同步）— closes [PsychQuant/che-word-mcp#98](https://github.com/PsychQuant/che-word-mcp/issues/98)，`insert_equation` MCP handler 跨 3 commits 重構（`91506f8` v1 / `357cbe7` v2 / `339ab77` v3）。Pre-fix 三個 structural defects：(1) **silent-clamp** on out-of-range `paragraph_index`（handler 用 non-throwing `insertParagraph(_:at: Int)` overload，tool 回 success 但插錯位置）；(2) lib `#84`/`#91` 的 `InsertLocation` overload + `InsertLocationError.inlineModeRequiresParagraphIndex` / `.invalidParagraphIndex(Int)` structured errors **從未到達 MCP callers**（handler 自建 OMML 完全 bypass lib）；(3) inline mode（`display_mode: false`）總是建立 NEW `Paragraph(runs: [eqRun])` 而**不是** append OMML run 到既有段落。v1 嘗試委派 lib 但 Codex 6-AI verify 抓到 P1 regression：lib 的 overload 內部用 `@available(*, deprecated, ...)` `MathEquation` flat output（`Field.swift:301`）— `\frac{a}{b}` 被截斷成 `(a)/(b` AND 嵌套 `<w:p><w:p>` invalid OOXML。v2 unified handler — 兩條 path（`latex` + `components`）都用 `MathComponent.toOMML()` 建結構化 OMML；display mode 走 lib 的 throwing `insertParagraph(_:at: InsertLocation)`；inline mode handler-side append OMML run 到既有段落。v3 補回 `eqPara.properties.alignment = .center`（lib display-mode convention，Codex sanity check P2）。**BREAKING for inline mode callers**：pre-fix 插新段落 → post-fix append 到既有段落（matches lib `#84`/`#91` design）；migration 見下方 v3.17.8 區塊。7 NEW `Issue98InsertEquationLibBypassTests` 釘住 contract（5 RED→GREEN scenarios + 2 quality regression tests 含 `unzip -p document.xml` 驗 `<m:f>` 結構 + centering 存活 + deprecated `(a)/(b)` 不出現）。6-AI verify ensemble（5 Claude reviewers + Codex gpt-5.5 xhigh）抓到 v1 兩個 P1 regression；Codex sanity check 抓到 v2 centering P2。6 P2/P3 follow-ups filed [#105](https://github.com/PsychQuant/che-word-mcp/issues/105) [#106](https://github.com/PsychQuant/che-word-mcp/issues/106) [#107](https://github.com/PsychQuant/che-word-mcp/issues/107) [#108](https://github.com/PsychQuant/che-word-mcp/issues/108) [#109](https://github.com/PsychQuant/che-word-mcp/issues/109) [#110](https://github.com/PsychQuant/che-word-mcp/issues/110)。Tests: 236 → 243 passing, 0 failures, 9 pre-existing skips。Backward compatible **except inline-mode BREAKING (documented)**。
+
+**v3.17.8 BREAKING migration guide**
+
+```
+// Pre-fix（會插入 NEW paragraph at index 5）
+insert_equation(doc_id, latex: "x", display_mode: false, paragraph_index: 5)
+
+// Post-fix（append OMML run 到既有段落 5；matches lib #84/#91 design）
+insert_equation(doc_id, latex: "x", display_mode: false, paragraph_index: 5)
+
+// 若舊行為（要 NEW paragraph）：改用 display mode 或拆兩步
+insert_equation(doc_id, latex: "x", display_mode: true, paragraph_index: 5)   // 新段落 + 公式
+// 或
+insert_paragraph(doc_id, paragraph_index: 5)
+insert_equation(doc_id, latex: "x", display_mode: false, paragraph_index: 6)
+```
+
+Pre-fix 的 silent-clamp + 新段落行為是 **bug**，不是 backward-compat surface — v3.17.8 的 BREAKING 是修復結構錯誤。
+
+---
+
 當前版本：**v3.17.7**（Plugin shell + Binary 同步）— bump `ooxml-swift` dep 0.21.10 → 0.21.11，closes 5-issue cluster [#99](https://github.com/PsychQuant/che-word-mcp/issues/99) + [#100](https://github.com/PsychQuant/che-word-mcp/issues/100) + [#101](https://github.com/PsychQuant/che-word-mcp/issues/101) + [#102](https://github.com/PsychQuant/che-word-mcp/issues/102) + [#103](https://github.com/PsychQuant/che-word-mcp/issues/103). **Bilateral mirror coverage** for direct-child OMML at 4 wrapper positions（`<w:p>` direct child for Pandoc display math / `<w:hyperlink>` direct child / `<mc:Fallback>` direct child / nested wrapper combos）+ 2 NEW library-wide spec capabilities（`ooxml-paragraph-text-mirror` + `ooxml-library-design-principles`）。Pre-fix `Paragraph.flattenedDisplayText` AND `Document.replaceInParagraphSurfaces` 共享 symmetric blind spot：direct-child `<m:oMath>`/`<m:oMathPara>`（沒有 `<w:r>` wrapper）silently dropped → 對含 display math 的 paragraph anchor lookup silently 0-matched。讀側：`flattenedDisplayText` 走訪 4 wrapper positions 的 direct-child OMML，source XML position 排序。寫側：NEW 公開 API `WordDocument.replaceTextWithBoundaryDetection` 回 `ReplaceResult` enum（`.replaced(count:)` / `.refusedDueToOMMLBoundary(occurrences:)` / `.mixed(...)`），cross-OMML mutation 拒絕並回傳 informative `Occurrence(matchSpan:, ommlSpans:)`。Mirror invariant — **asymmetric by design**：reads include OMML visibleText（anchor lookup universe extends to math），writes treat OMML as opaque structural units（refuse cross-OMML mutation rather than silently delete equations）。Principle-driven（`ooxml-library-design-principles` spec）：**Correctness primacy** + **Human-like operations** as foundational normative invariants for all `ooxml-swift` mutators。Decision 4 raw passthrough preserved — round-trip fidelity unaffected。Tests: 236 passing che-word-mcp / 813→829 ooxml-swift (+16 in `Issue99FlattenReplaceOMMLBilateralTests`)。Backward compatible — strict superset of pre-fix behavior。
 
 **v3.17.7 bump `ooxml-swift` dep v0.21.10 → v0.21.11** — Bilateral mirror coverage for direct-child OMML（5-issue cluster #99-#103, Spectra change `flatten-replace-omml-bilateral-coverage`）。Pure transitive, no MCP source changes:
