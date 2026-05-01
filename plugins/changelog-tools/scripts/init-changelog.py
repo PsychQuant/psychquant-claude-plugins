@@ -259,13 +259,80 @@ def render_changelog(segments: list[ParsedSegment]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def normalize_changelog(text: str) -> str:
-    """Best-effort rewrite of em-dash format to KAC bracket format.
+# Common non-KAC section names → KAC equivalents (additive to bracket-header normalize)
+SECTION_REMAP = {
+    "Changes": "Changed",
+    "Change": "Changed",
+    "Migration": "Changed",
+    "Migrations": "Changed",
+    "Breaking": "Changed",  # KAC convention: BREAKING signaled inside Changed
+    "BREAKING": "Changed",
+    "Improvements": "Changed",
+    "Improvement": "Changed",
+    "Bug Fixes": "Fixed",
+    "Bug Fix": "Fixed",
+    "Bugfix": "Fixed",
+    "Bugfixes": "Fixed",
+    "New": "Added",
+    "Features": "Added",
+    "Feature": "Added",
+    "Enhancements": "Changed",
+    "Enhancement": "Changed",
+}
 
-    Only touches version headers; leaves body content (### Subsection etc.) alone.
+KAC_PREAMBLE_INJECT = """All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+"""
+
+
+def normalize_changelog(text: str) -> str:
+    """Best-effort rewrite of non-KAC format to KAC strict.
+
+    Three transforms (idempotent):
+      1. Version header brackets:   `## 2.37.0 — 2026-05-02` → `## [2.37.0] - 2026-05-02`
+      2. Section remap:             `### Changes` → `### Changed`, `### Migration` → `### Changed`
+                                    (NEW prefixes like `### NEW: foo` become `### Added` with
+                                    description retained as the next line — best-effort)
+      3. Preamble injection:        if missing 'Keep a Changelog' reference, insert standard
+                                    preamble after the `# Changelog` title.
     """
-    # Convert `## 2.37.0 — 2026-05-02` → `## [2.37.0] - 2026-05-02`
+    # 1. Version headers (em-dash → bracket)
     text = EM_DASH_HEADER_RE.sub(r"## [\g<version>] - \g<date>", text)
+
+    # 2. Section remap. Match `### <name>[: optional context]`
+    def remap_section(match: re.Match) -> str:
+        raw = match.group("raw")
+        # Strip "NEW: " etc. prefixes
+        cleaned = raw.strip()
+        # Try direct remap first
+        if cleaned in SECTION_REMAP:
+            return f"### {SECTION_REMAP[cleaned]}"
+        # Try first word
+        first = cleaned.split(":")[0].split()[0] if cleaned else ""
+        if first in SECTION_REMAP:
+            return f"### {SECTION_REMAP[first]}"
+        return match.group(0)  # unchanged
+
+    text = re.sub(
+        r"^### (?P<raw>[^\n]+?)\s*$",
+        remap_section,
+        text,
+        flags=re.MULTILINE,
+    )
+
+    # 3. Preamble injection
+    if "keep a changelog" not in text[:500].lower():
+        # Find the `# Changelog` line and insert preamble after it
+        m = re.match(r"^(# Changelog\s*\n+)", text)
+        if m:
+            text = m.group(1) + KAC_PREAMBLE_INJECT + text[m.end():]
+        else:
+            # No `# Changelog` title — prepend full preamble
+            text = "# Changelog\n\n" + KAC_PREAMBLE_INJECT + text
+
     return text
 
 
