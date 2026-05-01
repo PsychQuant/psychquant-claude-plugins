@@ -2,6 +2,12 @@
 
 Search 結果可能含有不符合 user 真正意圖的 emails(false positives),例如 subject keyword 撞名。Bulk operation preview 階段要 flag 這些並讓 user 排除。
 
+## Enforcement(v2.9.0+ 鐵律)
+
+False-positive scan **不是 optional best practice**,是 archive-mail Step 0 Bootstrap 必建的 task `filter_and_scan_false_positives`。任何 search 結果在進 Phase 2 preview 前都要跑這份 rule 的 `flag_thread()` 算法,並在 task description 裡記下「✓ N / ⚠ M / ⚠⚠ K / ❓ J」分布。沒跑就把這個 task 標 completed = 違規。
+
+實際後果(2026-05-01 incident):filter「陳老師 + 林助理 + subject 含『陳君厚』」搜尋出 19 封,265250 是 sibling activity (subject「應徵資料科學統計合作社…」,寄給 scchen 不是 cchen),false-positive scan 沒跑,事後才發現,又走一輪 rm + index 修復。如果 scan 是 enforced task,Phase 2 preview 會 ⚠⚠ flag 這封並讓 user 排除。
+
 ## 為什麼需要
 
 `mcp__plugin_che-apple-mail-mcp_mail__search_emails` 用 SQLite full-text 搜尋,query 可能 match 到:

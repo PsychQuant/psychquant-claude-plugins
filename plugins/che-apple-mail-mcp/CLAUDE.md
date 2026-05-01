@@ -1,6 +1,22 @@
 # che-apple-mail-mcp
 
-Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol。
+Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol + IDD-derived task enforcement。
+
+## 鐵律:Step 0 Bootstrap Stage Task List(v2.9.0+)
+
+**`/archive-mail` 與 `confirmation-protocol` skill 的第一個動作必須是 `TaskCreate`**,把該 stage 的所有 execution sub-steps 建成 harness-level todo list。完成每一步立即 `TaskUpdate → completed`。**靜默完成 = 違規**。
+
+學自 IDD plugin 的 enforcement pattern。為什麼:
+
+- v2.7.0 加 confirmation-protocol skill,v2.8.0 加 namespace migration,但 spec-level 的「應該 confirm / 應該掃 false positive」依賴 Claude 讀 markdown 後自願執行
+- 歷史 incident:2026-05-01 archive 陳老師信件,265250 false positive 漏網 → spec 有寫但被跳過
+- TaskCreate 把每個 phase 變成 UI 可見的 binary state,跳過會留下 incomplete task 顯眼
+
+兩處強制 bootstrap:
+- `commands/archive-mail.md` Step 0 → 10 個 stage tasks (resolve_filter_and_paths / phase1_disambiguation / load_indices_and_config / search_emails / filter_and_scan_false_positives / phase2_3_preview_and_confirm / fetch_and_write_markdown / download_and_classify_attachments / update_indices / report_and_audit)
+- `skills/confirmation-protocol/SKILL.md` → 4 個 phase tasks (disambiguation / search_preview / operation_confirmation / execute_or_iterate)
+
+可 skip 的 phase(明確 filter 跳 Phase 1)也要 `TaskUpdate completed` + 在 description append skip 原因,不可只是不做。
 
 ## Components
 
@@ -193,6 +209,7 @@ v2.8.0+ 的 `archive-mail` / `view` / `rebuild-threads` **每次跑都會 silent
 
 ## Version History
 
+- **v2.9.0**(2026-05-01)— **Task enforcement**:學 IDD 的 Step 0 Bootstrap Stage Task List 鐵律。`/archive-mail` 開工前強制 `TaskCreate` 10 個 stage tasks,`confirmation-protocol` skill 強制 4 個 phase tasks,完成立即 `TaskUpdate`,靜默 skip = 違規。把 v2.7.0 spec-level confirmation 升級到 enforce-level
 - **v2.8.0**(2026-05-01)— **`.claude/.mail/` namespace**:學 IDD 的 `.claude/.idd/` 收斂 config + state。新增 `/archive-mail-migrate`。archive-mail / view / rebuild-threads 都加 auto-migrate。Backward compatible:legacy paths 自動 detect 並搬遷
 - **v2.7.0**(2026-05-01)— **NSQL confirmation protocol**:加 3 skills + 2 rules + CLAUDE.md。archive-mail 預設套用 4-phase confirmation workflow。Backward compatible:精確 filter 仍可直接執行
 - v2.6.0 — archive-mail YAML frontmatter + .threads.json + view/rebuild commands

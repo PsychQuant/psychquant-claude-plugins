@@ -11,6 +11,28 @@ description: NSQL-derived confirmation workflow for email operations. Use this s
 
 借鑑自 nsql 的 Confirmation Protocol(`/Users/che/Developer/nsql`)。原始 nsql 設計給 SQL/data query;這裡 adapt 到 Apple Mail 操作。
 
+## Bootstrap(v2.9.0+ 鐵律,強制)
+
+被 trigger 時(filter 模糊 / bulk operation ≥ 5 / destructive / compose 寄出),**第一個動作就用 `TaskCreate`** 把要跑的 phases 建成 todo list:
+
+```
+TaskCreate(subject="confirm_phase1_disambiguation",
+           description="Filter 是否模糊?模糊 → 列候選 + AskUserQuestion 選定;明確 → 直接 mark completed。處理完 update。")
+
+TaskCreate(subject="confirm_phase2_search_preview",
+           description="Search 結果 ≥ 5 → bulk-operation-preview skill 跑 thread breakdown + false-positive flagging,展示 user;< 5 且無 ⚠⚠ → mark completed。")
+
+TaskCreate(subject="confirm_phase3_operation_confirmation",
+           description="展示 side-effect scope (N files written, K attachments, total bytes)。Destructive 加 ⚠ 警告。User AskUserQuestion 答覆(a)確認 (b)排除 false positive (c)改 filter (d)取消。")
+
+TaskCreate(subject="confirm_phase4_execute_or_iterate",
+           description="按 user 答覆執行 / 回 Phase 1-3 / abort。Abort 時要明確告訴 user『未做任何 side effect』。")
+```
+
+**完成每一個 phase 立即 `TaskUpdate → completed`。靜默 skip = 違規**。即使該 phase 是「可 skip」(明確 filter 跳 Phase 1),也要 `TaskUpdate completed` + 註明 skip 原因(在 description 裡 append),不可只是不做。
+
+**為什麼**:沒 task tracking 時,Claude 容易把 Phase 2 preview 用「應該還好吧」rationalize 掉,直接寫檔。Task 標 incomplete 在 UI 看得見,user 知道有東西被跳。
+
 ## 何時觸發
 
 | 觸發條件 | 範例 | 嚴重度 |
