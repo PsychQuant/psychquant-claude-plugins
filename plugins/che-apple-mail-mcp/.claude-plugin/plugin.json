@@ -1,8 +1,22 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.6.0",
-  "description": "Apple Mail MCP server — 44 tools, SQLite 毫秒搜尋, .emlx 解析, 批次操作. v2.6.0: archive-mail 加 YAML frontmatter + .threads.json thread 關係索引，新增 /archive-mail-view 和 /archive-mail-rebuild-threads 兩個 skill. 疊加 v2.5.0 composing tools format 參數 + v2.4.0 搜尋擴展 + Coverage Audit.",
-  "author": { "name": "Che Cheng" },
+  "version": "2.7.0",
+  "description": "Apple Mail MCP server — 44+ tools, NSQL-derived confirmation protocol (v2.7.0). v2.7.0: 加 3 skills + 2 rules + CLAUDE.md。archive-mail 4-phase confirmation 防 false positive。疊加 v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
+  "author": {
+    "name": "Che Cheng"
+  },
   "license": "MIT",
-  "keywords": ["mcp", "apple-mail", "email", "archive", "markdown", "applescript", "macos", "threads"]
+  "keywords": [
+    "apple-mail",
+    "applescript",
+    "markdown",
+    "archive",
+    "email",
+    "nsql",
+    "macos",
+    "confirmation",
+    "threads",
+    "preview",
+    "mcp"
+  ]
 }
