@@ -2,6 +2,20 @@
 
 個人 Claude Code Plugin Marketplace，專注於學術研究與生產力工具。
 
+> ## 📦 IDD has moved
+>
+> **`issue-driven-dev` 從本 marketplace 搬到 [`PsychQuant/issue-driven-development`](https://github.com/PsychQuant/issue-driven-development) 自立門戶（自 2026-05-02）。**
+>
+> 既有 install 需重新指 source：
+>
+> ```bash
+> claude plugin uninstall issue-driven-dev@psychquant-claude-plugins
+> claude plugin marketplace add PsychQuant/issue-driven-development
+> claude plugin install issue-driven-dev@issue-driven-development
+> ```
+>
+> 設定（`.claude/issue-driven-dev.local.json`、`.claude/.idd/`）在 project repo 裡，不用搬。
+
 ## 安裝
 
 ```bash
