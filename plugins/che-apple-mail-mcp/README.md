@@ -134,6 +134,12 @@ https://github.com/kiki830621/che-apple-mail-mcp
 
 ## Version History
 
+- **v2.10.0 shell + binary v2.4.0**（2026-05-02）— **Reply-as-draft mode** ([issue #33](https://github.com/PsychQuant/che-apple-mail-mcp/issues/33))。`reply_email` 新增 3 個 optional params：
+  - `cc_additional: string[]` — 在 `reply_all` 算出的 CC 之外再加 recipient
+  - `attachments: string[]` — POSIX 絕對路徑檔案附件
+  - `save_as_draft: boolean` — 存草稿不寄出（預設 false 保 backward compat）
+
+  Unblocks 工作流：reply 一個既存 thread + 加 CC + 附 PDF + 存草稿等手動審。AppleScript native `reply` verb returns `outgoing message`，後續 `save` vs `send` 條件式分流。Backward compatible — 既有 callers 不變。
 - **v2.9.0**（2026-05-01）— **Task enforcement**：學 IDD 的 Step 0 Bootstrap Stage Task List 鐵律。`/archive-mail` 強制 `TaskCreate` 10 個 stage tasks，`confirmation-protocol` skill 強制 4 個 phase tasks，靜默 skip = 違規。把 v2.7.0 spec-level confirmation 升級到 enforce-level
 - **v2.8.0**（2026-05-01）— **`.claude/.mail/` namespace**：學 IDD 的 `.claude/.idd/` pattern 收斂 config + state。新增 `/archive-mail-migrate`。archive-mail / view / rebuild-threads 都加 auto-migrate。Backward compatible
 - **v2.7.0**（2026-05-01）— **NSQL confirmation protocol**：加 3 skills（confirmation-protocol / email-search-disambiguation / bulk-operation-preview）+ 2 rules + CLAUDE.md。archive-mail 預設套用 4-phase confirmation workflow。Backward compatible
