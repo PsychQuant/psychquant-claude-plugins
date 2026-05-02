@@ -1,7 +1,7 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.10.2",
-  "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.10.2, binary v2.5.0)。Shell v2.10.2: 通知 binary v2.5.0 修正 reply_email plain mode 終於把 quoted original 嵌入 draft body (issue #43)。RFC 3676 `> ` prefix + CRLF normalization + 空行 stuffing + pre-fetch graceful degrade。疊加 v2.4.1 save_as_draft 不彈視窗、v2.4.0 reply-as-draft、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
+  "version": "2.10.3",
+  "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.10.3, binary v2.6.0)。Shell v2.10.3: 通知 binary v2.6.0 — 16 issues 一輪 marathon (8 PRs)。安全強化:id 注入防護 (#50)、附件路徑 deny-list (#38)、email 地址驗證 (#41)、type-strict handler params (#35)、新 SECURITY.md。Bug fix:forward_email plain mode 也終於嵌入 quoted original (#44)。Quality:cc_additional dedup、schema test 強化、indent cleanup。Tests:gated integration tests for reply runtime。新 env var MAIL_MCP_ATTACHMENT_ROOTS。疊加 v2.5.0 reply quote、v2.4.0 reply-as-draft、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
   "author": {
     "name": "Che Cheng"
   },
