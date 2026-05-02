@@ -40,8 +40,8 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "2.9.0",
-      "description": "Apple Mail MCP server — 44+ tools, IDD-style task enforcement + NSQL confirmation + .claude/.mail/ namespace (v2.9.0)。v2.9.0: archive-mail 與 confirmation-protocol skill Step 0 強制 TaskCreate bootstrap,靜默 skip = 違規。疊加 v2.8.0 namespace、v2.7.0 NSQL confirmation、v2.6.0 thread index、v2.5.0 composing format、v2.4.0 搜尋擴展。",
+      "version": "2.10.0",
+      "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.10.0, binary v2.4.0)。Shell v2.10.0: 通知 binary v2.4.0 新增 reply_email 的 cc_additional / attachments / save_as_draft optional params (issue #33),unblocks reply-to-thread 加 CC 加附件存草稿 workflow。疊加 v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation、v2.6.0 thread index。",
       "author": {
         "name": "Che Cheng"
       },
