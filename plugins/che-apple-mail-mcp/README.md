@@ -134,6 +134,8 @@ https://github.com/kiki830621/che-apple-mail-mcp
 
 ## Version History
 
+- **v2.10.2 shell + binary v2.5.0**（2026-05-03）— **Reply quoted-original fix** ([issue #43](https://github.com/PsychQuant/che-apple-mail-mcp/issues/43))。`reply_email` plain mode 終於把 quoted original 嵌入 draft body — 自 `b8a4a89`（initial release）以來每次 plain reply 都靜默 drop 掉 quoted original，因為 AppleScript `& content` 對 freshly-created outgoing message 讀為空。改用 Swift-side `composeReplyPlainText` helper 預先 fetch + RFC 3676 `> ` prefix 組合 quoted body。Round-1 hardening 涵蓋 CRLF/CR normalization、trailing newline trim、空行 stuffing（`>` 不含 trailing space）、pre-fetch 失敗 graceful degrade。**Wire-output 行為改變**：plain reply body 從 `<user reply>` 變成 `<user reply>\n\n> <quoted lines>`。HTML branch 不變（原本就走對的 architecture）。234 tests pass。Follow-ups #44–#50 已開。
+- **v2.10.1 shell + binary v2.4.1**（2026-05-02）— **Save-as-draft popup + path validation fix** ([issue #33 verify findings A+B](https://github.com/PsychQuant/che-apple-mail-mcp/issues/33))。`reply_email` `save_as_draft=true` 不再彈出 Mail.app 視窗（windowClause 改成條件式 with/without opening window），`replyEmail` 加 `validateFilePaths` 鏡像 composeEmail / createDraft 行為。
 - **v2.10.0 shell + binary v2.4.0**（2026-05-02）— **Reply-as-draft mode** ([issue #33](https://github.com/PsychQuant/che-apple-mail-mcp/issues/33))。`reply_email` 新增 3 個 optional params：
   - `cc_additional: string[]` — 在 `reply_all` 算出的 CC 之外再加 recipient
   - `attachments: string[]` — POSIX 絕對路徑檔案附件
