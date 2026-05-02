@@ -40,8 +40,8 @@
     },
     {
       "name": "che-apple-mail-mcp",
-      "version": "2.10.0",
-      "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.10.0, binary v2.4.0)。Shell v2.10.0: 通知 binary v2.4.0 新增 reply_email 的 cc_additional / attachments / save_as_draft optional params (issue #33),unblocks reply-to-thread 加 CC 加附件存草稿 workflow。疊加 v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation、v2.6.0 thread index。",
+      "version": "2.10.1",
+      "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.10.1, binary v2.4.1)。Shell v2.10.1: 通知 binary v2.4.1 修正 reply_email save_as_draft=true 不再彈出 Mail.app 視窗 + replyEmail 加 validateFilePaths (verify findings A+B)。疊加 v2.4.0 reply-as-draft、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
       "author": {
         "name": "Che Cheng"
       },
