@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "mcp-tools",
-      "version": "1.15.1",
-      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-issue",
+      "version": "1.16.0",
+      "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-sign-pipeline（macOS 26 簽章）、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-issue",
       "author": {
         "name": "Che Cheng"
       },
@@ -330,8 +330,8 @@
     },
     {
       "name": "cli-tools",
-      "version": "1.1.1",
-      "description": "CLI tool lifecycle management — build, deploy, install, upgrade Swift CLI tools via GitHub Releases",
+      "version": "1.1.2",
+      "description": "CLI tool lifecycle management — build, deploy, install, upgrade Swift CLI tools via GitHub Releases (macOS 26 signing via mcp-tools:mcp-sign-pipeline)",
       "author": {
         "name": "Che Cheng"
       },

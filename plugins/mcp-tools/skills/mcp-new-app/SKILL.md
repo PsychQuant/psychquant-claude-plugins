@@ -640,8 +640,13 @@ SOFTWARE.
    - Swift: `swift build`
    - Python: `pip install -e .`
    - TypeScript: `npm install && npm run build`
-3. **部署**：使用 `/mcp-tools:mcp-deploy`
+3. **若 MCP 會用到 macOS 隱私 API**（EventKit / AppleEvents / Photos / Mic / Camera / Full Disk Access）→ **裝簽章 pipeline**：使用 `/mcp-tools:mcp-sign-pipeline`
+   - macOS 26 的 TCC 不再對 ad-hoc 簽章的 binary 開放 permission dialog；若要 outside-MAS distribution 必須走 Developer ID + hardened runtime + notarization
+   - 此 skill 會自動把 `scripts/sign-and-notarize.sh` + `Makefile release-signed` + `Sources/<Target>/Entitlements.plist` + README + CHANGELOG 補進你新建的 MCP
+   - 純檔案 I/O / HTTP / 字串處理 MCP 不需要（簽章只影響 Gatekeeper warning，不影響功能）
+4. **部署**：使用 `/mcp-tools:mcp-deploy`
    - 會自動編譯、打包 .mcpb、發布到 GitHub Release
+   - 若已裝 sign-pipeline，可用 `make release-signed` 跑 signed release（macOS 26 必要）
 ```
 
 ---

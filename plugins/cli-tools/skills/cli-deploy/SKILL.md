@@ -193,6 +193,23 @@ lipo -create \
 xattr -cr .release/$BINARY_NAME
 
 # 重新簽名（lipo 破壞原始 code signature）
+#
+# 注意：這是 ad-hoc 簽名（`-` = 無 identity），**僅 macOS ≤ 25 dev path**。
+# macOS 26 上 ad-hoc binary 無法觸發 TCC dialog；對外分發需走 Developer ID + notarization。
+#
+# **若 CLI 走 macOS 26 production path**：
+#   1. 確認專案已裝簽章 pipeline（`scripts/sign-and-notarize.sh` 存在?）
+#   2. 沒裝 → 提示使用者跑 `/mcp-tools:mcp-sign-pipeline`（CLI 同樣適用）
+#   3. 已裝 + `DEVELOPER_ID` 已 export → 改呼叫 `./scripts/sign-and-notarize.sh .release/$BINARY_NAME`
+#
+# 偵測邏輯建議：
+#   if [ -f "scripts/sign-and-notarize.sh" ] && [ -n "$DEVELOPER_ID" ]; then
+#       ./scripts/sign-and-notarize.sh .release/$BINARY_NAME
+#   else
+#       codesign --force --sign - .release/$BINARY_NAME  # ad-hoc fallback
+#       echo "⚠ ad-hoc signed; macOS 26 users may see Gatekeeper warning"
+#       echo "  Install signing pipeline: /mcp-tools:mcp-sign-pipeline"
+#   fi
 codesign --force --sign - .release/$BINARY_NAME
 ```
 
