@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.19.0] - 2026-05-04
+
+### Fixed — `find_inline_math_gaps` caption detection ([#136](https://github.com/PsychQuant/che-word-mcp/issues/136))
+
+Two-layer detection. **Layer 1**: `Paragraph.style?.lowercased().contains("caption")` — Word's canonical OOXML signal. **Layer 2**: 7 English prefixes (Table / Figure / Tab. / Fig. / Listing) + 9 CJK prefixes (incl. U+3000 ideographic space) + CJK no-separator regex `^[表圖图]\d` + label-only `表格`/`图表`. Digit-after-prefix guard rejects body sentences like "Table reservations are required...". `isLikelyTableCaption(_:)` signature changed `String → Paragraph`; private → internal for `@testable`. PR [#157](https://github.com/PsychQuant/che-word-mcp/pull/157), 17 new tests.
+
+### Fixed — `estimate_paragraph_for_page` structural weights v2 ([#142](https://github.com/PsychQuant/che-word-mcp/issues/142))
+
+Walker upgrade: `getParagraphs()` → `collectStructuralBlocks()` returning `[StructuralBlock]` enum (`.paragraph` / `.table` / `.imageOnlyParagraph(drawingCount:)` / `.displayEquationParagraph`). Per-block weights (12pt thesis calibration): table = `tableRows × avgCellChars` (200/row fallback), image = +200 chars/drawing, display eq = 120 chars. New `structural_breakdown` field with 9 sub-fields. `method` field bumped `char_count_heuristic` → `char_count_heuristic_v2`. ~95× thesis figure-counting accuracy improvement. PR [#158](https://github.com/PsychQuant/che-word-mcp/pull/158), 6 new tests + #89 backward-compat (text-only fixtures unchanged).
+
+### Backward compat preserved
+
+- `getParagraphs()` UNCHANGED — 30+ other callers unaffected
+- `paragraph_count` semantics: body-paragraph blocks only (paragraph_index math invariant preserved)
+- `chars_per_page` override path UNCHANGED
+- Existing #89 / #94 tests pass; only `Issue89...Tests:29` `method` literal updated to `_v2`
+
+### Verified
+
+- `swift build`: clean (only pre-existing deprecation warnings)
+- `swift test`: 289 pass, 9 pre-existing skips, 0 failures
+- 1 P3 follow-up filed: [#159](https://github.com/PsychQuant/che-word-mcp/issues/159) (display-eq fixture limitation, non-blocking)
+
 ## [3.17.8] - 2026-05-01
 
 ### Changed
