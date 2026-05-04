@@ -158,5 +158,10 @@ swift build
 下一步：
 1. 加入你的 subcommands
 2. `swift build` 測試
-3. `/cli-tools:cli-deploy` 發布
+3. （macOS 26 + 公開分發）裝簽章 pipeline：`/mcp-tools:mcp-sign-pipeline`
+   - macOS 26 對 ad-hoc binary 收緊；若要對外分發給其他 macOS 26 使用者，必須走 Developer ID + hardened runtime + notarization
+   - 純自用 / dev-only CLI 不需要（ad-hoc 仍能跑，只會 Gatekeeper warning）
+   - 此 skill 在 mcp-tools plugin 內但對 Swift CLI 同樣適用
+4. `/cli-tools:cli-deploy` 發布
+   - 若已裝 sign-pipeline，可跑 `make release-signed` 產出 signed binary
 ```

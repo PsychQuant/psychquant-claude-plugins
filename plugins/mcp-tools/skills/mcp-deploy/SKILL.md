@@ -115,6 +115,25 @@ lipo -create \
 xattr -cr mcpb/server/$BINARY_NAME
 
 # 重新簽名（lipo 會破壞原始 code signature，未簽名會被 macOS SIGKILL）
+#
+# 注意：這裡是 ad-hoc 簽名（`-` 表示無 identity），**僅適用 macOS ≤ 25 dev/test**。
+# macOS 26 上 ad-hoc binary 無法觸發 Calendar / Reminders / AppleEvents 等 TCC dialog；
+# 若 MCP 會打到隱私 API，必須走 Developer ID 簽章 + notarization。
+#
+# **若你的 MCP 走 macOS 26 production path**：
+#   1. 確認專案已裝簽章 pipeline（`scripts/sign-and-notarize.sh` 存在?）
+#   2. 沒裝 → 提示使用者跑 `/mcp-tools:mcp-sign-pipeline` 補裝（一次性 setup）
+#   3. 已裝 → 改成呼叫 `./scripts/sign-and-notarize.sh mcpb/server/$BINARY_NAME`
+#      (要求 `DEVELOPER_ID` + `NOTARY_PROFILE` env vars 已設)
+#
+# 偵測邏輯建議：
+#   if [ -f "scripts/sign-and-notarize.sh" ] && [ -n "$DEVELOPER_ID" ]; then
+#       ./scripts/sign-and-notarize.sh mcpb/server/$BINARY_NAME
+#   else
+#       codesign --force --sign - mcpb/server/$BINARY_NAME  # ad-hoc fallback
+#       echo "⚠ ad-hoc signed; macOS 26 users will hit TCC blockage"
+#       echo "  Install signing pipeline: /mcp-tools:mcp-sign-pipeline"
+#   fi
 codesign --force --sign - mcpb/server/$BINARY_NAME
 ```
 
