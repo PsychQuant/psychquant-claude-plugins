@@ -11,6 +11,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.20.0] - 2026-05-04
+
+### Added
+
+- **Cross-document OMath splice MCP tools** ([#160](https://github.com/PsychQuant/che-word-mcp/issues/160)) — two new MCP tools wrapping [PsychQuant/ooxml-swift v0.24.0's `spliceOMath` API](https://github.com/PsychQuant/ooxml-swift/issues/57):
+  - `splice_omath_from_source` — single-OMath low-level splice between two documents. Source via `source_path` (Direct mode read-only) or `source_doc_id` (Session); target requires session-mode `doc_id`. Position via `atStart` / `atEnd` / `afterText` / `beforeText` with optional `anchor` + `instance`. `omath_index` 0-based, joint document-order across both source carriers. `rpr_mode`: `full` (default verbatim) / `omathOnly` (whitelist rFonts/sz/lang/bold/italic) / `discard` (empty). `namespace_policy`: `lenient` (default — accepts `mml:` vs `m:` prefix mismatch with same URI per ECMA-376) / `strict` (any mismatch throws).
+  - `splice_paragraph_omath_from_source` — paragraph-level batch convenience. Splices all OMath blocks from source paragraph in source-document order via auto-derived ~10-char context anchors. Returns count or `contextAnchorNotFound(omath_index, snippet)` with partial-success state.
+
+### Changed
+
+- Bumps `ooxml-swift` dep `0.21.0` → `0.24.0` (required for `spliceOMath` API).
+
+### Tests
+
+- `Issue160SpliceOMathFromSourceTests` — 8 cases covering Direct/Session source modes, atEnd / afterText positions, error taxonomy, batch mode, rPr discard.
+- Full suite: 297 tests, 0 failures, 9 pre-existing skips.
+
+### Use case
+
+Unblocks [kiki830621/collaboration_guo_analysis#17](https://github.com/kiki830621/collaboration_guo_analysis/issues/17) Phase 7 inline-math restoration — 522 inline OMath blocks restored from `_raw.docx` into `碩士論文-rescue-swift-v317.docx` (95.5% paragraph coverage in first pass; 100% after suffix-anchor fallback in [collaboration_guo_analysis@43465a6](https://github.com/kiki830621/collaboration_guo_analysis/commit/43465a6)).
+
 ## [3.19.0] - 2026-05-04
 
 ### Fixed — `find_inline_math_gaps` caption detection ([#136](https://github.com/PsychQuant/che-word-mcp/issues/136))
