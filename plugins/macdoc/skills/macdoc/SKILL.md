@@ -166,9 +166,86 @@ macdoc ocr document.pdf --model qwen3-vl
 
 ### 已知問題
 
-- **MLX backend crash**：mlx-swift-lm 有 upstream bug（ml-explore/mlx-swift-lm#191），所有 VLM 模型都會 crash。暫時只能用 Ollama。
-- **SSH tunnel 長時間會斷**：連線超過 2-3 小時會 timeout。解法是分段 OCR（`--pages`）或用 `caffeinate -i`。
-- **大頁面**：超過 8000px 的頁面會被自動縮小。
+- **MLX backend crash**:mlx-swift-lm 有 upstream bug(ml-explore/mlx-swift-lm#191),所有 VLM 模型都會 crash。暫時只能用 Ollama。
+- **SSH tunnel 長時間會斷**:連線超過 2-3 小時會 timeout。解法是分段 OCR(`--pages`)或用 `caffeinate -i`。
+- **大頁面**:超過 8000px 的頁面會被自動縮小。
+
+### 批次與並行(77 PDF 轉學考實戰累積)
+
+當要 OCR 數十張 PDF 或數百頁時,單檔順序跑會花太久。下面是實戰整理出來的 pattern。
+
+#### 為什麼先拆 PNG 再 OCR
+
+直接 `macdoc ocr file.pdf` 在某些 PDF 上會漏頁首 — 模型內部的 PDF→image 路徑可能用低解析度。改成預先用 `pdftoppm` 拆 PNG 再逐頁 OCR,單頁可控、可平行、漏頁可重跑。
+
+```bash
+# Step 1: 拆 PNG (200 DPI 對手寫/印刷都夠)
+mkdir -p out
+pdftoppm -r 200 -png file.pdf out/page
+
+# Step 2: 逐 PNG OCR (見下面 xargs -P pattern)
+
+# Step 3: 合併
+cat out/page-*.md > full.md
+```
+
+#### Ollama 並發環境變數
+
+跑遠端 Ollama(SSH tunnel 連 Kyle 等)時這幾個變數顯著影響吞吐:
+
+| 變數 | 建議 | 說明 |
+|------|------|------|
+| `OLLAMA_NUM_PARALLEL` | 4~8 | 同 model 並發請求數;太高會 OOM |
+| `OLLAMA_MAX_LOADED_MODELS` | 1 | 單 model 任務維持 1,避免 thrash |
+| `OLLAMA_FLASH_ATTENTION` | 1 | Apple Silicon Metal 後端免費加速 |
+
+設定方式:在 Ollama server 端的 `~/Library/LaunchAgents/com.ollama.server.plist` 加 `EnvironmentVariables`,或啟動前 `export`,然後 `ollama serve`。
+
+#### `xargs -P` 並行 pattern
+
+```bash
+# N=4 並行 (對應 OLLAMA_NUM_PARALLEL=4)
+find out -name "page-*.png" | xargs -P 4 -I{} \
+  macdoc ocr {} --output "{}.md" --host kyle --model glm-ocr
+
+# 失敗重試 (找出無 .md 的 png 重跑)
+find out -name "page-*.png" | while read png; do
+  [ -f "${png}.md" ] || echo "$png"
+done | xargs -P 2 -I{} macdoc ocr {} --output "{}.md" --host kyle
+```
+
+#### SSH tunnel 維持
+
+長時間批次 OCR(>2 小時)tunnel 會斷。三種策略:
+
+```bash
+# (a) 簡易 — 跑前重建 tunnel,搭配 caffeinate 防 mac sleep
+ssh -fN -L 11435:localhost:11434 kyle
+caffeinate -i -- xargs -P 4 ... < pages.txt
+
+# (b) autossh — 自動重連
+brew install autossh
+autossh -fN -M 0 -L 11435:localhost:11434 kyle
+
+# (c) Health check loop — 中途斷 tunnel 自動重建
+while true; do
+  curl -s --max-time 5 http://localhost:11435/api/tags >/dev/null \
+    || ssh -fN -L 11435:localhost:11434 kyle
+  sleep 60
+done &
+```
+
+實戰建議:走 (b) autossh + `caffeinate -i`,踩坑成本最低。
+
+#### 與 CLI `--parallel` 的整合(roadmap)
+
+`PsychQuant/macdoc#73` 追蹤把 `--parallel N` 整合進 macdoc CLI(內建 `xargs -P` 邏輯 + 失敗重試 + tunnel health check)。CLI 落地後上面那段 pattern 會被取代成:
+
+```bash
+macdoc ocr-batch out/*.png --parallel 4 --host kyle  # roadmap, 尚未實作
+```
+
+在那之前,沿用 `xargs -P` 即可。另一個正在被討論的方向是新建 `batch-ocr` plugin 把 PDF→PNG→OCR→merge 整個 pipeline 包成 single command,見 PsychQuant/psychquant-claude-plugins#6。
 
 ---
 
