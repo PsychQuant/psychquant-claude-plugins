@@ -1,6 +1,6 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.12.0",
+  "version": "2.13.0",
   "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.11.0, binary v2.7.0)。Shell v2.11.0: 通知 binary v2.7.0 — multi-attachment race fix (#60)。Bug fix:compose_email / create_draft / reply_email 多附件不再靜默掉檔——AppleScript race 修正,attachmentFragment 在連續 make new attachment 之間插入 delay 0.3 + 結尾 delay 0.5,N>=2 的 latency floor (N-1)*0.3+0.5 秒;N=1 不變。新增 1 個 gated integration smoke test (test_createDraft_threeAttachments_allLand_issue60),驗證 3 附件實際進 draft。後續追蹤 #61-#64。疊加 v2.6.0 marathon (8 PRs)、v2.5.0 reply quote、v2.4.0 reply-as-draft、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
   "author": {
     "name": "Che Cheng"
