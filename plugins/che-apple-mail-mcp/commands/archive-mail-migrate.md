@@ -28,7 +28,7 @@ v2.8.0+ 集中後:
 ```
 {cwd}/
 ├── .claude/.mail/
-│   ├── config.md                  ← 從 .claude/emails.md 搬來
+│   ├── config.yaml                ← 從 .claude/emails.md 搬來(v2.7.0 ↓);v2.16.0+ 副檔名 .yaml
 │   └── state/
 │       └── archives/
 │           └── communications-emails/
@@ -91,7 +91,7 @@ Detected legacy archive targets:
 3. (etc.)
 
 Plus:
-  ./.claude/emails.md → .claude/.mail/config.md
+  ./.claude/emails.md → .claude/.mail/config.yaml
 ```
 
 ### Step 3: 確認 plan(若非 --dry-run)
@@ -106,7 +106,7 @@ Plus:
   2. ./communications/emails/.threads.json
      → ./.claude/.mail/state/archives/communications-emails/threads.json
   3. ./.claude/emails.md
-     → ./.claude/.mail/config.md
+     → ./.claude/.mail/config.yaml
   ...
 
 ⚠ 此操作會移動(不是複製)既有檔案。Archive markdown(.md)和 attachments 不動。
@@ -138,12 +138,21 @@ for bak in "${archive_dir}"/.threads.json.bak.*; do
 done
 ```
 
-對 config:
+對 config(v2.16.0+ #47:`.yaml` first-class,`.md` 視為 legacy):
 
 ```bash
-if [ -f ".claude/emails.md" ] && [ ! -f "${NAMESPACE_DIR}/config.md" ]; then
-  mkdir -p "${NAMESPACE_DIR}"
-  mv ".claude/emails.md" "${NAMESPACE_DIR}/config.md"
+mkdir -p "${NAMESPACE_DIR}"
+
+# Step A: legacy .claude/emails.md (v2.7.0 ↓) → namespace .yaml
+if [ -f ".claude/emails.md" ] && [ ! -f "${NAMESPACE_DIR}/config.yaml" ] && [ ! -f "${NAMESPACE_DIR}/config.md" ]; then
+  mv ".claude/emails.md" "${NAMESPACE_DIR}/config.yaml"
+  echo "✓ .claude/emails.md → ${NAMESPACE_DIR}/config.yaml"
+fi
+
+# Step B: namespace .md (v2.8.0–v2.15.0) → .yaml (v2.16.0+ #47)
+if [ -f "${NAMESPACE_DIR}/config.md" ] && [ ! -f "${NAMESPACE_DIR}/config.yaml" ]; then
+  mv "${NAMESPACE_DIR}/config.md" "${NAMESPACE_DIR}/config.yaml"
+  echo "✓ ${NAMESPACE_DIR}/config.md → ${NAMESPACE_DIR}/config.yaml"
 fi
 ```
 
@@ -171,7 +180,8 @@ Archive Mail — Namespace Migration
 Migrated:
   ✓ communications/emails/.email_index.json → .claude/.mail/state/archives/communications-emails/email_index.json (18 entries)
   ✓ communications/emails/.threads.json → .claude/.mail/state/archives/communications-emails/threads.json (6 threads)
-  ✓ .claude/emails.md → .claude/.mail/config.md
+  ✓ .claude/emails.md → .claude/.mail/config.yaml
+  ✓ .claude/.mail/config.md → .claude/.mail/config.yaml (v2.16.0+ schema rename, #47)
 
 Total: 3 files moved.
 

@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.16.0] - 2026-05-07
+
+### Changed
+- **Config schema rename `.md` → `.yaml` (#47)**:`.claude/.mail/config.md` (v2.8.0–v2.15.0) 改名 `.claude/.mail/config.yaml`。原因:副檔名語意 ↔ 實際內容(YAML)一致;IDE 接 yaml-lsp;新 user 不被 `.md` 暗示「要寫 markdown body」誤導。
+- 三處 mental model(spec / README / awk parser)統一稱「YAML config」,排除 「frontmatter」說法(parser 對 `---` boundary 自然 tolerant,因 `^---$` 不 match `^[a-z_]+:`)。
+
+### Added
+- **Auto-migrate `.md` → `.yaml`** in `archive-mail.md` Step 1.6 + `archive-mail-migrate` command。Silent rename,user 不需動手。順序:legacy `.claude/emails.md` (v2.7.0 ↓) → `.yaml`;then `.claude/.mail/config.md` (v2.8.0–v2.15.0) → `.yaml`。
+- archive-mail.md `argument-hint` frontmatter + 使用方式 section 更新 path 引用。
+- CLAUDE.md schema 段標題 `.claude/.mail/config.yaml Schema (v2.16.0+ #47)` + 路徑遷移說明。
+- README archive-mail 段加 v2.16.0 highlight + File Layout `.yaml` 標示。
+
+### Deprecated
+- `.claude/.mail/config.md`:仍 work 為 fallback(parser 對舊檔自動相容),**v3.0 移除**。期間文件示範一律用 `.yaml`。
+
+### Notes
+- Plugin minor bump 2.15.0 → 2.16.0(new feature surface,backward compat;default behavior 對既有 `.md` user 透過 silent migration 不 break)。
+- User decision (#issuecomment-4395581948):走 YAML 路線;選 Option C 漸進過渡(雙支援期 + v3.0 強制 `.yaml`)而非 Option A 立即 break。
+
 ## [2.15.0] - 2026-05-07
 
 ### Added

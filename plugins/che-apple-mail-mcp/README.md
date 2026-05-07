@@ -18,7 +18,7 @@ macOS Apple Mail MCP server with native AppleScript integration.
 把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。v2.7.0+ 預設套用 4-phase NSQL confirmation protocol（filter 模糊先 disambiguate、bulk 結果先 preview + flag false positives、destructive op 必 confirm），v2.9.0+ 強制 `TaskCreate` 10 個 stage tasks 確保每 phase 不被靜默 skip。
 
 ```bash
-# Zero-arg mode (v2.12.0+) — reads .claude/.mail/config.md
+# Zero-arg mode (v2.12.0+, v2.16.0+ reads .yaml) — reads .claude/.mail/config.yaml
 /archive-mail
 
 # Explicit filter mode (always available)
@@ -31,7 +31,8 @@ macOS Apple Mail MCP server with native AppleScript integration.
 - **v2.15.0** (#45) — Inline `cid:` 圖片保留路徑:從 HTML body 解析 `<img src="cid:..." alt="...">` → save 到 `attachments/<stem>/inline/<filename>`,Markdown 加獨立 `Inline images:` section(`![]()` syntax 直接 render),Step 8a Coverage Audit 拆 explicit + inline 兩部分。修掉 dogfood gap:archive 「Solution? (affine repre + Iverson)」 thread CleanShot screenshot 全 miss
 - **v2.14.0** (#18) — Opt-in `dedup_strategy` config:`index`(預設) | `last_archived`(輕量,以 ISO date 作 date_from) | `both`(雙 dedup);零 breaking,既有 archive 走 default
 - **v2.13.0** (#17) — Markdown template default 簡化:預設 `Subject/From/To/Date` 多行 header + body,對應 tatsuma 50 個歷史檔。User 想要原 4-section 模板:`enrichment: summary+todos`
-- **v2.12.0** (#13/#21) — Zero-arg mode:`/archive-mail` 不帶參數從 `.claude/.mail/config.md` 讀 `filters` / `output_dir` / `last_archived` / `exclude_mailboxes`;`argument-hint` 改 `[email-filter]` 反映可選性
+- **v2.16.0** (#47) — Config schema rename:`.claude/.mail/config.md` → `.claude/.mail/config.yaml`(副檔名 ↔ 內容語意一致;legacy `.md` 仍 fallback,v3.0 移除)。auto-migrate 在 archive-mail / archive-mail-migrate 觸發,user 不需動手
+- **v2.12.0** (#13/#21) — Zero-arg mode:`/archive-mail` 不帶參數從 `.claude/.mail/config.yaml`(legacy `.md` fallback)讀 `filters` / `output_dir` / `last_archived` / `exclude_mailboxes`;`argument-hint` 改 `[email-filter]` 反映可選性
 
 每封 md 帶 YAML frontmatter（`message_id` / `thread_key` / `in_reply_to` / `date` / `sender` / `direction`），並同步維護 `email_index.json`（Message-ID 去重）與 `threads.json`（thread 關係索引），v2.8.0+ 收斂到 `.claude/.mail/state/archives/{slug}/`。
 
@@ -79,7 +80,7 @@ macOS Apple Mail MCP server with native AppleScript integration.
 ```
 {cwd}/
 ├── .claude/.mail/                              ← namespace root
-│   ├── config.md                               ← YAML frontmatter（filters / aliases / attachment routing）
+│   ├── config.yaml                             ← YAML(filters / aliases / attachment routing) — v2.16.0+;legacy .md fallback 至 v3.0
 │   └── state/archives/{slug}/                  ← per-archive-target indices
 │       ├── email_index.json                    ← Message-ID 去重
 │       └── threads.json                        ← thread 關係索引
