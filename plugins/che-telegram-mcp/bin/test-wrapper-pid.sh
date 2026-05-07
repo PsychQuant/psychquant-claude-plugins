@@ -450,6 +450,112 @@ fi
 wait "$WRAPPER_PID" 2>/dev/null
 
 # ----------------------------------------------------------------------
+test_case "Atomic-claim lock: second instance fails fast, first instance survives (#10)"
+LOCK_DIR="$TMPDIR/test9-lock"
+LOCK_FILE="${LOCK_DIR}.flock"
+PID_FILE="$TMPDIR/test9.pid"
+
+# Build a wrapper that uses the same atomic-claim primitive as production
+# (mkdir-based fallback path; works even on macOS without flock)
+make_lock_wrapper() {
+    local out=$1
+    local sleep_duration=$2
+
+    cat > "$out" <<EOF
+#!/bin/bash
+LOCK_DIR="$LOCK_DIR"
+LOCK_FILE="${LOCK_FILE}"
+LOCK_MODE=""
+mkdir -p "\$(dirname "\$LOCK_DIR")"
+
+if command -v flock >/dev/null 2>&1; then
+    LOCK_MODE="flock"
+    exec 200>"\$LOCK_FILE"
+    if ! flock -n 200; then
+        echo "Another instance is already running." >&2
+        exit 1
+    fi
+else
+    LOCK_MODE="mkdir"
+    if ! mkdir "\$LOCK_DIR" 2>/dev/null; then
+        OWNER_PID=
+        [ -f "\$LOCK_DIR/owner.pid" ] && read -r OWNER_PID < "\$LOCK_DIR/owner.pid" 2>/dev/null
+        if [[ "\$OWNER_PID" =~ ^[0-9]+\$ ]] && ! kill -0 "\$OWNER_PID" 2>/dev/null; then
+            rm -rf "\$LOCK_DIR"
+            mkdir "\$LOCK_DIR" 2>/dev/null || { echo "Failed to claim lock." >&2; exit 1; }
+        else
+            echo "Another instance is already running." >&2
+            exit 1
+        fi
+    fi
+    echo \$\$ > "\$LOCK_DIR/owner.pid"
+fi
+
+/bin/sleep $sleep_duration <&0 &
+BIN_PID=\$!
+
+cleanup() {
+    if [[ -n "\$BIN_PID" ]] && kill -0 "\$BIN_PID" 2>/dev/null; then
+        kill -TERM "\$BIN_PID" 2>/dev/null
+        wait "\$BIN_PID" 2>/dev/null
+    fi
+    if [[ "\$LOCK_MODE" == "mkdir" ]] && [[ -d "\$LOCK_DIR" ]]; then
+        OWNER_PID=
+        [ -f "\$LOCK_DIR/owner.pid" ] && read -r OWNER_PID < "\$LOCK_DIR/owner.pid" 2>/dev/null
+        [[ "\$OWNER_PID" == "\$\$" ]] && rm -rf "\$LOCK_DIR"
+    fi
+}
+trap cleanup EXIT INT TERM
+wait "\$BIN_PID"
+EOF
+    chmod +x "$out"
+}
+
+make_lock_wrapper "$TMPDIR/wrapper9a.sh" "3"
+make_lock_wrapper "$TMPDIR/wrapper9b.sh" "3"
+
+# Start first instance — should claim lock and run
+"$TMPDIR/wrapper9a.sh" &
+W9A_PID=$!
+# Wait for lock to be claimed
+LOCK_CLAIMED=0
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+    if [[ -d "$LOCK_DIR" ]] || [[ -f "$LOCK_FILE" ]]; then
+        LOCK_CLAIMED=1
+        break
+    fi
+    sleep 0.05
+done
+
+if [[ "$LOCK_CLAIMED" != 1 ]]; then
+    fail "first wrapper failed to claim lock"
+    kill -TERM "$W9A_PID" 2>/dev/null
+    wait "$W9A_PID" 2>/dev/null
+else
+    # Start second instance — should fail-fast with "already running"
+    SECOND_OUT="$TMPDIR/test9-second.stderr"
+    "$TMPDIR/wrapper9b.sh" 2>"$SECOND_OUT"
+    SECOND_EXIT=$?
+
+    if [[ "$SECOND_EXIT" -eq 1 ]] && grep -q "already running" "$SECOND_OUT"; then
+        pass "second instance fail-fast (exit=1, stderr contains 'already running')"
+    else
+        fail "second instance behavior unexpected (exit=$SECOND_EXIT, stderr=$(cat "$SECOND_OUT"))"
+    fi
+
+    # First instance should still be alive
+    if kill -0 "$W9A_PID" 2>/dev/null; then
+        pass "first instance survived second-instance attempt (no SIGTERM cross-fire)"
+    else
+        fail "first instance died unexpectedly"
+    fi
+
+    # Cleanup
+    kill -TERM "$W9A_PID" 2>/dev/null
+    wait "$W9A_PID" 2>/dev/null
+fi
+
+# ----------------------------------------------------------------------
 echo ""
 echo "Results: $((TOTAL - FAIL))/$TOTAL passed"
 exit $FAIL
