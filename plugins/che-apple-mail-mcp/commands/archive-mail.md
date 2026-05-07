@@ -1,6 +1,6 @@
 ---
 description: 歸檔指定聯絡人的 Apple Mail 郵件到 Markdown 檔案
-argument-hint: <email-filter> [output-dir]
+argument-hint: "[email-filter] [output-dir]  # 零參數時讀 .claude/.mail/config.md"
 allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Write, Glob
 ---
 
@@ -11,12 +11,26 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 ## 使用方式
 
 ```
+/archive-mail                                    # 零參數(v2.12.0+,讀 .claude/.mail/config.md)
 /archive-mail user@example.com
 /archive-mail user@example.com communication/emails
 ```
 
-- 第一個參數：Email 過濾條件（寄件人或收件人包含此字串）
-- 第二個參數（可選）：輸出目錄，預設 `communication/emails`
+- 第一個參數(**v2.12.0+ 可選**):Email 過濾條件(寄件人或收件人包含此字串)
+- 第二個參數(可選):輸出目錄,預設 `communication/emails`
+
+#### 零參數模式
+
+當 cwd 已有 `.claude/.mail/config.md` 並設定 `filters` 時,可不帶任何參數呼叫;從 config 讀取:
+
+| Field | 用途 |
+|-------|------|
+| `filters` | 多個 filter,作 OR-search 合併 corpus |
+| `output_dir` | 覆寫 default `communication/emails` |
+| `last_archived` | 給 search_emails 設 `date_from`(只抓此時點之後的信)|
+| `exclude_mailboxes` | search 跳過(垃圾郵件 / 草稿等)|
+
+命令列參數仍可覆寫 config(傳一個 filter 就只用該 filter,不讀 config 的 filters 清單)。詳細 schema 見 plugin CLAUDE.md。
 
 ## 執行步驟
 
@@ -64,11 +78,53 @@ TaskCreate(subject="report_and_audit",
 
 ### Step 1: 解析參數
 
-從 `$ARGUMENTS` 取得：
-- `filter`: 第一個參數（必填）
-- `output_dir`: 第二個參數，預設 `communication/emails`
+從 `$ARGUMENTS` 取得:
+- `filter`: 第一個參數(可選,**v2.12.0+ 零參數模式**)
+- `output_dir`: 第二個參數,預設 `communication/emails`
 
-如果沒有提供 filter，詢問用戶。
+#### Zero-arg 模式(v2.12.0+,resolves #13)
+
+若 `$ARGUMENTS` 為空,從 `${CONFIG_FILE}`(`.claude/.mail/config.md`,Step 1.6 計算) frontmatter 讀取:
+
+```bash
+if [ -z "$ARGUMENTS" ]; then
+    if [ ! -f "${CONFIG_FILE}" ]; then
+        echo "Error: 沒有給 filter 也找不到 ${CONFIG_FILE}。" >&2
+        echo "請建立 \${CONFIG_FILE} 並設定 filters,或直接傳 filter 參數。" >&2
+        exit 1
+    fi
+
+    # Parse YAML frontmatter (top-level scalars + sequences only)
+    # filters → list,作 OR-search 的 filter set
+    # output_dir → 覆寫 default
+    # last_archived → 餵 search_emails 的 date_from
+    # exclude_mailboxes → search 跳過
+
+    FILTERS=$(awk '/^filters:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    CFG_OUTPUT_DIR=$(awk '/^output_dir:[ \t]*/{sub(/^output_dir:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
+    LAST_ARCHIVED=$(awk '/^last_archived:[ \t]*/{sub(/^last_archived:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
+    EXCLUDE_MBX=$(awk '/^exclude_mailboxes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+
+    if [ -z "$FILTERS" ]; then
+        echo "Error: ${CONFIG_FILE} 沒設定 filters。請補 filters 或傳命令列參數。" >&2
+        exit 1
+    fi
+
+    [ -n "$CFG_OUTPUT_DIR" ] && output_dir="$CFG_OUTPUT_DIR"
+    # last_archived feeds Step 3 search_emails 的 date_from (strict `>`)
+    # exclude_mailboxes feeds Step 3 mailbox-filter
+fi
+```
+
+#### 命令列覆寫(現行行為,backward compat)
+
+若 `$ARGUMENTS` 非空,命令列參數覆寫 config:
+- `filter` = 第一個 arg(視為單一 filter,即使 config 有多個 filters 仍只用此一個)
+- `output_dir` = 第二個 arg(若有),否則用 config / default
+
+#### 模糊 filter
+
+不論來源(命令列 / config),若 filter 為模糊詞 → 進 Step 1.5 disambiguation。
 
 ### Step 1.5: Confirmation — Phase 1: Disambiguation（v2.7.0+）
 
