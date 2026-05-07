@@ -1,7 +1,7 @@
 {
   "name": "che-apple-mail-mcp",
-  "version": "2.15.0",
-  "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.15.0, binary v2.7.0)。Shell v2.15.0: /archive-mail 加 inline cid: 圖片保留路徑(#45)— Step 5.5.0 從 HTML body 解析 cid: 引用 + alt filename → save_attachment 到 attachments/<stem>/inline/ 子資料夾,Markdown 加獨立 Inline images: section,Step 8a Coverage Audit 拆 explicit + inline 兩部分。dogfood 來源:archive 「Solution? (affine repre + Iverson)」 thread CleanShot screenshot 全 miss。疊加 v2.14.0 dedup_strategy opt-in (#18)、v2.13.0 markdown template default 簡化 (#17)、v2.12.0 zero-arg mode 從 .claude/.mail/config.md 讀 filters (#13/#21)、v2.11.0 binary v2.7.0 multi-attachment race fix (#60)、v2.6.0 marathon (8 PRs)、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
+  "version": "2.16.0",
+  "description": "Apple Mail MCP server — 44+ tools, reply-as-draft + IDD task enforcement + NSQL confirmation + .claude/.mail/ namespace (shell v2.16.0, binary v2.7.0)。Shell v2.16.0: config schema rename .md → .yaml (#47) — 副檔名 ↔ 內容(YAML)語意一致;auto-migrate silent rename in archive-mail / archive-mail-migrate;legacy .md 仍 fallback 直到 v3.0;IDE 接 yaml-lsp。疊加 v2.15.0 inline cid: 圖片保留路徑 (#45)、v2.14.0 dedup_strategy opt-in (#18)、v2.13.0 markdown template default 簡化 (#17)、v2.12.0 zero-arg mode 從 .claude/.mail/config (#13/#21)、v2.11.0 binary v2.7.0 multi-attachment race fix (#60)、v2.6.0 marathon (8 PRs)、v2.9.0 task enforcement、v2.8.0 namespace、v2.7.0 NSQL confirmation。",
   "author": {
     "name": "Che Cheng"
   },
