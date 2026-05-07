@@ -18,19 +18,24 @@ macOS Apple Mail MCP server with native AppleScript integration.
 把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。v2.7.0+ 預設套用 4-phase NSQL confirmation protocol（filter 模糊先 disambiguate、bulk 結果先 preview + flag false positives、destructive op 必 confirm），v2.9.0+ 強制 `TaskCreate` 10 個 stage tasks 確保每 phase 不被靜默 skip。
 
 ```bash
-# Explicit filter mode (available now)
+# Zero-arg mode (v2.12.0+) — reads .claude/.mail/config.md
+/archive-mail
+
+# Explicit filter mode (always available)
 /archive-mail some@example.com
 /archive-mail some@example.com communications
 ```
 
-> **Roadmap — zero-arg mode (not yet implemented, tracked in #13)**
-> Planned: `/archive-mail` (no args) will read `.claude/.mail/config.md` frontmatter for
-> filters / output_dir / last_archived / exclude_mailboxes. Do **not** call it
-> without args today — it requires a filter parameter.
+**v2.12.0–v2.15.0 highlights**:
+
+- **v2.15.0** (#45) — Inline `cid:` 圖片保留路徑:從 HTML body 解析 `<img src="cid:..." alt="...">` → save 到 `attachments/<stem>/inline/<filename>`,Markdown 加獨立 `Inline images:` section(`![]()` syntax 直接 render),Step 8a Coverage Audit 拆 explicit + inline 兩部分。修掉 dogfood gap:archive 「Solution? (affine repre + Iverson)」 thread CleanShot screenshot 全 miss
+- **v2.14.0** (#18) — Opt-in `dedup_strategy` config:`index`(預設) | `last_archived`(輕量,以 ISO date 作 date_from) | `both`(雙 dedup);零 breaking,既有 archive 走 default
+- **v2.13.0** (#17) — Markdown template default 簡化:預設 `Subject/From/To/Date` 多行 header + body,對應 tatsuma 50 個歷史檔。User 想要原 4-section 模板:`enrichment: summary+todos`
+- **v2.12.0** (#13/#21) — Zero-arg mode:`/archive-mail` 不帶參數從 `.claude/.mail/config.md` 讀 `filters` / `output_dir` / `last_archived` / `exclude_mailboxes`;`argument-hint` 改 `[email-filter]` 反映可選性
 
 每封 md 帶 YAML frontmatter（`message_id` / `thread_key` / `in_reply_to` / `date` / `sender` / `direction`），並同步維護 `email_index.json`（Message-ID 去重）與 `threads.json`（thread 關係索引），v2.8.0+ 收斂到 `.claude/.mail/state/archives/{slug}/`。
 
-詳細 spec 見 [`commands/archive-mail.md`](commands/archive-mail.md)。
+詳細 spec 見 [`commands/archive-mail.md`](commands/archive-mail.md)。完整 changelog 見 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ### `/archive-mail-view` — 生成 thread 聚合視圖（v2.6.0+）
 
