@@ -171,6 +171,38 @@ CONFIG_FILE="${NAMESPACE_DIR}/config.md"
 mkdir -p "${INDEX_DIR}"
 ```
 
+**Resolve dedup strategy** (v2.14.0+, issue #18):
+
+```bash
+# Default: index-based dedup (backward compat with v2.13.0 ↓)
+DEDUP_STRATEGY=$(awk '/^dedup_strategy:[ \t]*/{sub(/^dedup_strategy:[ \t]*/,"");print;exit}' "${CONFIG_FILE}" 2>/dev/null)
+DEDUP_STRATEGY="${DEDUP_STRATEGY:-index}"
+
+case "$DEDUP_STRATEGY" in
+    index|last_archived|both) ;;  # valid
+    *)
+        echo "Error: invalid dedup_strategy '${DEDUP_STRATEGY}'. Valid: index | last_archived | both" >&2
+        exit 1
+        ;;
+esac
+
+# If last_archived strategy: require last_archived field present
+if [ "$DEDUP_STRATEGY" = "last_archived" ]; then
+    LAST_ARCHIVED=$(awk '/^last_archived:[ \t]*/{sub(/^last_archived:[ \t]*/,"");print;exit}' "${CONFIG_FILE}" 2>/dev/null)
+    if [ -z "$LAST_ARCHIVED" ]; then
+        echo "Error: dedup_strategy=last_archived requires '${CONFIG_FILE}' to have a 'last_archived: YYYY-MM-DD' field." >&2
+        echo "Either set last_archived (manually or after first archive run) or use dedup_strategy: index | both." >&2
+        exit 1
+    fi
+fi
+```
+
+| `dedup_strategy` | Step 2 (load index) | Step 4 (dedup logic) | Step 5/6 (write index) |
+|------------------|---------------------|----------------------|-----------------------|
+| `index` (default) | load `email_index.json` | filter Message-ID not in index | append new Message-IDs |
+| `last_archived` | skip | filter received-date `>` last_archived | skip |
+| `both` | load | union: not-in-index AND date `>` last_archived | append (索引 still maintained) |
+
 **Auto-migrate from legacy paths**(silent,只在新位置不存在時觸發):
 
 ```bash
@@ -199,11 +231,11 @@ fi
 mkdir -p "${output_dir}"   # archive markdown 目的地(不變)
 ```
 
-**讀取兩個索引檔**(v2.8.0+ 從 `${INDEX_DIR}/` 讀):
+**讀取兩個索引檔**(v2.8.0+ 從 `${INDEX_DIR}/` 讀;v2.14.0+ 條件 skip per `dedup_strategy`):
 
 `${INDEX_FILE}` (`.claude/.mail/state/archives/${SLUG}/email_index.json`) — Message-ID 去重索引(canonical key):
-- 若存在,載入已歸檔的 Message-ID
-- 若不存在,建立空索引 `{"version": "1.0", "emails": {}}`
+- 若 `dedup_strategy=last_archived`(v2.14.0+) → **skip**, 完全不讀 index
+- 若 `dedup_strategy=index`(default)或 `both` → 載入已歸檔 Message-ID;不存在則建立空索引 `{"version": "1.0", "emails": {}}`
 
 `${THREADS_FILE}` (`.claude/.mail/state/archives/${SLUG}/threads.json`) — Thread 關係索引(append-only thread view):
 - 若存在,載入既有 thread 結構
