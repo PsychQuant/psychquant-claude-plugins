@@ -4,7 +4,7 @@ Claude Code plugin for macOS Calendar & Reminders management using native EventK
 
 ## Features
 
-- **28 MCP Tools**: Complete calendar and reminder management with attendees / organizer support, batch operations, and undo/redo
+- **29 MCP Tools**: Complete calendar and reminder management with attendees / organizer support, batch operations, undo/redo, and one-call cleanup
 - **Skills**: Guided calendar management workflow
 - **Commands**: Quick shortcuts for common operations
 - **Auto-detection**: Automatically finds installed MCP binary
@@ -96,7 +96,7 @@ Or just ask naturally:
 - "Show my pending reminders"
 - "Add a reminder to call mom"
 
-## Available Tools (28)
+## Available Tools (29)
 
 ### Calendars (4)
 - `list_calendars` - List all calendars
@@ -113,10 +113,11 @@ Or just ask naturally:
 - `create_events_batch` / `move_events_batch` / `delete_events_batch` — batch ops
 - `find_duplicate_events` — surface duplicates for cleanup
 
-### Reminders (9)
+### Reminders (10)
 - `list_reminders` / `search_reminders` / `list_reminder_tags`
 - `create_reminder` / `update_reminder` / `complete_reminder` / `delete_reminder`
 - `create_reminders_batch` / `delete_reminders_batch` — batch ops
+- `cleanup_completed_reminders` — single-call cleanup of all completed reminders (`dry_run=true` default; new in v1.7.2)
 
 ### Undo / Redo (3, process-local)
 - `undo` / `redo` / `undo_history`
@@ -133,7 +134,16 @@ Plugin version: 1.7.2 (matches MCP server version)
 
 ### Changelog
 
-**1.7.2** (2026-04-22)
+**1.7.2** (2026-05-07)
+- **Tool count 28 → 29**: `cleanup_completed_reminders` (#21) — single-call cleanup of all completed reminders, `dry_run=true` default
+- **`--self-update` flag** (#49): existing-install upgrade path with SHA-256 verification (#98). Wrapper auto-download covers fresh-install only; this fills the gap
+- **Sanitizer hardening cluster** (#73 #74 #80 #85 #86 #94): full C0+DEL escape coverage, executeUndo/executeRedo title interpolation guard, CLIRunner stderr trusted-branch carve-out, DoS amplification cap, thread-safety doc with macOS PIPE_BUF=512
+- **CI test workflow** (#51): PR-time `swift build` + `swift test` on macos-latest
+- **`make install-signed`** (#50): maintainer dev TCC flow on macOS 26
+- **Distribution polish**: README install snippets `rm -f` preamble (#90), zh-TW v1.7.1 sync (#75)
+- All 30+ commits with `Refs #N` IDD discipline + 6-AI parallel verify before merge
+
+**1.7.2-pre** (2026-04-22, pre-release plugin shell bump only)
 - Plugin wrapper now version-aware: re-downloads `~/bin/CheICalMCP` when binary lags upstream Release
 
 **1.7.1** (2026-04-20)
