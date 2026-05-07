@@ -172,6 +172,8 @@ participant_aliases:               # 模糊人名 → 標準 email 對應表
 subject_keywords_strict: true      # bool, default false。true = subject-only match 不算 hit;
                                    # 防止「履歷」這種 generic 關鍵字汙染 result
 
+enrichment: none                   # v2.13.0+: 'none'(預設,簡單 template) | 'summary+todos'(AI 摘要 + 待辦)
+
 output_dir: communications/emails  # string,default "communications/emails"。
                                    # archive markdown 寫入路徑(相對 cwd)
 
