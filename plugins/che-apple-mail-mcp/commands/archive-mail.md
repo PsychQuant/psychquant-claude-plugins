@@ -542,9 +542,55 @@ direction: received
 
 ### Step 5.5: 下載並分流附件
 
-對每封已歸檔的新郵件：
+對每封已歸檔的新郵件,**處理兩類**:explicit MIME attachments(由 `list_attachments` 回傳)+ inline `cid:` 圖片(由 HTML body 解析,v2.15.0+ 加,issue #45)。
 
-1. **列出附件**：呼叫 `mcp__plugin_che-apple-mail-mcp_mail__list_attachments`（或 `list_attachments_batch`）取得附件清單。若為空 → 跳到下一封。
+#### Step 5.5.0: Inline `cid:` images(v2.15.0+,resolves #45)
+
+`list_attachments` **不**回傳 inline `cid:` 圖片(`Content-Disposition: inline`)。先從 HTML body 抽出再 download:
+
+```bash
+# Parse HTML body for inline cid references + alt-attribute filenames
+# Pattern 1: <img src="cid:XXX" ... alt="filename.png">
+# Pattern 2: <span id="cid:XXX">&lt;filename.tex&gt;</span>  (Mail.app quote-time marker — 已由 Step 5.5 #6 cross-reference 處理,本 step 只處理 Pattern 1)
+
+INLINE_LIST=$(echo "$HTML_BODY" | python3 -c "
+import re, sys, html
+body = sys.stdin.read()
+# 抓 <img ... cid:XXX ... alt='...'>;tolerant 大小寫 + 屬性順序
+pattern = re.compile(
+    r'<img\b[^>]*?src=[\"\\']cid:([^\"\\']+)[\"\\'][^>]*?alt=[\"\\']([^\"\\']+)[\"\\']',
+    re.IGNORECASE | re.DOTALL
+)
+seen = set()
+for m in pattern.finditer(body):
+    cid, alt = m.group(1), html.unescape(m.group(2))
+    if cid not in seen:
+        seen.add(cid)
+        print(f'{cid}\t{alt}')
+")
+```
+
+對每個 `(cid, alt_filename)` pair:
+
+1. **目標路徑**:`{documents_dir}/{email_md_stem}/inline/{alt_filename}`
+   - 與 explicit attachments 同 stem 資料夾,但放 `inline/` 子目錄
+   - filename 保留原始 alt(空白 / emoji / 中日文都不改)
+   - 若 `documents_dir/{email_md_stem}/inline/` 不存在,先 `mkdir -p`
+
+2. **下載**:呼叫 `save_attachment(attachment_name=alt_filename, save_path=...)`
+   - **預期假設**:Apple Mail binary 接受 inline filename(尚未驗證,需要實測)
+   - 若 `save_attachment` 失敗 → log warning + 改用 cross-reference 註記(見 Step 5.5.5),不中斷歸檔
+   - 若 alt 屬性失敗解析(例如 charset 異常)→ fallback 用 `{cid}.png`(假設 PNG;典型 inline 都是)
+
+3. **去重**:同一 thread 不同信引用同一 cid(thread quote 累積) → 只在**首次**出現的信下載,後續信只在 markdown 引用既有檔(看路徑是否存在判斷)
+
+4. **計數**:記錄 `inline_count` 供 Step 7 報告 + Step 8 audit。
+
+#### Step 5.5.1: Explicit MIME attachments
+
+(原 Step 5.5 邏輯,不變)
+
+1. **列出附件**：呼叫 `mcp__plugin_che-apple-mail-mcp_mail__list_attachments`（或 `list_attachments_batch`）取得附件清單。若為空 → 跳到下一封(但 Step 5.5.0 inline 仍跑)。
 
 2. **分類每個附件**：用 Step 2 載入的分類規則判斷 `data` 或 `document`：
 
@@ -578,25 +624,35 @@ direction: received
    - 目標目錄若不存在，先 `mkdir -p`
    - 若 `save_attachment` 失敗，log warning 繼續下一個（不中斷歸檔）
 
-5. **更新 Markdown**：在該封信的 Markdown 中插入 `Attachments:` 區塊。
+5. **更新 Markdown**：在該封信的 Markdown 中插入 attachment 區塊。
 
    **放置位置**：簽名（signature）之後、thread quote 之前。
    Thread quote 的辨識 pattern：第一個匹配 `差出人:` / `寄件者:` / `From:` / `On .* wrote:` 的行。
-   若沒有 thread quote（原始信件，非回覆），`Attachments:` 接在 body 最後。
+   若沒有 thread quote（原始信件，非回覆），attachment 區塊接在 body 最後。
+
+   **兩個獨立 section**(v2.15.0+,issue #45):若該信同時有 inline + explicit,先 `Inline images:` 後 `Attachments:`;只有一邊則只列該邊;空 thread 全省略。
 
    **連結格式**：
    ```markdown
+   Inline images:
+   - ![原始檔名](相對路徑URL編碼)
+
    Attachments:
    - [原始檔名](相對路徑URL編碼) (大小 KB)
    ```
+
+   `Inline images:` 用 `![]()`(image syntax,markdown viewer 直接渲染),`Attachments:` 用 `[]()`(link syntax,點擊下載)。
 
    URL 編碼規則（僅用於 Markdown link URL，display text 保留原始）：
    - 空白 → `%20`
    - `&` → `%26`
    - 其餘（含中日文）→ 保留原字元
 
-   範例：
+   範例:
    ```markdown
+   Inline images:
+   - ![CleanShot 2026-05-07 at 15.44.58@2x.png](attachments/2026-05-07_Re--Solution---Iverson-similarity/inline/CleanShot%202026-05-07%20at%2015.44.58%402x.png)
+
    Attachments:
    - [Figures & Tables20260408.docx](attachments/2026-04-08_Re--Taxometric-Analysis/Figures%20%26%20Tables20260408.docx) (93 KB)
    - [raw_indicators.csv](../../data/raw/raw_indicators.csv) (12 KB)
@@ -614,7 +670,18 @@ direction: received
    (Attachments referenced in thread quote — original not yet archived)
    ```
 
-7. **累計計數**：記錄 `data_count` 和 `document_count`，供 Step 7 報告用。
+7. **累計計數**：記錄 `data_count`、`document_count`、`inline_count`(v2.15.0+) 供 Step 7 報告用。
+
+#### Step 5.5.5: Inline cid: download fallback (v2.15.0+, issue #45)
+
+若 Step 5.5.0 的 `save_attachment(inline_filename)` 失敗(binary 不支援 inline name 或 inline cid: 不在 binary 的 attachment list),**不**完全 skip — 改寫 cross-reference 註記:
+
+```markdown
+Inline images:
+- (cid:331ECED2 — CleanShot 2026-05-07 at 15.44.58@2x.png — binary 無法 download by name;見 Mail.app 原始信)
+```
+
+User 看到註記知道 inline 圖存在但需手動 export from Mail.app。Filed 上游 issue 在 PsychQuant/che-apple-mail-mcp 跟進 binary-side support。
 
 ### Step 5.7: 維護 `threads.json`（v2.6.0+,路徑 v2.8.0+ 改 `${THREADS_FILE}`）
 
@@ -708,11 +775,13 @@ Thread 索引: 2 new threads, 3 existing threads updated
 附件: 15 個下載
   → 4 to data/raw
   → 11 to correspondence/attachments
+  → 2 inline images to correspondence/attachments/{stem}/inline/  (v2.15.0+, #45)
 
 ═══════════════════════════════════════════
 ```
 
-若無附件：`附件: 0 個下載`（不顯示分類明細）。
+若無附件：`附件: 0 個下載`(不顯示分類明細)。
+若無 inline images,省略該行(v2.15.0+ 新加,只在有 inline 時顯示)。
 Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 
 ### Step 8: 覆蓋率稽核（Coverage Audit）（v2.4.0+）
@@ -721,10 +790,18 @@ Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 
 **8a. 附件完整性檢查**：
 
-對所有新歸檔的郵件，呼叫 `list_attachments` 取得附件數量，比對磁碟上對應目錄的實際檔案數。
+對所有新歸檔的郵件,**分兩部分檢查**(v2.15.0+, #45):
+
+**8a.1 Explicit attachments**:呼叫 `list_attachments` 取得 explicit MIME attachment 數量,比對磁碟上對應目錄的實際檔案數。
 
 - 一致 → pass
-- 不一致 → 發出 warning：`⚠️ {email_stem}: {差異} attachment missing (expected {報告數}, found {磁碟數})`
+- 不一致 → 發出 warning：`⚠️ {email_stem}: {差異} explicit attachment missing (expected {報告數}, found {磁碟數})`
+
+**8a.2 Inline cid: images** (v2.15.0+):從 HTML body 解析 inline cid: 引用數量,比對 `{stem}/inline/` 目錄實際檔案數。
+
+- 一致 → pass
+- 不一致(已 cross-reference 註記取代下載)→ 發出 warning:`⚠️ {email_stem}: {N} inline images cross-referenced (binary download unsupported); see Mail.app for visual content`
+- 完全 miss(連 cross-reference 都沒)→ `⚠️ {email_stem}: {N} inline images parsed from body but not handled (skill bug, file follow-up)`
 
 **8b. Thread 完整性檢查**：
 
@@ -738,16 +815,17 @@ Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 ```
 Archive Coverage Audit
 ═══════════════════════════════════════════
-附件覆蓋: 15/15 (100%)
+附件覆蓋: explicit 15/15 + inline 2/3 (1 cross-ref'd) (94%)
 Thread 覆蓋: 3 threads, 2 complete, 1 with gaps
 
 搜尋結果: 37 by sender + 12 by subject + 9 by thread expansion = 58 unique
 
 Issues:
   ⚠️ 2026-04-08_Re--Taxometric: 1 attachment missing
+  ⚠️ 2026-05-07_Re--Solution: 1 inline image cross-referenced (binary unsupported)
   ⚠️ Thread "indicator selection": 2 potential missing siblings
 
-建議: 在 .claude/emails.md 加入 subject_keywords 擴大搜尋範圍
+建議: 在 .claude/.mail/config.md 加入 subject_keywords 擴大搜尋範圍
 ═══════════════════════════════════════════
 ```
 
@@ -755,10 +833,12 @@ Issues:
 ```
 Archive Coverage Audit
 ═══════════════════════════════════════════
-附件覆蓋: 15/15 (100%) ✓
+附件覆蓋: explicit 15/15 + inline 3/3 (100%) ✓
 Thread 覆蓋: 3 threads, 3 complete ✓
 ═══════════════════════════════════════════
 ```
+
+若無 inline,簡化:`附件覆蓋: 15/15 (100%) ✓`(同 v2.14.0 ↓ 行為)。
 
 ## 注意事項
 
