@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-05-07
+
+### Added
+- New `save-feedback` skill (#28): captures **conversational feedback** that user gives mid-draft into reusable rules. Complements `draft-learner` (which only triggers on file-modification system-reminders). Real-world gap: when user gives verbal tone/style/relationship/structure feedback in conversation and agent rewrites the file each round, no file diff is produced → draft-learner never fires → feedback evaporates at session end. `save-feedback` fills that gap with explicit invocation (`/perspective-writer:save-feedback`) or proactive trigger phrases ("存 feedback" / "把這些建議記下來"). 6-step workflow (scan conversation → classify → extract concrete rules with **Why** field → locate `.claude/rules/` file → write → confirm). Distinct from draft-learner per a side-by-side comparison table in the SKILL.md.
+
 ## [2.5.0] - (date unknown — please fill in)
 
 ### Changed
