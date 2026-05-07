@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-05-07
+
+### Fixed
+- PreToolUse Bash hook regex narrowed to word boundaries (`grep -wE`) for both `(rm|rmdir|unlink)` and `archived` matches. Previously over-broad substring grep fired false-positives on commands containing `platform` / `format` / `perform` / `transform` / `inform` / `harm` (any English word with `rm` substring) when the same command also mentioned `archived` anywhere — common in `gh issue comment` heredoc bodies discussing archive governance. Resolves #32.
+
 ## [2.1.0] - (date unknown — please fill in)
 
 ### Changed
