@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-05-07
+
+### Added
+- **Opt-in `dedup_strategy` for `/archive-mail` (#18)**:resolves real-world observation that `.email_index.json` is rarely built / used — tatsuma project ran archive-mail for 3 years without producing one. New `.claude/.mail/config.md` field `dedup_strategy` with three values:
+  - `index` (default,backward compat) — load + write `email_index.json` as before
+  - `last_archived` — skip index entirely;use `last_archived` ISO-date as `date_from` for Step 3 search;requires `last_archived` field set in config (fail-fast if missing,prevents silent full-inbox scan)
+  - `both` — load index AND apply date filter (Message-ID set ∪ date filter)
+- Step 1.6 of archive-mail.md gains a strategy-resolve block;Step 2 conditionally skips index load;Step 4 dedup logic branches per strategy;Step 5/6 conditionally skip index write.
+- CLAUDE.md schema docs updated with `dedup_strategy` + `last_archived` fields.
+
+### Notes
+- Default behavior unchanged from v2.13.0;existing archives continue with index-based dedup until user explicitly opts into `last_archived` or `both`.
+
 ## [2.13.0] - 2026-05-07
 
 ### Changed
