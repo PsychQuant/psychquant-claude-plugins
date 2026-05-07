@@ -416,7 +416,41 @@ Subject → filename 轉換規則（依此順序執行）：
 
 > **歷史相容 note**：`communications/` 有少量 `-a` / `-b` 字母後綴（如 `2024-07-14_...-a.md`）。新規不遷移舊檔，但新檔**一律用 `-1` `-2` `-3` 數字後綴**。若混用造成困擾，另開 follow-up issue。
 
-**內容格式**（v2.6.0+：加入 YAML frontmatter，便於 thread 索引重建）：
+**內容格式**(v2.13.0+ 預設簡化,issue #17;v2.6.0+ 加入 YAML frontmatter):
+
+預設使用 **simple template**(對應 tatsuma 50 個既有檔案格式)。若 `${CONFIG_FILE}` 設 `enrichment: summary+todos`,改用下方 **enriched template** 加上 AI 摘要 + 待辦兩段。
+
+```bash
+# Step 1.6 階段已 parse;此處使用
+ENRICHMENT=$(awk '/^enrichment:[ \t]*/{sub(/^enrichment:[ \t]*/,"");print;exit}' "${CONFIG_FILE}" 2>/dev/null)
+ENRICHMENT="${ENRICHMENT:-none}"  # default: simple template (v2.13.0+)
+```
+
+#### Simple template (default, v2.13.0+):
+
+```markdown
+---
+message_id: "<9c7a43db76e94a64a51f85d04c3bf01b@ntu.edu.tw>"
+thread_key: "SE manuscript 10xx-2025"
+in_reply_to: "<eddba65d53754587aeee5d86ff631d2c@ntu.edu.tw>"
+date: 2026-01-28T08:35:34Z
+sender: yfhsu@ntu.edu.tw
+direction: received
+---
+
+Subject: <subject>
+From: <sender display name OR email>
+To: <recipient(s)>
+Date: YYYY-MM-DD HH:MM
+
+[完整 body]
+```
+
+Frontmatter 保留全部 6 欄位(thread index 重建仍依賴);header 改為 4 行純文字 `Subject/From/To/Date`,直接接 body,不再有元數據表 / 重點摘要 / 待辦事項三段。
+
+#### Enriched template (opt-in via `enrichment: summary+todos`):
+
+僅在 `${CONFIG_FILE}` 設定後觸發。Schema:
 
 ```markdown
 ---
