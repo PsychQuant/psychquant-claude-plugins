@@ -1,0 +1,19 @@
+{
+  "name": "batch-ocr",
+  "version": "0.1.0",
+  "description": "Orchestration layer for batch OCR pipelines — PDF→PNG split, parallel macdoc OCR with SSH-tunnel health check + auto-retry, per-page md merge, idempotent resume, structured progress logs. Wraps the boilerplate that every 'OCR a folder of PDFs' task otherwise re-derives.",
+  "author": {
+    "name": "Che Cheng"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ocr",
+    "batch",
+    "pipeline",
+    "macdoc",
+    "ollama",
+    "pdf",
+    "parallel",
+    "ssh-tunnel"
+  ]
+}
