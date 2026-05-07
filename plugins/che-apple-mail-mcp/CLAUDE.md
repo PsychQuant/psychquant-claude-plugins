@@ -174,6 +174,11 @@ subject_keywords_strict: true      # bool, default false。true = subject-only m
 
 enrichment: none                   # v2.13.0+: 'none'(預設,簡單 template) | 'summary+todos'(AI 摘要 + 待辦)
 
+dedup_strategy: index              # v2.14.0+: 'index'(預設) | 'last_archived' | 'both'
+                                   #   index = 用 .email_index.json (current default)
+                                   #   last_archived = skip index,以 last_archived 日期作 date_from
+                                   #   both = 兩者皆用 (Message-ID 為主, date 為輔)
+
 output_dir: communications/emails  # string,default "communications/emails"。
                                    # archive markdown 寫入路徑(相對 cwd)
 
@@ -194,7 +199,7 @@ exclude_mailboxes:                 # list[string],default []。完全跳過的 m
   - Drafts
 
 last_archived:                     # ISO-8601 timestamp;archive-mail 會自動更新
-  2026-05-01T13:30:00+08:00        # 用於 incremental archive(只抓此後的信)
+  2026-05-01T13:30:00+08:00        # 用於 incremental archive(只抓此後的信);搭配 dedup_strategy='last_archived' 必填
 ---
 ```
 
