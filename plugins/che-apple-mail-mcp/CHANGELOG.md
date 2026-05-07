@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.15.0] - 2026-05-07
+
+### Added
+- **Inline `cid:` image preservation in `/archive-mail` (#45)**:resolves dogfood gap where 「Solution? (affine repre + Iverson's law of similarity)」 thread 11 封信中 1 張 CleanShot screenshot inline-embedded via `cid:` 完全 miss(因 `list_attachments` 不回 `Content-Disposition: inline` images)。
+- **Step 5.5.0** (new) parses HTML body via regex `<img\s+...src="cid:..."...alt="...">` → extracts `(cid, alt_filename)` pairs → tries `save_attachment(attachment_name=alt, save_path=<stem>/inline/<alt>)`
+- **Step 5.5.5** (new) fallback: if `save_attachment` doesn't recognize inline filename (binary-side limitation), writes cross-reference note `Inline images: - (cid:XXX — filename — binary unsupported; see Mail.app)` instead of silent skip
+- **`Inline images:` section** in archive markdown (separate from `Attachments:`); image syntax `![alt](path)` for direct render in markdown viewers (vs link syntax for explicit attachments)
+- **Folder layout**: `correspondence/attachments/<email_stem>/inline/<filename>` — sub-folder under existing stem dir; preserves semantic distinction between user-attached files vs inline illustrations
+- **Step 8a Coverage Audit** updated: split into 8a.1 explicit + 8a.2 inline; report shows `explicit N/M + inline P/Q` format
+- **Step 7 report** adds inline count line (only if any inline images present)
+
+### Notes
+- Skill-side workaround only;binary `save_attachment` 是否認得 inline filename **尚未驗證**(待實測,可能需要 follow-up upstream issue)
+- 既有 archives 不會 retroactive process — inline 圖片仍是占位文字,user 手動補
+- Plugin minor bump 2.14.0 → 2.15.0 (new feature surface,backward compat 預設行為不變)
+
 ## [2.14.0] - 2026-05-07
 
 ### Added
