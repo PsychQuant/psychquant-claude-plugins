@@ -153,23 +153,82 @@ AI: [直接執行,沒 confirmation]
 
 ## Configuration
 
-`.claude/emails.md` frontmatter 可以調整 plugin 行為:
+> **路徑遷移**:v2.7.0 ↓ 用 `.claude/emails.md`,v2.8.0+ 改用 `.claude/.mail/config.md`(auto-migrate)。下述 schema 兩者通用。
+
+### `.claude/.mail/config.md` Schema
+
+YAML frontmatter,空白 body。所有欄位可選,未填走 default。
 
 ```yaml
 ---
-filters:
-  - cchen
-  - coco891017
-participant_aliases:
+filters:                           # 預設 filter 清單(零參數模式讀此)
+  - cchen                          #   string:可以是 email、email prefix、display name alias
+  - coco891017                     #   match logic:Swift-side substring + Phase 1 disambiguation
+
+participant_aliases:               # 模糊人名 → 標準 email 對應表
   "陳老師": cchen@stat.sinica.edu.tw
   "林助理": coco891017@webmail.stat.sinica.edu.tw
-subject_keywords_strict: true   # 不允許單純 subject match 算 hit
-attachment_routing:
-  data_extensions: [csv, sav, xlsx]
-  data_dir: data/raw
-  documents_dir: communications/attachments
+
+subject_keywords_strict: true      # bool, default false。true = subject-only match 不算 hit;
+                                   # 防止「履歷」這種 generic 關鍵字汙染 result
+
+output_dir: communications/emails  # string,default "communications/emails"。
+                                   # archive markdown 寫入路徑(相對 cwd)
+
+attachments_dir: correspondence/attachments  # string,default 同上格式。附件根目錄
+
+attachment_routing:                # 附件依副檔名分流
+  data_extensions:                 #   list[string]:被視為「資料」的副檔名
+    - csv
+    - sav
+    - xlsx
+    - rds
+  data_dir: data/raw               #   data 副檔名導到此(覆蓋 attachments_dir)
+  documents_dir: correspondence/attachments  # 其他副檔名導到此
+
+exclude_mailboxes:                 # list[string],default []。完全跳過的 mailbox 名稱
+  - Junk
+  - Trash
+  - Drafts
+
+last_archived:                     # ISO-8601 timestamp;archive-mail 會自動更新
+  2026-05-01T13:30:00+08:00        # 用於 incremental archive(只抓此後的信)
 ---
 ```
+
+### Field 互動規則
+
+- `filters` + 命令列參數同時指定 → 命令列覆蓋
+- `participant_aliases` 在 Phase 1 disambiguation 優先 match
+- `subject_keywords_strict=true` 時 sender / recipient match 仍 hit;只阻擋「only subject contains keyword」的 lone match
+- `attachment_routing.data_extensions` ∩ 真實附件 → 走 `data_dir`,其他走 `documents_dir`(若未設 `data_extensions` 則全部走 `documents_dir`)
+- `last_archived` 不存在 → 全量 archive;存在 → 只抓 received-date > last_archived 的 emails
+
+## 帳號名稱陷阱:EWS URL vs Display Name
+
+Apple Mail.app(via AppleScript)在 `account` property 上**同時用兩種識別**而沒一致對應:
+
+| 場景 | 回傳值 | 例 |
+|------|--------|----|
+| `list_accounts` | display name | `"Sinica Mail"` |
+| Email object 的 `account` field | EWS URL | `"https://owa.sinica.edu.tw/EWS/Exchange.asmx"` |
+| Filter / search by account | 接受 display name | `"Sinica Mail"` |
+| `set account of email to X` | 需 display name | `"Sinica Mail"` |
+
+### 為什麼會踩雷
+
+Search 結果的 email 可能來自 IMAP 帳號(display name)或 Exchange/EWS 帳號(URL)。直接拿 email.account 字串去 `move_email account="..."` 會在 EWS 帳號失敗 — 因為 set account 接受 display name 不接受 URL。
+
+### 正確做法
+
+1. 永遠先 `list_accounts` 取 display name 清單
+2. 對 EWS-style 帳號,維護 URL → display name mapping(plugin 內已有 `account_normalize` helper)
+3. 對 user 顯示一律用 display name
+
+### 相關 issue
+
+- #15 — display-name vs internal-name 混用導致 archive-mail 在多帳號環境噴錯(已 close)
+- 本陷阱由 #15 提煉成 plugin 內建 normalization layer
 
 ## File Layout — `.claude/.mail/` Namespace(v2.8.0+)
 
@@ -216,6 +275,38 @@ v2.8.0+ 的 `archive-mail` / `view` / `rebuild-threads` **每次跑都會 silent
 - v2.5.0 — composing tools format 參數
 - v2.4.0 — search expansion + Coverage Audit
 - v2.3.0 — attachment auto-download + 分流
+
+## MCP Tool 命名 prefix
+
+Claude Code 載入本 plugin 時,所有 MCP tool 都以 `mcp__plugin_che-apple-mail-mcp_mail__*` 為 prefix。例:
+
+```
+mcp__plugin_che-apple-mail-mcp_mail__list_accounts
+mcp__plugin_che-apple-mail-mcp_mail__search_emails
+mcp__plugin_che-apple-mail-mcp_mail__compose_email
+mcp__plugin_che-apple-mail-mcp_mail__archive_email     ← 不存在,archive 走 /archive-mail command
+```
+
+### Prefix 拆解
+
+| 段 | 意義 |
+|----|------|
+| `mcp__` | 固定前綴(Claude Code 區分 MCP tool vs built-in) |
+| `plugin_` | tool 來自 plugin(非全 user-level MCP server) |
+| `che-apple-mail-mcp` | plugin name(對應 `.claude-plugin/plugin.json` `name` field) |
+| `_mail__` | MCP server 名稱(`.mcp.json` 裡的 server key) |
+| `*` | tool 名稱(Swift binary 註冊的 tool name) |
+
+### 用途
+
+- 多 plugin 共存時不撞名(e.g. 別的 plugin 也叫 `list_accounts`)
+- Allow-list 設定可整 plugin 一次准許 / 拒絕(`mcp__plugin_che-apple-mail-mcp_*`)
+- Claude Code log 一眼看出 tool 來自哪個 plugin
+
+### 相關文件
+
+- Anthropic MCP plugin spec — https://code.claude.com/docs/en/plugins
+- `.mcp.json` 裡 `mail` 那個 key 決定 prefix 中段(改名要同步改 wrapper)
 
 ## 相關
 
