@@ -99,24 +99,66 @@ if [[ -z "$TELEGRAM_API_ID" || -z "$TELEGRAM_API_HASH" ]]; then
     exit 1
 fi
 
-# --- PID tracking + orphan cleanup (#8) ---
-# Claude Code 異常退出時，上一個 MCP server process 可能 orphan 繼續持有
-# TDLib DB lock，導致新 process 的 authState 卡在 waitingForParameters。
+# --- Atomic-claim lock (#10) ---
+# TDLib DB is single-instance — two MCP servers can't share it. The previous
+# PID-tracking strategy (#8) is racy on multi-window scenarios: window B reads
+# window A's PID, sees an alive CheTelegramAllMCP process, sends SIGTERM →
+# kills window A's server unannounced. Atomic claim prevents that: window B
+# finds the lock held, fails fast, lets the user decide which window keeps it.
+LOCK_DIR="$HOME/.cache/che-telegram-all-mcp.lock"
+LOCK_FILE="${LOCK_DIR}.flock"
+LOCK_MODE=""
+
+mkdir -p "$(dirname "$LOCK_DIR")"
+
+if command -v flock >/dev/null 2>&1; then
+    LOCK_MODE="flock"
+    exec 200>"$LOCK_FILE"
+    if ! flock -n 200; then
+        echo "$BINARY_NAME: Another instance is already running. Use the existing Claude Code window, or kill the previous wrapper first." >&2
+        exit 1
+    fi
+    # fd 200 stays open through wrapper lifetime; OS releases on exit
+else
+    LOCK_MODE="mkdir"
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        # Stale-lock cleanup: if owner PID is dead, remove and retry once
+        OWNER_PID=
+        [ -f "$LOCK_DIR/owner.pid" ] && read -r OWNER_PID < "$LOCK_DIR/owner.pid" 2>/dev/null
+        if [[ "$OWNER_PID" =~ ^[0-9]+$ ]] && ! kill -0 "$OWNER_PID" 2>/dev/null; then
+            rm -rf "$LOCK_DIR"
+            mkdir "$LOCK_DIR" 2>/dev/null || {
+                echo "$BINARY_NAME: Failed to claim lock (stale-cleanup race). Retry shortly." >&2
+                exit 1
+            }
+        else
+            echo "$BINARY_NAME: Another instance is already running (lock held by PID ${OWNER_PID:-?}). Use the existing Claude Code window, or kill the previous wrapper first." >&2
+            exit 1
+        fi
+    fi
+    echo $$ > "$LOCK_DIR/owner.pid"
+fi
+
+# --- PID tracking (#8, retained for cleanup() bookkeeping) ---
+# Atomic claim above prevents the multi-instance race. The PID file below is
+# now used solely by cleanup() to know which child to reap, not to gate startup.
+# The old "kill the previous PID if alive" branch is now unreachable because the
+# lock above would have refused, so the residual logic just resets a dead PID
+# file from a crashed wrapper without sending signals.
 PID_FILE="$HOME/.cache/che-telegram-all-mcp.pid"
 mkdir -p "$(dirname "$PID_FILE")"
 
 if [[ -f "$PID_FILE" ]]; then
-    # `read` preserves internal whitespace (rejected by regex below),
-    # unlike `tr -d` which would silently concatenate "12 34" → "1234".
     OLD_PID=
     read -r OLD_PID < "$PID_FILE" 2>/dev/null || true
     if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && kill -0 "$OLD_PID" 2>/dev/null; then
-        # PID recycling 防護：比對 comm 的 basename（exact match，不用 substring）
+        # If this branch fires, atomic claim above failed silently — investigate.
+        # Retain the kill-old behavior as defense-in-depth, but log it.
+        echo "$BINARY_NAME: warning — old PID $OLD_PID alive after lock claim succeeded; killing as defense-in-depth (#8)." >&2
         OLD_COMM=$(ps -p "$OLD_PID" -o comm= 2>/dev/null)
         OLD_BASENAME=$(basename "$OLD_COMM" 2>/dev/null)
         if [[ "$OLD_BASENAME" == "$BINARY_NAME" ]]; then
             kill -TERM "$OLD_PID" 2>/dev/null
-            # Wait up to 2s for graceful shutdown
             for _ in 1 2 3 4; do
                 kill -0 "$OLD_PID" 2>/dev/null || break
                 sleep 0.5
@@ -152,6 +194,14 @@ cleanup() {
         CURRENT_PID=
         read -r CURRENT_PID < "$PID_FILE" 2>/dev/null || true
         [[ "$CURRENT_PID" == "$BIN_PID" ]] && rm -f "$PID_FILE"
+    fi
+    # Release atomic claim (#10). flock mode auto-releases on fd close;
+    # mkdir mode needs explicit rmdir.
+    if [[ "$LOCK_MODE" == "mkdir" ]] && [[ -d "$LOCK_DIR" ]]; then
+        OWNER_PID=
+        [ -f "$LOCK_DIR/owner.pid" ] && read -r OWNER_PID < "$LOCK_DIR/owner.pid" 2>/dev/null
+        # Only release if we own it (avoid late trap deleting another wrapper's lock)
+        [[ "$OWNER_PID" == "$$" ]] && rm -rf "$LOCK_DIR"
     fi
 }
 trap cleanup EXIT INT TERM
