@@ -1,6 +1,6 @@
 ---
 description: 歸檔指定聯絡人的 Apple Mail 郵件到 Markdown 檔案
-argument-hint: "[email-filter] [output-dir]  # 零參數時讀 .claude/.mail/config.md"
+argument-hint: "[email-filter] [output-dir]  # 零參數時讀 .claude/.mail/config.yaml"
 allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Write, Glob
 ---
 
@@ -11,7 +11,7 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 ## 使用方式
 
 ```
-/archive-mail                                    # 零參數(v2.12.0+,讀 .claude/.mail/config.md)
+/archive-mail                                    # 零參數(v2.12.0+;v2.16.0+ 讀 .claude/.mail/config.yaml,.md fallback)
 /archive-mail user@example.com
 /archive-mail user@example.com communication/emails
 ```
@@ -21,7 +21,7 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 
 #### 零參數模式
 
-當 cwd 已有 `.claude/.mail/config.md` 並設定 `filters` 時,可不帶任何參數呼叫;從 config 讀取:
+當 cwd 已有 `.claude/.mail/config.yaml`(v2.16.0+;舊 `.md` 仍 fallback,首次 invoke auto-migrate 為 `.yaml`)並設定 `filters` 時,可不帶任何參數呼叫;從 config 讀取:
 
 | Field | 用途 |
 |-------|------|
@@ -84,7 +84,7 @@ TaskCreate(subject="report_and_audit",
 
 #### Zero-arg 模式(v2.12.0+,resolves #13)
 
-若 `$ARGUMENTS` 為空,從 `${CONFIG_FILE}`(`.claude/.mail/config.md`,Step 1.6 計算) frontmatter 讀取:
+若 `$ARGUMENTS` 為空,從 `${CONFIG_FILE}`(`.claude/.mail/config.yaml`,Step 1.6 計算;legacy `.md` fallback 同樣 work) 讀取:
 
 ```bash
 if [ -z "$ARGUMENTS" ]; then
@@ -94,7 +94,9 @@ if [ -z "$ARGUMENTS" ]; then
         exit 1
     fi
 
-    # Parse YAML frontmatter (top-level scalars + sequences only)
+    # Parse YAML config (top-level scalars + sequences only)
+    # 兼容 pure YAML(`.yaml` v2.16.0+)與 frontmatter-wrapped(`.md` legacy);awk pattern 對兩者皆 work
+    # `---` 邊界(若 .md 用 frontmatter style)由 pattern 自然 skip(不 match `^[a-z_]+:`)
     # filters → list,作 OR-search 的 filter set
     # output_dir → 覆寫 default
     # last_archived → 餵 search_emails 的 date_from
@@ -166,7 +168,11 @@ SLUG=$(echo "${output_dir}" | tr '/' '-' | sed 's/^[-.]*//;s/[-.]*$//')
 INDEX_DIR="${NAMESPACE_DIR}/state/archives/${SLUG}"
 INDEX_FILE="${INDEX_DIR}/email_index.json"
 THREADS_FILE="${INDEX_DIR}/threads.json"
-CONFIG_FILE="${NAMESPACE_DIR}/config.md"
+
+# v2.16.0+ (#47): config 改 .yaml 為 first-class;.md 維持 fallback 直到 v3.0
+# Auto-migrate legacy .md → .yaml 時機在下方 "Auto-migrate" 區塊處理
+CONFIG_FILE="${NAMESPACE_DIR}/config.yaml"
+[ ! -f "$CONFIG_FILE" ] && [ -f "${NAMESPACE_DIR}/config.md" ] && CONFIG_FILE="${NAMESPACE_DIR}/config.md"
 
 mkdir -p "${INDEX_DIR}"
 ```
@@ -216,12 +222,23 @@ if [ ! -f "${THREADS_FILE}" ] && [ -f "${output_dir}/.threads.json" ]; then
   echo "🔄 Migrated ${output_dir}/.threads.json → ${THREADS_FILE}"
 fi
 
-# Legacy → new: config(global,跨 archive target 共用)
-if [ ! -f "${CONFIG_FILE}" ] && [ -f ".claude/emails.md" ]; then
-  mv ".claude/emails.md" "${CONFIG_FILE}"
-  echo "🔄 Migrated .claude/emails.md → ${CONFIG_FILE}"
+# Legacy → new: config v2.7.0 ↓ (.claude/emails.md → namespace)
+if [ ! -f "${NAMESPACE_DIR}/config.yaml" ] && [ ! -f "${NAMESPACE_DIR}/config.md" ] && [ -f ".claude/emails.md" ]; then
+  mv ".claude/emails.md" "${NAMESPACE_DIR}/config.yaml"
+  CONFIG_FILE="${NAMESPACE_DIR}/config.yaml"
+  echo "🔄 Migrated .claude/emails.md → ${NAMESPACE_DIR}/config.yaml"
+fi
+
+# Legacy → new: config v2.15.0 ↓ (.md → .yaml, v2.16.0+ #47)
+# 只 rename,不改內容(awk parser 對 YAML body 兩種格式皆 work)
+if [ ! -f "${NAMESPACE_DIR}/config.yaml" ] && [ -f "${NAMESPACE_DIR}/config.md" ]; then
+  mv "${NAMESPACE_DIR}/config.md" "${NAMESPACE_DIR}/config.yaml"
+  CONFIG_FILE="${NAMESPACE_DIR}/config.yaml"
+  echo "🔄 Migrated ${NAMESPACE_DIR}/config.md → ${NAMESPACE_DIR}/config.yaml (v2.16.0+ schema rename)"
 fi
 ```
+
+> **v2.16.0+ schema clarification (#47)**:config 副檔名改 `.yaml`(內容向來都是 YAML,只是 v2.15.0 ↓ 用 `.md` 副檔名造成語意 mismatch)。Auto-migrate 是 silent rename,user 不需動手。`.md` 仍 work 為 fallback,**v3.0 移除**;期間 README / CLAUDE.md schema 範例都改示範 `.yaml`。
 
 或者用 `/archive-mail-migrate` 批次 migrate 所有舊 archive targets,詳見該 command。
 
