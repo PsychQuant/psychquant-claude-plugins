@@ -359,6 +359,16 @@
       "category": "productivity"
     },
     {
+      "name": "batch-ocr",
+      "version": "0.1.0",
+      "description": "Folder-level OCR pipeline orchestrator wrapping macdoc — PDF→PNG split, parallel OCR with SSH-tunnel health check + auto-retry, per-page md merge, idempotent resume from interruption. Wraps the boilerplate every 'OCR a folder of PDFs' task otherwise re-derives.",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/batch-ocr",
+      "category": "development"
+    },
+    {
       "name": "agent-cacher",
       "version": "0.1.0",
       "description": "Explicit-lookup cache for AI agent shell calls — records every invocation to SQLite, exposes cache.{lookup,fetch,recent,diff} via MCP",
