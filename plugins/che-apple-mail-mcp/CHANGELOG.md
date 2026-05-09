@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.0] - 2026-05-09
+
+### Added
+- **Workspace Layout Detection (#49)**:當 `output_dir` 既無 `$ARGUMENTS[1]` 也無 `${CONFIG_FILE}` 的 `output_dir:` 欄位給定時,probe 工作目錄按 `communications/email/` → `correspondence/emails/` → baseline default `communication/emails` 順序解析。Detection-first not prescriptive — adapt 到 user 既有 layout,不 push canonical convention。Existing user 有 explicit config 的 100% backward-compat(detection 不 fire)。
+- **Sibling-archive dedup extension (#49)**:`${output_dir}` 下若有 symlinked subdirectory(transitioned-project pattern,e.g. `communications/email/application/` → `applications/completed/.../emails/`),自動讀其下 markdown 的 `message_id:` YAML frontmatter 併入 in-memory dedup set。`find -P -maxdepth 2`,read-only,never writes to symlink target。Composes with `dedup_strategy = index | both`(skip on `last_archived`)。
+- **Ambiguity guard**:當 `communications/email/` 與 `correspondence/emails/` **同時存在且都有 `*.md`** 時,refuse to guess,abort with explicit pin recommendation(指 user 寫 `output_dir:` in config)。Mid-migration workspace 必須 explicit 指定避免 dedup-index split-brain。
+- **Detection 透明度**:啟動時 `🔍 Detected output_dir: <path> (from layout probe)` log,以及 dedup extension 觸發時 `🔗 Extended dedup with N entries from sibling archives:` log,讓 verify / diagnose 能看到 path resolution 結果。
+- **README Workspace Patterns section**(v2.17.0+):文件三種 layout、precedence(高→低:`$ARGUMENTS[1]` → config `output_dir:` → detection → default)、symlink coexistence pattern、ambiguity guard。
+
+### Notes
+- Plugin minor bump 2.16.1 → 2.17.0(new feature surface,additive,backward compat)。Plan 走 IDD `/idd-plan` approval gate,EnterPlanMode 已 user-approved 後才 chain 到 implement。
+- Out-of-scope follow-ups filed:**#50** parallel `documents_dir` detection,**#51** companion-commands(`archive-mail-view` / `archive-mail-rebuild-threads` / `archive-mail-migrate`)detection consistency,Tier C' per-contact mode(deferred until N≥3 evidence)。
+- Sister-bug observation during scout:v2.16.1 release(2026-05-09 commit `8089765`)沒寫 CHANGELOG entry — 屬 KAC sync drift,**留給 follow-up issue 補 backfill**(本 PR 不混進)。
+
 ## [2.16.0] - 2026-05-07
 
 ### Changed

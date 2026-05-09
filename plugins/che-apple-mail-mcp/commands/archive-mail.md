@@ -80,11 +80,41 @@ TaskCreate(subject="report_and_audit",
 
 從 `$ARGUMENTS` 取得:
 - `filter`: 第一個參數(可選,**v2.12.0+ 零參數模式**)
-- `output_dir`: 第二個參數,預設 `communication/emails`
+- `output_dir`: 第二個參數;若未給且 `${CONFIG_FILE}` 也沒設,進 **Workspace Layout Detection**(v2.17.0+,見下方)決定;最終 fallback 為 `communication/emails`
+
+#### Config parsing(always-on,v2.17.0+ #49)
+
+不論 `$ARGUMENTS` 是空還是有內容,**只要 `${CONFIG_FILE}` 存在就先 parse**。理由:`/archive-mail <filter>`(只給第一個 arg)的 user 也應該尊重 config `output_dir:` pin,不能 silently fall through 到 detection。
+
+> **Forward reference**:`${CONFIG_FILE}` 由 Step 1.6 計算(`.claude/.mail/config.yaml`,legacy `.md` fallback)。AI executor 整段 skill 讀完才開始執行,所以 forward-reference 在 markdown skill 慣例下 OK;若有人手動 copy bash 出來跑,先看 Step 1.6 的 `CONFIG_FILE` 賦值。
+
+```bash
+# Always parse config if file exists — independent of $ARGUMENTS state
+CFG_OUTPUT_DIR=""
+LAST_ARCHIVED=""
+EXCLUDE_MBX=""
+if [ -f "${CONFIG_FILE}" ]; then
+    # Parse YAML config (top-level scalars + sequences only)
+    # 兼容 pure YAML(`.yaml` v2.16.0+)與 frontmatter-wrapped(`.md` legacy);awk pattern 對兩者皆 work
+    # `---` 邊界(若 .md 用 frontmatter style)由 pattern 自然 skip(不 match `^[a-z_]+:`)
+    CFG_OUTPUT_DIR=$(awk '/^output_dir:[ \t]*/{sub(/^output_dir:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
+    LAST_ARCHIVED=$(awk '/^last_archived:[ \t]*/{sub(/^last_archived:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
+    EXCLUDE_MBX=$(awk '/^exclude_mailboxes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+fi
+
+# output_dir precedence (高 → 低):
+#   1. $ARGUMENTS[2] (cmdline second arg) — 若已設,跳過下面的 fallback
+#   2. ${CONFIG_FILE} 的 output_dir: 欄位(本 step,both zero-arg and single-arg modes)
+#   3. Workspace Layout Detection(下方,v2.17.0+)
+#   4. Baseline default `communication/emails`(detection 中的 Probe 3)
+[ -z "$output_dir" ] && [ -n "$CFG_OUTPUT_DIR" ] && output_dir="$CFG_OUTPUT_DIR"
+# last_archived feeds Step 3 search_emails 的 date_from (strict `>`)
+# exclude_mailboxes feeds Step 3 mailbox-filter
+```
 
 #### Zero-arg 模式(v2.12.0+,resolves #13)
 
-若 `$ARGUMENTS` 為空,從 `${CONFIG_FILE}`(`.claude/.mail/config.yaml`,Step 1.6 計算;legacy `.md` fallback 同樣 work) 讀取:
+若 `$ARGUMENTS` 為空,從 `${CONFIG_FILE}` 讀取 `filters`(否則無 filter 可搜):
 
 ```bash
 if [ -z "$ARGUMENTS" ]; then
@@ -94,27 +124,13 @@ if [ -z "$ARGUMENTS" ]; then
         exit 1
     fi
 
-    # Parse YAML config (top-level scalars + sequences only)
-    # 兼容 pure YAML(`.yaml` v2.16.0+)與 frontmatter-wrapped(`.md` legacy);awk pattern 對兩者皆 work
-    # `---` 邊界(若 .md 用 frontmatter style)由 pattern 自然 skip(不 match `^[a-z_]+:`)
     # filters → list,作 OR-search 的 filter set
-    # output_dir → 覆寫 default
-    # last_archived → 餵 search_emails 的 date_from
-    # exclude_mailboxes → search 跳過
-
     FILTERS=$(awk '/^filters:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
-    CFG_OUTPUT_DIR=$(awk '/^output_dir:[ \t]*/{sub(/^output_dir:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
-    LAST_ARCHIVED=$(awk '/^last_archived:[ \t]*/{sub(/^last_archived:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
-    EXCLUDE_MBX=$(awk '/^exclude_mailboxes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
 
     if [ -z "$FILTERS" ]; then
         echo "Error: ${CONFIG_FILE} 沒設定 filters。請補 filters 或傳命令列參數。" >&2
         exit 1
     fi
-
-    [ -n "$CFG_OUTPUT_DIR" ] && output_dir="$CFG_OUTPUT_DIR"
-    # last_archived feeds Step 3 search_emails 的 date_from (strict `>`)
-    # exclude_mailboxes feeds Step 3 mailbox-filter
 fi
 ```
 
@@ -122,7 +138,57 @@ fi
 
 若 `$ARGUMENTS` 非空,命令列參數覆寫 config:
 - `filter` = 第一個 arg(視為單一 filter,即使 config 有多個 filters 仍只用此一個)
-- `output_dir` = 第二個 arg(若有),否則用 config / default
+- `output_dir` = 第二個 arg(若有);**否則仍走上方 Config parsing 區段已 apply 的 `CFG_OUTPUT_DIR`**(v2.17.0+ 修掉 explicit-config-bypass-in-non-zero-arg-mode 漏洞);config 沒設則走 **Workspace Layout Detection**(v2.17.0+) / default
+
+#### Workspace Layout Detection(v2.17.0+,#49)
+
+當 `output_dir` 既非 `$ARGUMENTS[1]` 也非 `${CONFIG_FILE}` 的 `output_dir:` 欄位給定時,probe 工作目錄看是否符合已知的 workspace layout。**Detection 只在「沒有 explicit choice」時觸發**——如果 user 在 config 或命令列已 pin,detection 完全不跑,既有行為 100% backward compat。
+
+**Probe 順序**(命中即停):
+
+```bash
+# Only run when output_dir is still empty after $ARGUMENTS[1] + ${CONFIG_FILE} resolution
+if [ -z "$output_dir" ]; then
+    # Probe 1: communications/<channel>/ pattern (v2.17.0+ canonical)
+    if [ -d "communications/email" ]; then
+        # Ambiguity guard: if both layouts have content, refuse to guess
+        if [ -d "correspondence/emails" ] && \
+           [ -n "$(find -P correspondence/emails -maxdepth 1 -name '*.md' 2>/dev/null | head -1)" ] && \
+           [ -n "$(find -P communications/email  -maxdepth 1 -name '*.md' 2>/dev/null | head -1)" ]; then
+            echo "❌ Ambiguous workspace layout: both 'communications/email/' and 'correspondence/emails/' have archived markdowns." >&2
+            echo "   Pin 'output_dir:' in .claude/.mail/config.yaml to disambiguate." >&2
+            exit 1
+        fi
+        output_dir="communications/email"
+        echo "🔍 Detected output_dir: communications/email (from layout probe)"
+
+    # Probe 2: correspondence/emails/ legacy pattern (pre-v2.17 user convention)
+    elif [ -d "correspondence/emails" ]; then
+        output_dir="correspondence/emails"
+        echo "🔍 Detected output_dir: correspondence/emails (legacy layout probe)"
+
+    # Probe 3: nothing detected — fall back to baseline default
+    else
+        output_dir="communication/emails"
+        # No log line — silent default keeps non-detection workspace flow unchanged
+    fi
+fi
+```
+
+**Why probe order = `communications/email` → `correspondence/emails` → default**:
+
+1. `communications/<channel>/` 是 forward direction(per kiki830621/chchen-lab 2026-05-08 reorg)。當 user 已建好 `communications/email/`,intent 明確。
+2. `correspondence/emails/` 是 legacy convention(per 既有 `psychophysic_representations` 等 workspaces)。但這些 workspaces 通常已有 explicit `output_dir:` 在 config,此 probe 主要為「legacy workspace 沒寫 config」的少數情境兜底。
+3. 都不符合則用 baseline default,既有 zero-config flow 不變。
+
+**Ambiguity guard**:當 `communications/email/` 與 `correspondence/emails/` **同時存在且都有 `*.md`** 時,refuse 而非 silent guess。Mid-migration 的 workspace 必須 explicit pin,否則風險:detection 把新信寫到 `communications/email/` 但 dedup index 依然指 legacy 路徑,半實作狀態下的 message-id collision 不會被偵測。Empty-dir-as-marker 不算ambiguity(常見:user 才剛建好 `communications/email/`,還沒 archive 過)。
+
+**Detection 與 explicit config 的關係**(precedence,高 → 低):
+
+1. `$ARGUMENTS[1]`(命令列 `/archive-mail <filter> <output_dir>` 的第二個參數)
+2. `${CONFIG_FILE}` 的 `output_dir:` 欄位(zero-arg 模式)
+3. **Workspace Layout Detection**(本節,v2.17.0+)
+4. Baseline default `communication/emails`
 
 #### 模糊 filter
 
@@ -261,6 +327,61 @@ mkdir -p "${output_dir}"   # archive markdown 目的地(不變)
 
 兩個索引**獨立維護**,thread 索引純粹為了快速查詢 thread 關係,不影響單封信的儲存。若 `threads.json` 損壞,可用 `/archive-mail-rebuild-threads` 從 md frontmatter 重建。
 
+#### Step 2.1: Sibling-archive dedup extension(v2.17.0+,#49)
+
+當 `${output_dir}` 下有 symlinked subdirectory(典型情境:transitioned-project pattern,例如 chchen_lab 把 `email/application/` symlink 到 `applications/completed/.../emails/`),掃描其下 markdown 的 YAML frontmatter,把 `message_id:` 值併入 in-memory dedup set。**讀取 only,從不寫入 symlink target**。
+
+```bash
+# Only run when dedup_strategy uses index (skip if last_archived only)
+if [ "$DEDUP_STRATEGY" = "index" ] || [ "$DEDUP_STRATEGY" = "both" ]; then
+    # Find symlinked subdirectories in output_dir (1 level deep)
+    EXTENDED_COUNT=0
+    EXTENDED_SOURCES=()
+    while IFS= read -r symlink_dir; do
+        [ -z "$symlink_dir" ] && continue
+        # Bound search depth + use -P to NOT follow symlinks recursively (we follow once into the symlinked dir, then stay)
+        ENTRIES_THIS_DIR=0
+        while IFS= read -r mdfile; do
+            [ -z "$mdfile" ] && continue
+            # Read just the YAML frontmatter (first ~30 lines is generous)
+            mid=$(head -30 "$mdfile" 2>/dev/null | awk '/^message_id:[ \t]*/{sub(/^message_id:[ \t]*"?/,"");sub(/"?$/,"");print;exit}')
+            if [ -n "$mid" ]; then
+                # Add to in-memory dedup set (Message-ID is canonical key, same as INDEX_FILE)
+                # Implementation: append to a shadow set the dedup logic in Step 4 will consult
+                EXTENDED_DEDUP_IDS+=("$mid")
+                ENTRIES_THIS_DIR=$((ENTRIES_THIS_DIR + 1))
+            fi
+        done < <(find -P "$symlink_dir/" -maxdepth 2 -name "*.md" -type f 2>/dev/null)
+
+        if [ "$ENTRIES_THIS_DIR" -gt 0 ]; then
+            EXTENDED_COUNT=$((EXTENDED_COUNT + ENTRIES_THIS_DIR))
+            EXTENDED_SOURCES+=("$symlink_dir ($ENTRIES_THIS_DIR entries)")
+        fi
+    done < <(find -P "${output_dir}" -maxdepth 1 -type l 2>/dev/null)
+
+    if [ "$EXTENDED_COUNT" -gt 0 ]; then
+        echo "🔗 Extended dedup with $EXTENDED_COUNT entries from sibling archives:"
+        for src in "${EXTENDED_SOURCES[@]}"; do
+            echo "   - $src"
+        done
+    fi
+    # Silent when zero — typical zero-symlink workspace flow stays clean
+fi
+```
+
+**Step 4 dedup logic 銜接**:`EXTENDED_DEDUP_IDS` 由 Step 4 透過 set union **併入** existing predicate(不取代 strategy-specific date filter)。完整 pseudocode 見 [Step 4 過濾新郵件](#step-4-過濾新郵件)。Composition rule 摘要:
+
+- `dedup_strategy=index`:`known_ids = existing_index_ids ∪ extended_ids`,filter by Message-ID set membership only
+- `dedup_strategy=last_archived`:本 step 2.1 完全 skip(`EXTENDED_DEDUP_IDS` 不會被 populate),Step 4 仍走 date gate
+- `dedup_strategy=both`:`known_ids = existing_index_ids ∪ extended_ids` AND date > `last_archived`,**两条件 AND**(extended IDs 不打破 date filter)
+
+**Properties / invariants**:
+
+- **Read-only**:never `mv` / `rm` / `>` against symlink target;`find` + `head` + `awk` only。
+- **Bounded**:`find -P -maxdepth 2`(symlink dir 本身 + 一層 immediate children),避免 deep archive 拖慢 startup。
+- **Resilient to schema diversity**:只 require `message_id:` field 在 YAML frontmatter 開頭~30 lines;archive-mail v2.6.0+ 全有,manual archive 若有 `message_id:` 也認得;沒有則跳過該檔(silent skip,計入 ENTRIES_THIS_DIR=0 不報)。
+- **Compose with `dedup_strategy`**:僅在 `index` / `both` strategy 跑;`last_archived` strategy 完全 skip(那種 strategy 的 user 顯然不依賴 Message-ID dedup)。Compose 邏輯:`EXTENDED_DEDUP_IDS` 透過 set union 併入 existing Message-ID set,不取代 strategy-specific date predicate。
+
 **讀取附件設定**(可選):檢查 `${CONFIG_FILE}` (`.claude/.mail/config.md`) 是否有 `attachment_routing` YAML front matter 區塊。
 若有，載入自訂規則（all-or-nothing 取代，不做 merge）。若無，使用以下內建預設：
 
@@ -345,10 +466,36 @@ search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
 
 ### Step 4: 過濾新郵件
 
-對每封搜尋到的郵件：
-1. 檢查其 Message-ID 是否已在索引中
+對每封搜尋到的郵件,依當前 `dedup_strategy` 套用 dedup logic。**v2.17.0+ #49**:除了既有 `INDEX_FILE` 來源的 Message-ID set,**也必須消費 Step 2.1 累積的 `EXTENDED_DEDUP_IDS`**(從 sibling-archive symlink 抽出的 historical Message-ID)。
+
+```python
+# Build the canonical "known" Message-ID set per dedup_strategy
+existing_ids = set(load_json(INDEX_FILE)["emails"].keys()) if DEDUP_STRATEGY in ("index", "both") else set()
+extended_ids = set(EXTENDED_DEDUP_IDS)  # v2.17.0+ — populated by Step 2.1 if symlinked siblings exist
+known_ids = existing_ids | extended_ids
+
+# Apply strategy-specific predicate (note: extended_ids compose IN to existing predicate, not replace it)
+def is_new(email):
+    # Always: not in known Message-ID set
+    if email["message_id"] in known_ids:
+        return False
+    # Extra gate for last_archived / both: also require date > last_archived
+    if DEDUP_STRATEGY in ("last_archived", "both") and LAST_ARCHIVED:
+        if email["date"] <= LAST_ARCHIVED:
+            return False
+    return True
+
+new_emails = [e for e in fetched if is_new(e)]
+```
+
+對每封新郵件:
+1. 檢查其 Message-ID 是否已在 `known_ids`(`INDEX_FILE` ∪ `EXTENDED_DEDUP_IDS`)中
 2. 若已存在 → 跳過
-3. 若不存在 → 加入待歸檔清單
+3. 若不存在(且通過 strategy-specific date gate)→ 加入待歸檔清單
+
+> **Why `known_ids` 而非單純 `existing_ids`?** 對 transitioned-project workspace(see Step 2.1),`EXTENDED_DEDUP_IDS` 來自 read-only sibling archive(symlink target),這些 historical Message-ID 不在 `INDEX_FILE` 但代表「使用者已 archive 過的信」。若不消費 extended set,sibling archive 裡的舊信被 forward 回來會 silent re-archive。
+>
+> **`dedup_strategy=both` composition 細節**:extended IDs 透過 set union **加入** known set,而非取代。`both` strategy 的 date filter 仍照常 apply(對所有 emails,不論其 Message-ID 來源)。
 
 ### Step 4.5: Confirmation — Phase 2 + 3: Search Preview + Operation Confirmation（v2.7.0+）
 
