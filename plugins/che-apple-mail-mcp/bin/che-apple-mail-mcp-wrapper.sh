@@ -15,6 +15,7 @@ BINARY_NAME="CheAppleMailMCP"
 INSTALL_DIR="$HOME/bin"
 BINARY="$INSTALL_DIR/$BINARY_NAME"
 VERSION_FILE="$INSTALL_DIR/.${BINARY_NAME}.version"
+RUNTIME_FILE="$INSTALL_DIR/.${BINARY_NAME}.runtime.json"
 
 # Locate plugin root via wrapper's own path (more reliable than $CLAUDE_PLUGIN_ROOT
 # which isn't guaranteed in MCP spawn env). Wrapper lives at PLUGIN_ROOT/bin/*.sh.
@@ -84,5 +85,14 @@ if $NEED_DOWNLOAD; then
         fi
     fi
 fi
+
+# Write runtime state (per #76 — let session-start hook detect mid-session staleness).
+# Atomic write: .tmp + mv; failures silent (|| true) so they never block spawn.
+{
+    printf '{"pid":%d,"started_at":%d,"version_at_spawn":"%s"}\n' \
+        "$$" "$(date +%s)" "${DESIRED_VERSION:-unknown}" \
+        > "${RUNTIME_FILE}.tmp" \
+        && mv "${RUNTIME_FILE}.tmp" "$RUNTIME_FILE"
+} 2>/dev/null || true
 
 exec "$BINARY" "$@"
