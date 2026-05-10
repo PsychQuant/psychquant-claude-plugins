@@ -14,7 +14,7 @@ Move a Google Drive file into the GiftHub-LFS folder, create an LFS pointer via 
 
 ## Prerequisites
 
-- `.gfh.json` exists in repo root
+- GiftHub config exists：`.claude/.gfs/config.json`（v2 layout，預設）或 `.gfh.json`（v1 layout，backward-compat）
 - `gfh` CLI installed (`~/bin/gfh`)
 - `gws` CLI installed (Google Workspace CLI)
 
@@ -23,7 +23,12 @@ Move a Google Drive file into the GiftHub-LFS folder, create an LFS pointer via 
 ### Step 1: Read repo config
 
 ```bash
-cat .gfh.json
+# v0.4.0+：自動 resolve v2 path 優先，v1 fallback
+if [ -f ".claude/.gfs/config.json" ]; then
+  cat .claude/.gfs/config.json
+elif [ -f ".gfh.json" ]; then
+  cat .gfh.json
+fi
 ```
 
 Extract:
@@ -57,7 +62,7 @@ gws drive files update \
   --json '{"name":"NEW_NAME.mp4"}'
 ```
 
-- `addParents`: GiftHub-LFS folder ID (from `.gfh.json`)
+- `addParents`: GiftHub-LFS folder ID (from config — v2 `.claude/.gfs/config.json` or v1 `.gfh.json`)
 - `removeParents`: the file's current parent folder ID (from Step 2 metadata)
 - `name`: new filename matching project convention
 
