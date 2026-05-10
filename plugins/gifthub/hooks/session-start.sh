@@ -1,8 +1,15 @@
 #!/bin/bash
-# GiftHub SessionStart hook — detect .gfh.json and inject context
+# GiftHub SessionStart hook — detect GiftHub config and inject context
 
-# Only activate if .gfh.json exists in current directory
-if [ ! -f ".gfh.json" ]; then
+# v0.4.0: detect v2 layout (.claude/.gfs/config.json) first, fallback to v1 (.gfh.json)
+# 任一存在即視為 GiftHub-enabled repo
+if [ -f ".claude/.gfs/config.json" ]; then
+  GFH_LAYOUT="v2"
+  GFH_CONFIG=".claude/.gfs/config.json"
+elif [ -f ".gfh.json" ]; then
+  GFH_LAYOUT="v1"
+  GFH_CONFIG=".gfh.json"
+else
   exit 0
 fi
 
@@ -43,7 +50,7 @@ fi
 cat <<EOF
 # GiftHub Detected
 
-$GFH_STATUS | Pointers: $POINTER_COUNT
+$GFH_STATUS | Pointers: $POINTER_COUNT | Layout: $GFH_LAYOUT ($GFH_CONFIG)
 
 ## Commands
 | Command | Purpose |
