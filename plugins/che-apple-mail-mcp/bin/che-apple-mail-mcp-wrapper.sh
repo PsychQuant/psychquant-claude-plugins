@@ -22,11 +22,19 @@ RUNTIME_FILE="$INSTALL_DIR/.${BINARY_NAME}.runtime.json"
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
 
-# Read desired version from plugin.json (empty string on any failure → fallback to "latest").
+# Read desired BINARY version from plugin.json. Prefer the explicit
+# `binary_version` field (introduced for #77 — disambiguates from the
+# plugin shell's own `version`). Fall back to `version` for plugins that
+# haven't migrated yet — they pay the existing silent-skip risk for
+# binary-only releases (documented in #77).
 DESIRED_VERSION=""
 if [[ -f "$PLUGIN_JSON" ]]; then
-    DESIRED_VERSION=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
+    DESIRED_VERSION=$(grep -oE '"binary_version":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
         | head -1 | cut -d'"' -f4 || true)
+    if [[ -z "$DESIRED_VERSION" ]]; then
+        DESIRED_VERSION=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
+            | head -1 | cut -d'"' -f4 || true)
+    fi
 fi
 
 # Read currently installed version from sidecar (empty string if file missing/unreadable).
@@ -72,8 +80,16 @@ if $NEED_DOWNLOAD; then
         if curl -sL --max-time 300 "$URL" -o "${BINARY}.tmp" 2>/dev/null; then
             chmod +x "${BINARY}.tmp"
             mv "${BINARY}.tmp" "$BINARY"
-            echo "${DESIRED_VERSION:-unknown}" > "$VERSION_FILE"
-            echo "$BINARY_NAME: installed v${DESIRED_VERSION:-latest}" >&2
+            # Sidecar records the ACTUAL downloaded binary tag, parsed from
+            # the GitHub release URL (path segment between /download/ and
+            # the next /). This breaks the #77 "silent skip" trap: when
+            # plugin.json lacks `binary_version`, DESIRED is the shell
+            # version which never matches a real binary tag, so writing
+            # DESIRED_VERSION makes the sidecar lie. Parsing the URL keeps
+            # the sidecar honest regardless of which path was taken.
+            ACTUAL_VERSION=$(echo "$URL" | sed -nE 's|.*/releases/download/v?([^/]+)/.*|\1|p')
+            echo "${ACTUAL_VERSION:-${DESIRED_VERSION:-unknown}}" > "$VERSION_FILE"
+            echo "$BINARY_NAME: installed v${ACTUAL_VERSION:-${DESIRED_VERSION:-latest}}" >&2
         else
             rm -f "${BINARY}.tmp" 2>/dev/null
             if [[ -x "$BINARY" ]]; then
