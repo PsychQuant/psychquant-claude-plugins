@@ -332,6 +332,13 @@ mkdir -p "${output_dir}"   # archive markdown 目的地(不變)
 當 `${output_dir}` 下有 symlinked subdirectory(典型情境:transitioned-project pattern,例如 chchen_lab 把 `email/application/` symlink 到 `applications/completed/.../emails/`),掃描其下 markdown 的 YAML frontmatter,把 `message_id:` 值併入 in-memory dedup set。**讀取 only,從不寫入 symlink target**。
 
 ```bash
+# === INVARIANT: this block is READ-ONLY w.r.t. $symlink_dir ===
+# Allowed: find / head / awk / cat / grep
+# FORBIDDEN: mv / rm / cp / > / >> / tee / chmod (against $symlink_dir or its target)
+# If you need to write, do it OUTSIDE this block.
+# (v2.17.x #56 — invariant marker; future hardening: bash trap-based check or pre-commit scan,
+# both deferred. This comment is the load-bearing contract for future maintainers.)
+
 # Only run when dedup_strategy uses index (skip if last_archived only)
 if [ "$DEDUP_STRATEGY" = "index" ] || [ "$DEDUP_STRATEGY" = "both" ]; then
     # Find symlinked subdirectories in output_dir (1 level deep)
