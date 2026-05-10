@@ -61,7 +61,7 @@ filters:
   - someone@example.com
 ```
 
-Detection 不會 fire,既有行為 100% backward compat。
+已 explicit-pin 的 workspace 行為不變;zero-config 且 `communications/email/` 與 `correspondence/emails/` 同時存在含 `*.md` 的 mid-migration workspace 會被 ambiguity guard flag,要求 explicit pin(避免半實作狀態的 dedup-index split-brain)。
 
 **Symlink coexistence**(transitioned-project pattern):
 
