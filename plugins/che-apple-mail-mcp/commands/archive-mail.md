@@ -379,7 +379,7 @@ fi
 
 - **Read-only**:never `mv` / `rm` / `>` against symlink target;`find` + `head` + `awk` only。
 - **Bounded**:`find -P -maxdepth 2`(symlink dir 本身 + 一層 immediate children),避免 deep archive 拖慢 startup。
-- **Resilient to schema diversity**:只 require `message_id:` field 在 YAML frontmatter 開頭~30 lines;archive-mail v2.6.0+ 全有,manual archive 若有 `message_id:` 也認得;沒有則跳過該檔(silent skip,計入 ENTRIES_THIS_DIR=0 不報)。
+- **archive-mail v2.6+ format compatibility**:設計 target 是 archive-mail 自產的 frontmatter(`message_id: "<...>"` 雙引號格式)。Manual archive 若 frontmatter 用單引號 / 內含 inline comment / CRLF / trailing whitespace,parser 會 silent skip 該檔(計入 ENTRIES_THIS_DIR=0)。Future hardening(yq parser / robust awk)deferred until N≥3 user reports of manual-archive missed dedup — see follow-up #54 / #50 for tracking。
 - **Compose with `dedup_strategy`**:僅在 `index` / `both` strategy 跑;`last_archived` strategy 完全 skip(那種 strategy 的 user 顯然不依賴 Message-ID dedup)。Compose 邏輯:`EXTENDED_DEDUP_IDS` 透過 set union 併入 existing Message-ID set,不取代 strategy-specific date predicate。
 
 **讀取附件設定**(可選):檢查 `${CONFIG_FILE}` (`.claude/.mail/config.md`) 是否有 `attachment_routing` YAML front matter 區塊。
