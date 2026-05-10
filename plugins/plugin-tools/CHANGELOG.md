@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **s6 Version history multi-version gap**:scan git log 找最近 90 天 same-major versions,對比 README Version History table。容忍 1 個 missing(可能 patch / internal),2+ 同 major missing 觸發 gate。Catches che-duckdb-mcp(v2.0 → v2.2.1 中 v2.1.0/v2.1.1/v2.2.0 漏列)。
 - **2 suppressions**:
   - `no-version-section` — plugin 刻意不維護 Version History section 時 suppress version-related signals
-  - `wrapper-only commits` — commits 只動 `bin/*-wrapper.sh` 視為 binary version sync,不觸發 README staleness gate
+  - `wrapper-only / marketplace-sync / version-bump commits` — commits 只動 `bin/*-wrapper.sh`、`marketplace.json` sync、或 `plugin.json` version field 視為 distribution maintenance(非 substantive 改動),不觸發 README staleness gate。Filters commit message patterns 含 `(fix|chore|docs)(.*)(version-aware auto-download|sync marketplace.json|update repo URLs|wrapper)` 與 path patterns `wrapper.sh` / `marketplace.json` / `plugin.json` version。Catches `1a4c1fe` wrapper-update commit 同時 touch 9 個 plugin 但對 user 不可見的情境。
 
 ### Notes
 - Backfilled per **#64** (sister concern from #60) — original v1.15.0 release on 2026-04-26 used `changelog-tools:changelog-init` placeholder `(date unknown — please fill in)` 而沒填入。Date verified via `git show -s 60f8cab`;description detail backfilled from commit body + original `marketplace.json` description。

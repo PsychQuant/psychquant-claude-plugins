@@ -44,12 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.16.1] - 2026-05-09
 
 ### Notes
-- **Bump-only release** to ship binary v2.7.1 + catch up tool count drift in user-facing surfaces (44 → 47)。Shell 邏輯 v2.16.0 不變,本版本只更新 wrapper 拉取的 binary tag。Backfilled per **#52** (sister concern from #49) — original v2.16.1 commit `8089765` 漏寫此 entry,KAC invariant 要求 every released version 有 entry。
+- **Bump-only release** to ship binary v2.7.1 + catch up tool count drift in `plugin.json` / `marketplace.json` descriptions (44 → 47)。Shell 邏輯 v2.16.0 不變,本版本只更新 wrapper 拉取的 binary tag。Backfilled per **#52** (sister concern from #49) — original v2.16.1 commit `8089765` 漏寫此 entry,KAC invariant 要求 every released version 有 entry。
 - Binary v2.7.1 ships:
   - **#72** base64 decoding fix — attachments with unusual MIME encoding now save correctly
   - **#69** SQLite fast-path stderr logging — silent fallback to AppleScript path now visible in logs
   - **#66** `.partial.emlx` attachment fix — incomplete download artifacts no longer crash get_email parsing
-- Tool count drift catch-up (44 → 47): per `tool-readme-sync` audit pattern, README + plugin.json description + marketplace.json description align on the actual tool count exposed by binary v2.7.1.
+- Tool count drift catch-up (44 → 47): commit `8089765` 只 touched `plugin.json` + `marketplace.json` description fields(README 未變動)。per `tool-readme-sync` audit pattern,後續 release 應補做 README 同步檢查。
 
 ## [2.16.0] - 2026-05-07
 
