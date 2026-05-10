@@ -407,6 +407,12 @@ options:
 | `plugin-deploy` Step 2.5 | 偶爾（發版時）| **BLOCK** | Release 沒 binary = 新使用者裝 plugin 就壞，不能放過 |
 | `plugin-update` Phase 1.5 | 頻繁（日常同步）| **ASK + AUTO-SYNC** | 開發者通常想要一次更新完，但要尊重「只改 shell 不動 binary」的情境 |
 
+> **Default-option policy alignment with Phase 0.5**(audit per #68):
+>
+> Phase 0.5 rule:**`abort` is the default for any state with multiple sensible actions;active default is reserved for unambiguous happy-path / reversible action / frequent dev flow**(per Phase 0.5 Step 3 explicit rule)。
+>
+> Phase 1.5 default 「順便更新」**符合 exception clause** — binary-out-of-sync 在 daily dev flow 是 unambiguous happy path(開發者通常確實想要 binary + shell 一起更新),而且 binary install 是 reversible(可重跑 mcp-deploy / cli-upgrade 換版本)。本 phase 跟 Phase 0.5 的 abort-default 不衝突,各自服務不同 lifecycle moment(release-time push 不可逆 vs dev-time binary sync 可逆)。
+
 ### Step 5: 執行 auto-sync（若使用者選擇）
 
 **MCP 情境**：
@@ -679,6 +685,14 @@ options:
 |-------|---------|-----------|------|
 | `plugin-update` Phase 2.5 | 頻繁（日常同步）| **ASK** | 有時純修 typo / hook / internal refactor，不需要動 README |
 | `plugin-deploy` Step 2 | 偶爾（發版時）| **列入 checklist 並 offer 修復** | 正式發布時使用者第一眼看 README，stale 就是差的第一印象 |
+
+> **Default-option policy alignment with Phase 0.5**(audit per #68):
+>
+> Phase 0.5 rule:**active default 保留給 unambiguous happy-path / reversible / non-destructive action**。
+>
+> Phase 2.5 default 「更新 README」**符合 exception clause** — 該選項不直接 mutate README,而是 propose diff(read CHANGELOG + git log → 起草 → user 審閱後才 commit)。User-confirmation gate 還在,只是把 draft 起草的 friction 從 user 轉到 skill。屬於 reversible / non-destructive 操作。
+>
+> 對比 Phase 0.5 abort-default 的 `git push` 情境:push to public marketplace 是 irreversible(回滾需要 force-push,在 public branch 是 bad day),所以即使用戶在 keyboard 也不該 default push。各 phase 的 default 反映其 action 的 risk profile。
 
 ---
 
