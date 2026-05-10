@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.18.0] - 2026-05-10
+
+### Added
+- **Staleness Detection (Refs PsychQuant/che-apple-mail-mcp#76)**:wrapper 在 `exec binary` 前 atomic-write `~/bin/.CheAppleMailMCP.runtime.json` 紀錄 `{pid, started_at, version_at_spawn}`;新增 `hooks/session-start.sh`,Claude Code session 啟動時偵測 runtime state 與 `plugin.json` 的 version drift。Drift + PID alive + `command` field 含 `CheAppleMailMCP` 三條件成立 → SIGTERM(+5s grace,SIGKILL fallback)stale PID,讓 host respawn 取新 binary。
+- **`hooks/session-start.sh`**(NEW,~70 行 bash)— 全 graceful-skip:`jq` / `ps` 缺、runtime file 缺、plugin.json 缺、PID 已死、PID command field 不含 `CheAppleMailMCP`(防 PID-reuse 誤殺)→ 全部 silent exit 0,never block session start。
+- **`tests/test-session-start-hook.sh`**(NEW)— 6 case integration test(無 runtime file / version match / version mismatch+alive / mismatch+dead / jq missing / plugin.json missing),全部用 `exec -a CheAppleMailMCP-mock sleep` 模擬 MCP process。16/16 PASS。
+
+### Changed
+- `bin/che-apple-mail-mcp-wrapper.sh`:`exec binary` 前多一段 atomic write runtime state file;失敗 silent skip(`|| true`),never block spawn。Wrapper 既有 sidecar version-check 邏輯**不動**(remains first line of defense for spawn-time download)。
+
+### Notes
+- Plugin minor bump 2.17.0 → 2.18.0(new feature surface,additive,backward compat)。Plan 走 IDD `/idd-plan` approval gate,EnterPlanMode 已 user-approved。
+- 解決今日 #72 incident 的 deployment 端 root cause:即使 binary v2.7.1 已 release + plugin shell 已 bump,user 當下 session 的 in-memory MCP 仍跑舊 v2.7.0 binary 直到 manual `kill <pid>` + 重啟 Claude Code。新 hook 把這條 staleness window 自動關掉。
+- Sister issue split:[`PsychQuant/psychquant-claude-plugins#58`](https://github.com/PsychQuant/psychquant-claude-plugins/issues/58)— `plugin-tools:plugin-update` 結尾應主動警告 user(sender-side 補強),獨立 PR。
+- Out-of-scope:**#77**(sidecar tracks shell version not binary version)、**#78**(server-side markdown export API)獨立評估。
+
 ## [2.17.0] - 2026-05-09
 
 ### Added
