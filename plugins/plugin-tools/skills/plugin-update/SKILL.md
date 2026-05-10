@@ -39,7 +39,8 @@ Plugin 修改後有 6 個環節容易漏掉：
 
 ```
 TaskCreate(name="detect_marketplace", description="Phase 0: 找到 plugin 所屬的 marketplace repo")
-TaskCreate(name="detect_changes", description="Phase 1: 確認 plugin + git status + 最近 commits")
+TaskCreate(name="git_state_gate", description="Phase 0.5 (v1.16.0+ #60): preview git status / unpushed commits / divergence + 5-case AskUserQuestion (abort default for non-clean states); idd-all unattended → auto-abort")
+TaskCreate(name="detect_changes", description="Phase 1: 確認 plugin + 最近 commits（git status 已由 Phase 0.5 gate）")
 TaskCreate(name="check_external_deps", description="Phase 1.5: 偵測 MCP/CLI 依賴，不同步時 AskUserQuestion")
 TaskCreate(name="sync_marketplace_json", description="Phase 2: 比對 plugin.json 和 marketplace.json 版本，commit+push")
 TaskCreate(name="check_readme_freshness", description="Phase 2.5: 檢查 README 是否跟上版本 / 新工具，過時時 AskUserQuestion")
@@ -77,6 +78,176 @@ claude plugin marketplace list 2>&1
 
 ---
 
+## Phase 0.5: Git State Preview & Confirmation Gate（v1.16.0+ #60）
+
+> **為什麼這 phase 在 Phase 1 之前**:Phase 1+ 會 `git add` / `git commit` / `git push` / `claude plugin marketplace update`,**任何 state-mutating 操作開始前**,user 必須明確表態現在的 git state 是不是該 push 的。
+>
+> 既有 (pre-v1.16.0) 行為:Phase 1 Step 2 印出 `git status` 後接 narrative reminder text 「請先 commit + push」,但**沒實際 gate**,AI executor 可以印 reminder 後繼續。新 phase 把這個決定升格成 **AskUserQuestion** explicit dispatch,跟 skill 內既有 Phase 1.5(MCP/CLI 依賴同步,line 161)+ Phase 2.5(README freshness,line 437)同 pattern。
+>
+> **Relationship to IDD `pr_policy`**:`pr_policy` 控制 development-time PR-vs-direct-commit 決定(during `idd-implement`)。Phase 0.5 控制 release-time push-or-abort 決定(during `plugin-update`)。**Different lifecycle moments;Phase 0.5 不 consult / 不 override `pr_policy`**。
+
+### Step 1: Read-only Preview Block
+
+```bash
+cd {marketplace_repo_path}
+
+echo "=== Git State Preview ==="
+echo ""
+echo "--- branch ---"
+git branch --show-current
+echo ""
+echo "--- working tree ---"
+git status --short
+echo "(empty = clean)"
+echo ""
+echo "--- unpushed commits (origin..HEAD) ---"
+git log --oneline origin/$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | sed 's|^origin/||' || echo main)..HEAD 2>/dev/null
+echo "(empty = none)"
+echo ""
+echo "--- divergence count (origin <-> HEAD) ---"
+git rev-list --left-right --count origin/$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | sed 's|^origin/||' || echo main)...HEAD 2>/dev/null
+echo "(0 0 = synced; '0 N' = local ahead by N; 'M 0' = origin ahead by M; 'M N' = diverged)"
+```
+
+**Read-only by contract**:本 step **只 print + read**,不 mutate。Phase 1+ 才允許 `git add` / `git commit` / `git push`。
+
+### Step 2: State Detection
+
+從 preview output 判斷以下 5 case(disjoint):
+
+| State | Detection signal |
+|-------|------------------|
+| **Clean + 0 unpushed** | `git status --short` empty AND `git log origin..HEAD` empty AND divergence `0 0` |
+| **Clean + N unpushed** | `git status --short` empty AND `git log origin..HEAD` non-empty AND divergence `0 N` |
+| **Dirty + 0 unpushed** | `git status --short` non-empty AND `git log origin..HEAD` empty |
+| **Dirty + N unpushed** | `git status --short` non-empty AND `git log origin..HEAD` non-empty |
+| **Origin diverged** | divergence `M N` with M ≥ 1(origin has commits we don't,要 fetch + rebase / merge 才能 push) |
+
+**Edge cases all → abort with structured error**(don't try to handle):
+- Detached HEAD(no branch)→ abort with "detached HEAD; checkout a branch first"
+- No upstream tracking(`@{u}` 解析失敗)→ abort with "no upstream branch; set with `git branch --set-upstream-to=origin/<branch>`"
+- Repo in middle of rebase / merge / cherry-pick(`.git/rebase-merge` etc. exist)→ abort with "incomplete rebase/merge state"
+
+### Step 3: AskUserQuestion 5-case Dispatch
+
+依 detected state 跑對應的 AskUserQuestion。**Default option = `abort` for any state with multiple sensible actions**;`push as-is` 只在 unambiguous clean+unpushed case 是 default。
+
+#### Case A: Clean + 0 unpushed
+
+不需要 dispatch,直接 abort:
+
+```bash
+echo "✗ Nothing to push — working tree is clean and 0 unpushed commits."
+echo "  If you intended to update the marketplace anyway (e.g. just trigger 'claude plugin marketplace update' on origin),"
+echo "  bypass plugin-update and run that command directly."
+exit 0
+```
+
+#### Case B: Clean + N unpushed → AskUserQuestion
+
+```
+question: "$N unpushed commits on $BRANCH. Push them to origin and proceed with marketplace sync?"
+options:
+  - label: "push N as-is (default)"
+    description: "git push origin $BRANCH → continue to Phase 1+"
+  - label: "interactive rebase first"
+    description: "abort plugin-update; run 'git rebase -i origin/$BRANCH' manually then re-run plugin-update"
+  - label: "abort"
+    description: "exit; nothing changed"
+```
+
+選 `push N as-is` → Phase 1+ continue。
+選其他 → exit 0。
+
+#### Case C: Dirty + 0 unpushed → AskUserQuestion
+
+```
+question: "Working tree has uncommitted changes, 0 unpushed commits. What to do?"
+options:
+  - label: "abort (default)"
+    description: "exit; manually 'git add ...' + 'git commit -m ...' the changes you want to push, then re-run plugin-update"
+  - label: "stage all + commit + push"
+    description: "git add -A then prompt for commit message → commit → push → continue"
+  - label: "manually stage subset + commit + push"
+    description: "abort; run 'git add' interactively, then re-run plugin-update"
+```
+
+預設 `abort` — skill 不擅自決定要 commit 什麼。
+
+#### Case D: Dirty + N unpushed → AskUserQuestion
+
+```
+question: "$N unpushed commits AND working tree has uncommitted changes. What to do?"
+options:
+  - label: "abort (default)"
+    description: "ambiguous state; exit and let user choose: amend dirty into HEAD? new commit? push without dirty? Re-run after deciding."
+  - label: "push N existing commits, leave dirty for later"
+    description: "git push origin $BRANCH → continue (dirty stays uncommitted)"
+  - label: "amend dirty into HEAD then push"
+    description: "git commit --amend --no-edit (dirty merged into HEAD) → push → continue"
+  - label: "commit dirty as new commit then push N+1"
+    description: "stage all + prompt for commit message → push → continue"
+```
+
+預設 `abort` — 4 種 sensible 動作對應不同意圖,user 必須明確選。
+
+#### Case E: Origin diverged → AskUserQuestion
+
+```
+question: "Origin is ahead by M commits AND HEAD has N unpushed (diverged). Resolve manually."
+options:
+  - label: "abort (default)"
+    description: "exit; run 'git fetch + git rebase origin/$BRANCH' or 'git merge origin/$BRANCH' then re-run plugin-update"
+  - label: "fetch + rebase + push"
+    description: "git fetch + git rebase origin/$BRANCH (linear history) → push → continue (may have conflicts)"
+  - label: "fetch + merge + push"
+    description: "git fetch + git merge origin/$BRANCH (preserve both branches' history) → push → continue (may have conflicts)"
+```
+
+預設 `abort` — conflict resolution 是 user 的工作,不是 skill 的。
+
+### Step 4: idd-all Unattended Mode Handler
+
+當 plugin-update 在 `idd-all` orchestrator 下被 invoke(env var or args detect,e.g. `IDD_ALL_UNATTENDED=1`):
+
+1. 仍跑 Step 1 preview block(printed for audit)
+2. **Auto-abort** with structured error:
+   ```
+   ✗ plugin-update Phase 0.5 cannot prompt under unattended mode.
+     Detected state: $STATE.
+     User must run /plugin-update <name> manually after IDD chain completes.
+   ```
+3. Return exit code non-zero(e.g. 75 = "abort by gate")so `idd-all` 在 final report 標 "plugin-update skipped under unattended mode"
+
+設計同 `idd-diagnose` Step 3.4 F unattended-mode pattern:auto-default to safe path + audit trail entry。**Plan tier 的 EnterPlanMode + plugin-update 的 Phase 0.5 都是 user-attendance-required gates**,unattended mode 統一走 abort + audit。
+
+### Step 5: Cross-plugin Commits Warning（v1.16.0 Tier A:warn-only)
+
+當 Step 3 選擇 `push N as-is` / `push N+1`,檢查 unpushed commits 有沒有 touch 多個 plugin:
+
+```bash
+git log --name-only --pretty=format: origin..HEAD 2>/dev/null \
+  | grep '^plugins/' | cut -d/ -f2 | sort -u > /tmp/touched-plugins.txt
+TARGET_PLUGIN=$1  # plugin-update CLI arg
+
+if [ "$(wc -l < /tmp/touched-plugins.txt)" -gt 1 ] || \
+   ([ "$(wc -l < /tmp/touched-plugins.txt)" -eq 1 ] && \
+    [ "$(cat /tmp/touched-plugins.txt)" != "$TARGET_PLUGIN" ]); then
+  echo "⚠ Heads-up: unpushed commits touch other plugins:"
+  cat /tmp/touched-plugins.txt | sed 's/^/   - plugins\//'
+  echo "  Pushing will publish all of them via marketplace update."
+  echo "  (warn-only; use Tier C cross-plugin scope guard when available — see #65)"
+fi
+```
+
+**Tier A scope = warn-only**;**Tier C scope guard(active 拒絕 push,refuse + suggest interactive rebase)留給 follow-up issue #65 處理**。
+
+### Step 6: Pass to Phase 1
+
+通過 Phase 0.5 gate(user 選 push,或 idd-all unattended fail-fast 已 abort)後,進 Phase 1 with 已驗證的 git state。
+
+---
+
 ## Phase 1: 偵測變更
 
 ### Step 1: 確定 Plugin
@@ -92,18 +263,11 @@ git diff --name-only HEAD~3 | grep '^plugins/' | cut -d/ -f2 | sort -u
 
 ### Step 2: 檢查 Git 狀態
 
-```bash
-cd {marketplace_repo_path}
-git status --short -- plugins/{plugin_name}/
-```
-
-- 如果有未提交變更 → 提醒用戶先 commit + push
-- 如果已 commit 但未 push → 提醒 `git push`
-- 如果已 push → 繼續下一步
-
-```bash
-git log origin/main..HEAD --oneline
-```
+> **Skipped(v1.16.0+ #60)**:Git state preview + commit/push decision 已在 [**Phase 0.5: Git State Preview & Confirmation Gate**](#phase-05-git-state-preview--confirmation-gate-v1160-60) 處理。
+>
+> 走到 Phase 1 等於 Phase 0.5 已 gate 過 + user 明確選擇了 push(或 abort 的話根本不會走到這裡)。
+>
+> Pre-v1.16.0 此 step 印 `git status` 後接 narrative reminder 「請先 commit + push」,**沒實際 gate**;新版升格成 Phase 0.5 explicit AskUserQuestion 5-case dispatch。歷史脈絡見 #60。
 
 ---
 
