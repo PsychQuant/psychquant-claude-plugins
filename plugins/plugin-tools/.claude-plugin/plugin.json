@@ -1,7 +1,7 @@
 {
   "name": "plugin-tools",
-  "version": "1.15.0",
-  "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug",
+  "version": "1.16.0",
+  "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug. v1.16.0 (#60): plugin-update 新增 Phase 0.5 git-state preview + 5-case AskUserQuestion confirmation gate(clean+0/clean+N/dirty+0/dirty+N/diverged),把舊有 Phase 1 Step 2 narrative advisory 升格為 explicit AskUserQuestion dispatch;default option = abort for any non-clean state(只有 unambiguous clean+unpushed 才 default push as-is);idd-all unattended mode auto-abort + 結構化錯誤;cross-plugin commits warn-only(Tier A scope,active scope guard 留給 #65)。",
   "author": {
     "name": "Che Cheng"
   },
