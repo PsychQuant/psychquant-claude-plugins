@@ -261,6 +261,10 @@ if [ -z "${TARGET_PLUGIN:-}" ]; then
 fi
 
 # 收集 unpushed commits touch 到的 plugin 名(去重)
+# Note (#70): 以 inline subshell `$(...)` capture 到 process-local 變數,
+# **不**經過 /tmp tempfile,故無 TOCTOU / shared-/tmp race condition。
+# 若未來重構需要持久化 list,改用 `mktemp -t plugin-update-touched.XXXXXX`
+# + `trap "rm -f \$TMPFILE" EXIT` 而**禁用**hardcoded /tmp/touched-plugins.txt。
 TOUCHED=$(git log --name-only --pretty=format: "$UPSTREAM"..HEAD \
   | grep '^plugins/' | cut -d/ -f2 | sort -u)
 TOUCHED_COUNT=$(echo -n "$TOUCHED" | grep -c . || true)
