@@ -82,7 +82,7 @@ claude plugin marketplace list 2>&1
 
 > **為什麼這 phase 在 Phase 1 之前**:Phase 1+ 會 `git add` / `git commit` / `git push` / `claude plugin marketplace update`,**任何 state-mutating 操作開始前**,user 必須明確表態現在的 git state 是不是該 push 的。
 >
-> 既有 (pre-v1.16.0) 行為:Phase 1 Step 2 印出 `git status` 後接 narrative reminder text 「請先 commit + push」,但**沒實際 gate**,AI executor 可以印 reminder 後繼續。新 phase 把這個決定升格成 **AskUserQuestion** explicit dispatch,跟 skill 內既有 Phase 1.5(MCP/CLI 依賴同步,line 161)+ Phase 2.5(README freshness,line 437)同 pattern。
+> 既有 (pre-v1.16.0) 行為:Phase 1 Step 2 印出 `git status` 後接 narrative reminder text 「請先 commit + push」,但**沒實際 gate**,AI executor 可以印 reminder 後繼續。新 phase 把這個決定升格成 **AskUserQuestion** explicit dispatch,跟 skill 內既有 [Phase 1.5: External Binary Dependency Check](#phase-15-external-binary-dependency-check若有) + [Phase 2.5: README Freshness Check](#phase-25-readme-freshness-check) 同 pattern(用 section refs 而非 line numbers,避免後續 insert 後 stale)。
 >
 > **Relationship to IDD `pr_policy`**:`pr_policy` 控制 development-time PR-vs-direct-commit 決定(during `idd-implement`)。Phase 0.5 控制 release-time push-or-abort 決定(during `plugin-update`)。**Different lifecycle moments;Phase 0.5 不 consult / 不 override `pr_policy`**。
 
@@ -91,42 +91,69 @@ claude plugin marketplace list 2>&1
 ```bash
 cd {marketplace_repo_path}
 
+# Resolve upstream once + abort on missing/unusual configs (v1.16.0 fix #60-verify P1)
+# - No upstream tracking → abort with structured error (don't silently proxy to origin/main)
+# - Detached HEAD → abort
+# - Incomplete rebase/merge → abort
+if [ ! -e "$(git rev-parse --git-dir)/HEAD" ] || ! git symbolic-ref -q HEAD >/dev/null; then
+    echo "✗ Detached HEAD or invalid HEAD; checkout a branch first." >&2
+    exit 1
+fi
+GITDIR=$(git rev-parse --git-dir)
+if [ -d "$GITDIR/rebase-merge" ] || [ -d "$GITDIR/rebase-apply" ] || [ -e "$GITDIR/MERGE_HEAD" ] || [ -e "$GITDIR/CHERRY_PICK_HEAD" ]; then
+    echo "✗ Repo in incomplete rebase/merge/cherry-pick state; resolve before plugin-update." >&2
+    exit 1
+fi
+UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null) || {
+    echo "✗ No upstream tracking branch. Set with 'git branch --set-upstream-to=origin/<branch>' first." >&2
+    exit 1
+}
+# UPSTREAM is now the canonical source for all comparisons (e.g. origin/main, upstream/feat-xyz)
+
 echo "=== Git State Preview ==="
 echo ""
 echo "--- branch ---"
 git branch --show-current
+echo "(upstream: $UPSTREAM)"
 echo ""
 echo "--- working tree ---"
 git status --short
 echo "(empty = clean)"
 echo ""
-echo "--- unpushed commits (origin..HEAD) ---"
-git log --oneline origin/$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | sed 's|^origin/||' || echo main)..HEAD 2>/dev/null
+echo "--- unpushed commits (\"$UPSTREAM\"..HEAD) ---"
+git log --oneline "$UPSTREAM"..HEAD
 echo "(empty = none)"
 echo ""
-echo "--- divergence count (origin <-> HEAD) ---"
-git rev-list --left-right --count origin/$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null | sed 's|^origin/||' || echo main)...HEAD 2>/dev/null
-echo "(0 0 = synced; '0 N' = local ahead by N; 'M 0' = origin ahead by M; 'M N' = diverged)"
+echo "--- divergence count (upstream <-> HEAD) ---"
+git rev-list --left-right --count "$UPSTREAM"...HEAD
+echo "(left = origin behind us; right = we ahead of origin; '0 0' = synced; '0 N' = ahead; 'M 0' = pure-behind; 'M N' = diverged)"
 ```
 
 **Read-only by contract**:本 step **只 print + read**,不 mutate。Phase 1+ 才允許 `git add` / `git commit` / `git push`。
 
-### Step 2: State Detection
+> **Why resolve `UPSTREAM` upfront**(v1.16.0 fix #60-verify P1):earlier draft used `origin/$(... | sed 's|^origin/||' || echo main)` chain which silently fell back to `origin/main` on no-upstream / fork remote workflow,defeating the L128 spec contract. New version aborts cleanly + uses single `$UPSTREAM` variable consistently.
 
-從 preview output 判斷以下 5 case(disjoint):
+### Step 2: State Detection (priority-ordered, v1.16.0 fix #60-verify P1)
 
-| State | Detection signal |
-|-------|------------------|
-| **Clean + 0 unpushed** | `git status --short` empty AND `git log origin..HEAD` empty AND divergence `0 0` |
-| **Clean + N unpushed** | `git status --short` empty AND `git log origin..HEAD` non-empty AND divergence `0 N` |
-| **Dirty + 0 unpushed** | `git status --short` non-empty AND `git log origin..HEAD` empty |
-| **Dirty + N unpushed** | `git status --short` non-empty AND `git log origin..HEAD` non-empty |
-| **Origin diverged** | divergence `M N` with M ≥ 1(origin has commits we don't,要 fetch + rebase / merge 才能 push) |
+從 preview output 判斷以下 case。**Detection 是 priority-ordered,先測 divergence,再測 dirty/clean × unpushed**:
 
-**Edge cases all → abort with structured error**(don't try to handle):
-- Detached HEAD(no branch)→ abort with "detached HEAD; checkout a branch first"
-- No upstream tracking(`@{u}` 解析失敗)→ abort with "no upstream branch; set with `git branch --set-upstream-to=origin/<branch>`"
-- Repo in middle of rebase / merge / cherry-pick(`.git/rebase-merge` etc. exist)→ abort with "incomplete rebase/merge state"
+| Priority | State | Detection signal |
+|----------|-------|------------------|
+| 1 (highest) | **Origin diverged** (Case E) | divergence `M N` with **M ≥ 1 AND N ≥ 1** — branches diverged, not just one-sided |
+| 2 | **Pure behind** (Case E') | divergence `M 0` with **M ≥ 1 AND N = 0** — fast-forward case, short-circuit to fetch + ff merge (no need to AskUserQuestion;just `git pull --ff-only` then re-evaluate) |
+| 3 | **Dirty + N unpushed** (Case D) | divergence `0 N` AND `git status --short` non-empty |
+| 4 | **Dirty + 0 unpushed** (Case C) | divergence `0 0` AND `git status --short` non-empty |
+| 5 | **Clean + N unpushed** (Case B) | divergence `0 N` AND `git status --short` empty |
+| 6 (lowest) | **Clean + 0 unpushed** (Case A) | divergence `0 0` AND `git status --short` empty |
+
+> **Why divergence wins** (priority 1-2 first):dirty + diverged 同時成立時,先處理 divergence(無法 push 在落後的 branch);user 可以 fetch + rebase 後再決定 dirty 怎麼處理。原 draft 把 dirty 跟 diverged 並列導致雙重匹配,新版用 priority order 消除歧義。
+>
+> **Pure-behind (Case E') 是新增 case** — origin 比 local 多 commits 但 local 無 unpushed,這是 `git pull --ff-only` 的乾淨情境;原 draft 漏列。
+
+**Edge cases all → abort with structured error**(由 Step 1 preview block 的開頭 guard 處理):
+- Detached HEAD → already aborted in Step 1
+- No upstream tracking → already aborted in Step 1
+- Incomplete rebase / merge / cherry-pick → already aborted in Step 1
 
 ### Step 3: AskUserQuestion 5-case Dispatch
 
@@ -184,7 +211,7 @@ options:
   - label: "push N existing commits, leave dirty for later"
     description: "git push origin $BRANCH → continue (dirty stays uncommitted)"
   - label: "amend dirty into HEAD then push"
-    description: "git commit --amend --no-edit (dirty merged into HEAD) → push → continue"
+    description: "git add -A then git commit --amend --no-edit (dirty staged + merged into HEAD) → push → continue"
   - label: "commit dirty as new commit then push N+1"
     description: "stage all + prompt for commit message → push → continue"
 ```
@@ -223,24 +250,45 @@ options:
 
 ### Step 5: Cross-plugin Commits Warning（v1.16.0 Tier A:warn-only)
 
-當 Step 3 選擇 `push N as-is` / `push N+1`,檢查 unpushed commits 有沒有 touch 多個 plugin:
+當 Step 3 選擇 `push N as-is` / `push N+1`,檢查 unpushed commits 有沒有 touch 預期外的 plugin / 完全沒 touch target plugin。**前置條件**:`$TARGET_PLUGIN` 必須先由 Phase 1 Step 1 plugin-name resolution 設定;若 Phase 0.5 在 Phase 1 之前就需要這個 check,要等 Phase 1 inference 完成再回來跑(skill 內由 Step 0 stage TaskList 控制 ordering)。
 
 ```bash
-git log --name-only --pretty=format: origin..HEAD 2>/dev/null \
-  | grep '^plugins/' | cut -d/ -f2 | sort -u > /tmp/touched-plugins.txt
-TARGET_PLUGIN=$1  # plugin-update CLI arg
+# Pre-condition: TARGET_PLUGIN 已由 Phase 1 Step 1 解析(命令列 arg 或從 git inferred)
+# 若 TARGET_PLUGIN 為空,跳過此 check(讓 Phase 1 處理 inference 後再看)
+if [ -z "${TARGET_PLUGIN:-}" ]; then
+    echo "ℹ Cross-plugin scope check deferred — TARGET_PLUGIN not yet resolved (Phase 1 Step 1 will set)."
+    return 0
+fi
 
-if [ "$(wc -l < /tmp/touched-plugins.txt)" -gt 1 ] || \
-   ([ "$(wc -l < /tmp/touched-plugins.txt)" -eq 1 ] && \
-    [ "$(cat /tmp/touched-plugins.txt)" != "$TARGET_PLUGIN" ]); then
-  echo "⚠ Heads-up: unpushed commits touch other plugins:"
-  cat /tmp/touched-plugins.txt | sed 's/^/   - plugins\//'
-  echo "  Pushing will publish all of them via marketplace update."
-  echo "  (warn-only; use Tier C cross-plugin scope guard when available — see #65)"
+# 收集 unpushed commits touch 到的 plugin 名(去重)
+TOUCHED=$(git log --name-only --pretty=format: "$UPSTREAM"..HEAD \
+  | grep '^plugins/' | cut -d/ -f2 | sort -u)
+TOUCHED_COUNT=$(echo -n "$TOUCHED" | grep -c . || true)
+
+# Three cases:
+#   (a) TOUCHED_COUNT = 0 — 無 plugin 被 touch (commits 只改 root files / 完全沒碰 plugins/) — 危險!
+#   (b) TOUCHED_COUNT = 1 AND 該 plugin = $TARGET_PLUGIN — happy path,silent
+#   (c) TOUCHED_COUNT ≥ 1 但 (a) (b) 都不成立 — 跨 plugin 或不對 target,warn
+
+if [ "$TOUCHED_COUNT" = "0" ]; then
+    # Empty-set case (v1.16.0 fix #60-verify P2 #5): commits 沒碰任何 plugin
+    echo "⚠ Heads-up: unpushed commits touch NO plugin under plugins/."
+    echo "   Commits in question:"
+    git log --oneline "$UPSTREAM"..HEAD | sed 's/^/     /'
+    echo "   Pushing will publish marketplace.json / docs / root-only changes."
+    echo "   If you intended to update '$TARGET_PLUGIN' specifically, abort and re-check commits."
+elif [ "$TOUCHED_COUNT" = "1" ] && [ "$TOUCHED" = "$TARGET_PLUGIN" ]; then
+    : # Happy path — single-plugin commit matching target. No warning.
+else
+    # Cross-plugin or wrong target
+    echo "⚠ Heads-up: unpushed commits touch plugin(s) other than (or in addition to) target '$TARGET_PLUGIN':"
+    echo "$TOUCHED" | sed 's/^/   - plugins\//'
+    echo "   Pushing will publish all of them via marketplace update."
+    echo "   (warn-only; active scope guard 留給 follow-up issue #65 處理)"
 fi
 ```
 
-**Tier A scope = warn-only**;**Tier C scope guard(active 拒絕 push,refuse + suggest interactive rebase)留給 follow-up issue #65 處理**。
+**Tier A scope = warn-only(3 cases:empty / happy / cross-plugin)**;**Tier C scope guard(active 拒絕 push,refuse + suggest interactive rebase)留給 follow-up issue #65 處理**。
 
 ### Step 6: Pass to Phase 1
 
