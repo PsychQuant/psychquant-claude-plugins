@@ -34,7 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Relationship to IDD `pr_policy`**:orthogonal axes — `pr_policy` 控制 development-time PR-vs-direct-commit 決定(during `idd-implement`);Phase 0.5 控制 release-time push-or-abort 決定(during `plugin-update`)。Phase 0.5 不 consult / 不 override `pr_policy`,documented 在 phase intro。
 - Out-of-scope follow-ups already filed:**#63** (apply pattern to plugin-deploy / plugin-create — same plugin-tools family);**#65** (apply pattern to mcp-tools:mcp-deploy / cli-tools:cli-deploy — cross-marketplace);**#64** (CHANGELOG `[1.15.0]` placeholder date drift,pre-existing,unrelated);**#58** (post-marketplace-sync stale-MCP-PID warning,complementary lifecycle-end angle)。
 
-## [1.15.0] - (date unknown — please fill in)
+## [1.15.0] - 2026-04-26
 
-### Changed
-- Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug
+### Added
+- **README Freshness Gate v2** — 從 3 信號擴展到 6,新增 3 偵測 + 2 suppressions,從跨 28 plugin 大規模 audit 萃取的盲點(commit `60f8cab`):
+  - **s4 Component inventory drift**:每個 `skills/` / `agents/` / `commands/` 下的 component 必須在 README 被 reference(backtick / slash / namespaced slash / agent at-form / bold list 任一)。Catches issue-driven-dev 5 listed vs 10 actual + mcp-tools 漏列 mcp-issue/mcp-publish/mcp-to-plugin。
+  - **s5 Tool count drift**:parse `(N tools)` / `(N MCP tools)` / `Available Tools (N)` / `N 個工具` from README header,對比 plugin.json description 的 tool count 宣稱。Catches che-ical-mcp(README 說 20、description 說 28)。
+  - **s6 Version history multi-version gap**:scan git log 找最近 90 天 same-major versions,對比 README Version History table。容忍 1 個 missing(可能 patch / internal),2+ 同 major missing 觸發 gate。Catches che-duckdb-mcp(v2.0 → v2.2.1 中 v2.1.0/v2.1.1/v2.2.0 漏列)。
+- **2 suppressions**:
+  - `no-version-section` — plugin 刻意不維護 Version History section 時 suppress version-related signals
+  - `wrapper-only commits` — commits 只動 `bin/*-wrapper.sh` 視為 binary version sync,不觸發 README staleness gate
+
+### Notes
+- Backfilled per **#64** (sister concern from #60) — original v1.15.0 release on 2026-04-26 used `changelog-tools:changelog-init` placeholder `(date unknown — please fill in)` 而沒填入。Date verified via `git show -s 60f8cab`;description detail backfilled from commit body + original `marketplace.json` description。
