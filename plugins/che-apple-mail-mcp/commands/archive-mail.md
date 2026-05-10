@@ -344,11 +344,12 @@ if [ "$DEDUP_STRATEGY" = "index" ] || [ "$DEDUP_STRATEGY" = "both" ]; then
     # Find symlinked subdirectories in output_dir (1 level deep)
     EXTENDED_COUNT=0
     EXTENDED_SOURCES=()
-    while IFS= read -r symlink_dir; do
+    # Null-safe: -print0 + read -d '' handles filenames containing newlines / unusual chars (#57)
+    while IFS= read -r -d '' symlink_dir; do
         [ -z "$symlink_dir" ] && continue
         # Bound search depth + use -P to NOT follow symlinks recursively (we follow once into the symlinked dir, then stay)
         ENTRIES_THIS_DIR=0
-        while IFS= read -r mdfile; do
+        while IFS= read -r -d '' mdfile; do
             [ -z "$mdfile" ] && continue
             # Read just the YAML frontmatter (first ~30 lines is generous)
             mid=$(head -30 "$mdfile" 2>/dev/null | awk '/^message_id:[ \t]*/{sub(/^message_id:[ \t]*"?/,"");sub(/"?$/,"");print;exit}')
@@ -358,13 +359,13 @@ if [ "$DEDUP_STRATEGY" = "index" ] || [ "$DEDUP_STRATEGY" = "both" ]; then
                 EXTENDED_DEDUP_IDS+=("$mid")
                 ENTRIES_THIS_DIR=$((ENTRIES_THIS_DIR + 1))
             fi
-        done < <(find -P "$symlink_dir/" -maxdepth 2 -name "*.md" -type f 2>/dev/null)
+        done < <(find -P "$symlink_dir/" -maxdepth 2 -name "*.md" -type f -print0 2>/dev/null)
 
         if [ "$ENTRIES_THIS_DIR" -gt 0 ]; then
             EXTENDED_COUNT=$((EXTENDED_COUNT + ENTRIES_THIS_DIR))
             EXTENDED_SOURCES+=("$symlink_dir ($ENTRIES_THIS_DIR entries)")
         fi
-    done < <(find -P "${output_dir}" -maxdepth 1 -type l 2>/dev/null)
+    done < <(find -P "${output_dir}" -maxdepth 1 -type l -print0 2>/dev/null)
 
     if [ "$EXTENDED_COUNT" -gt 0 ]; then
         echo "🔗 Extended dedup with $EXTENDED_COUNT entries from sibling archives:"
