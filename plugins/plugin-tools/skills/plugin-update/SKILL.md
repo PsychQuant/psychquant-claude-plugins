@@ -692,9 +692,12 @@ options:
 
 > **Default-option policy alignment with Phase 0.5**(audit per #68):
 >
-> Phase 0.5 rule:**active default 保留給 unambiguous happy-path / reversible / non-destructive action**。
+> Phase 0.5 rule(canonical 3-clause):**active default 保留給 unambiguous happy-path / reversible action / frequent dev flow**(per Phase 0.5 Step 3 explicit rule)。
 >
-> Phase 2.5 default 「更新 README」**符合 exception clause** — 該選項不直接 mutate README,而是 propose diff(read CHANGELOG + git log → 起草 → user 審閱後才 commit)。User-confirmation gate 還在,只是把 draft 起草的 friction 從 user 轉到 skill。屬於 reversible / non-destructive 操作。
+> Phase 2.5 default 「更新 README」**符合 exception clause(2/3 criteria + substitution)**:
+> - **unambiguous happy-path** ✓ — 偵測到 README 與當前 plugin.json version 不同步,起草更新是 unambiguous 的方向(scope 是「重新生成 stale 段落」,不是 design choice)
+> - **reversible action** ✓ — 該選項不直接 mutate README,而是 propose diff(read CHANGELOG + git log → 起草 → user 審閱後才 commit);User-confirmation gate 還在,只是把 draft 起草的 friction 從 user 轉到 skill
+> - **frequent dev flow** ✗ → **substituted with non-destructive** — README update 並非 daily dev flow(只在 substantive change 後 fire),故 frequent-dev criterion 不適用;以 non-destructive(propose-only,不 mutate disk)替代,作為 risk-profile 等價的 fallback criterion
 >
 > 對比 Phase 0.5 abort-default 的 `git push` 情境:push to public marketplace 是 irreversible(回滾需要 force-push,在 public branch 是 bad day),所以即使用戶在 keyboard 也不該 default push。各 phase 的 default 反映其 action 的 risk profile。
 
