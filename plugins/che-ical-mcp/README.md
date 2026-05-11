@@ -130,9 +130,18 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 1.7.2 (matches MCP server version)
+Plugin version: 1.8.0 (matches MCP server version)
 
 ### Changelog
+
+**1.8.0** (2026-05-11)
+- **Wire-format consistency wave** — closes #101 cluster (5 issues: #102 #103 #104 #106 #107) in 3 days, full IDD lifecycle + 6-AI ensemble verify per issue
+- **Event listing response-shape parameters** (#47/#101): `detail_level` (`summary`/`standard`), `fields` allow-list, `display_timezone` (strict IANA), `limit` (cap 10000) — LLM token-usage tuning
+- **Envelope unification — BREAKING wire-format** (#102/#107): `list_events`/`list_reminders` `metadata.returned` removed; all 5 list/search envelopes use top-level `<entity>_count` with pre-limit semantic; `search_reminders.result_count` → `reminder_count`; `search_reminders` gains `limit` parameter
+- **Validator hardening** (#101 F1–F3): `Int.max` DoS trap closed, `detail_level`/`display_timezone` validators no longer silent-coerce non-string inputs, `UTC` echo round-trips verbatim
+- **Runtime-anchored drift detection** (#103, strengthening #101 M3): `formatEventDict` ↔ `validEventFields` divergence test now via `EventFormattingSource` test seam + `FakeFormattableEvent`
+- **CHANGELOG reclass** (#106): wire-format renames moved from `Fixed` → `Changed` (Keep a Changelog 1.1.0)
+- **Release pipeline fix**: `build-mcpb.sh` pre-pack defense now derives Team ID from `DEVELOPER_ID` cert via `security find-identity` (was incorrectly comparing SHA hash against `Authority=` human-readable string)
 
 **1.7.2** (2026-05-07)
 - **Tool count 28 → 29**: `cleanup_completed_reminders` (#21) — single-call cleanup of all completed reminders, `dry_run=true` default
