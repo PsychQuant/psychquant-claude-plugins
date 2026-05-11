@@ -378,6 +378,16 @@
       },
       "source": "./plugins/agent-cacher",
       "category": "development"
+    },
+    {
+      "name": "docflow",
+      "version": "1.0.0",
+      "description": "Git-flow analog for documents — semantic synthesis, multi-version comparison, evidence-after-commit workflows for .tex / .md / .ipynb / .docx. v1.0 ships doc-synth skill (semantic merge between 2+ document versions, dimension-level take/leave decisions, provenance tracking). Future: doc-compare, doc-verdict, doc-multiimpl.",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/docflow",
+      "category": "productivity"
     }
   ]
 }
