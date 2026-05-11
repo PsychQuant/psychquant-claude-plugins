@@ -261,6 +261,10 @@ if [ -z "${TARGET_PLUGIN:-}" ]; then
 fi
 
 # 收集 unpushed commits touch 到的 plugin 名(去重)
+# Note (#70): 以 inline subshell `$(...)` capture 到 process-local 變數,
+# **不**經過 /tmp tempfile,故無 TOCTOU / shared-/tmp race condition。
+# 若未來重構需要持久化 list,改用 `mktemp -t plugin-update-touched.XXXXXX`
+# + `trap "rm -f \$TMPFILE" EXIT` 而**禁用**hardcoded /tmp/touched-plugins.txt。
 TOUCHED=$(git log --name-only --pretty=format: "$UPSTREAM"..HEAD \
   | grep '^plugins/' | cut -d/ -f2 | sort -u)
 TOUCHED_COUNT=$(echo -n "$TOUCHED" | grep -c . || true)
@@ -406,6 +410,12 @@ options:
 |-------|---------|------|------|
 | `plugin-deploy` Step 2.5 | 偶爾（發版時）| **BLOCK** | Release 沒 binary = 新使用者裝 plugin 就壞，不能放過 |
 | `plugin-update` Phase 1.5 | 頻繁（日常同步）| **ASK + AUTO-SYNC** | 開發者通常想要一次更新完，但要尊重「只改 shell 不動 binary」的情境 |
+
+> **Default-option policy alignment with Phase 0.5**(audit per #68):
+>
+> Phase 0.5 rule:**`abort` is the default for any state with multiple sensible actions;active default is reserved for unambiguous happy-path / reversible action / frequent dev flow**(per Phase 0.5 Step 3 explicit rule)。
+>
+> Phase 1.5 default 「順便更新」**符合 exception clause** — binary-out-of-sync 在 daily dev flow 是 unambiguous happy path(開發者通常確實想要 binary + shell 一起更新),而且 binary install 是 reversible(可重跑 mcp-deploy / cli-upgrade 換版本)。本 phase 跟 Phase 0.5 的 abort-default 不衝突,各自服務不同 lifecycle moment(release-time push 不可逆 vs dev-time binary sync 可逆)。
 
 ### Step 5: 執行 auto-sync（若使用者選擇）
 
@@ -679,6 +689,17 @@ options:
 |-------|---------|-----------|------|
 | `plugin-update` Phase 2.5 | 頻繁（日常同步）| **ASK** | 有時純修 typo / hook / internal refactor，不需要動 README |
 | `plugin-deploy` Step 2 | 偶爾（發版時）| **列入 checklist 並 offer 修復** | 正式發布時使用者第一眼看 README，stale 就是差的第一印象 |
+
+> **Default-option policy alignment with Phase 0.5**(audit per #68):
+>
+> Phase 0.5 rule(canonical 3-clause):**active default 保留給 unambiguous happy-path / reversible action / frequent dev flow**(per Phase 0.5 Step 3 explicit rule)。
+>
+> Phase 2.5 default 「更新 README」**符合 exception clause(2/3 criteria + substitution)**:
+> - **unambiguous happy-path** ✓ — 偵測到 README 與當前 plugin.json version 不同步,起草更新是 unambiguous 的方向(scope 是「重新生成 stale 段落」,不是 design choice)
+> - **reversible action** ✓ — 該選項不直接 mutate README,而是 propose diff(read CHANGELOG + git log → 起草 → user 審閱後才 commit);User-confirmation gate 還在,只是把 draft 起草的 friction 從 user 轉到 skill
+> - **frequent dev flow** ✗ → **substituted with non-destructive** — README update 並非 daily dev flow(只在 substantive change 後 fire),故 frequent-dev criterion 不適用;以 non-destructive(propose-only,不 mutate disk)替代,作為 risk-profile 等價的 fallback criterion
+>
+> 對比 Phase 0.5 abort-default 的 `git push` 情境:push to public marketplace 是 irreversible(回滾需要 force-push,在 public branch 是 bad day),所以即使用戶在 keyboard 也不該 default push。各 phase 的 default 反映其 action 的 risk profile。
 
 ---
 
