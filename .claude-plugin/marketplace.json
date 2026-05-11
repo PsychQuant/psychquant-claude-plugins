@@ -181,8 +181,8 @@
     },
     {
       "name": "archive-first",
-      "version": "2.1.0",
-      "description": "Protect files from AI-assisted deletion — PreToolUse hooks block destructive commands on archived/ paths, toggle with archived-lock/archived-unlock",
+      "version": "2.2.0",
+      "description": "v2.2.0: PreToolUse hooks now protect both archive/ and archived/ directory conventions. Regex anchored on trailing slash to avoid false positives on git archive / tar archive.tar. Toggle protection with archived-lock/archived-unlock.",
       "author": {
         "name": "Che Cheng"
       },
