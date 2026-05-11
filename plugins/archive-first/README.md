@@ -4,13 +4,15 @@ Protect your files from AI-assisted deletion with the Archive-First strategy.
 
 ## What it does
 
-This plugin adds three layers of protection for files in `archived/` directories:
+This plugin adds three layers of protection for files in `archive/` or `archived/` directories:
 
 | Layer | Mechanism | How |
 |-------|-----------|-----|
-| **PreToolUse hook** | Blocks destructive commands | Denies any `rm`, `rmdir`, or `unlink` targeting paths containing `archived` |
+| **PreToolUse hook** | Blocks destructive commands | Denies any `rm`, `rmdir`, or `unlink` targeting `archive/` or `archived/` paths (regex `archived?/` — trailing slash required to avoid false positives on `git archive` or `tar archive.tar`) |
 | **PostToolUse hook** | Auto-locks archived files | Applies macOS `chflags uchg` (immutable flag) after every Bash command |
 | **Slash commands** | Manual archive/unlock | `/archive-first:archive` and `/archive-first:unlock` |
+
+> Both `archive/` (preferred for new directories — matches `git archive`, macOS Archive Utility, Gmail) and `archived/` (legacy, still common) receive identical protection. See the [Archive-First Defense blog post](https://che-cheng.vercel.app/blog/vibe-coding-data-loss) Naming Note section for the design history.
 
 ## Commands
 
