@@ -101,8 +101,8 @@
     },
     {
       "name": "che-ical-mcp",
-      "version": "1.8.0",
-      "description": "macOS 行事曆與提醒事項 MCP Server - EventKit 整合，29 個工具，支援 attendees/organizer、undo/redo、每事件時區、--cli 模式、--setup TCC 授權、--self-update 自我升級+SHA-256 驗證、cleanup_completed_reminders 一鍵清除、彈性日期解析、模糊匹配、batch 操作",
+      "version": "1.8.1",
+      "description": "v1.8.1: Phase 1 of #108 — adds mcpb/README.md post-install / upgrade TCC permission setup guide. Closes the silent-failure gap for .mcpb upgrade path (cdhash mismatch invalidates TCC grant, MCP subprocess context cannot surface re-auth dialog). Workaround: run --setup from Terminal after install/upgrade. Phase 2 (v1.9.0) lands the structural fix (per-call authorizationStatus check + remove has*Access caches). v1.8.0: Wire-format consistency wave (#101 cluster) — event listing tools gain detail_level/fields/display_timezone/limit response-shape parameters. macOS 行事曆與提醒事項 MCP Server - EventKit 整合，29 個工具，支援 attendees/organizer、undo/redo、每事件時區、--cli 模式、--setup TCC 授權、--self-update 自我升級+SHA-256 驗證、cleanup_completed_reminders 一鍵清除、彈性日期解析、模糊匹配、batch 操作",
       "author": {
         "name": "Che Cheng"
       },
