@@ -11,6 +11,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.19.5] - 2026-05-11
+
+### Added
+- **#16 nested markdown lists** — depth-aware `<ul>`/`<ol>` rendering for nested list structures
+- **#17 markdown tables** — `<table>`/`<thead>`/`<tbody>` rendering with per-column alignment
+- **#89 `list_emails` SQLite fallback** — AppleScript path retained for compat, but new SQLite fast-path delivers 3× IPC reduction
+
+### Fixed
+- **#26 malformed multipart throws** — handler fallback for missing/corrupt MIME boundary parts no longer crashes `get_email`
+
+### Notes
+- Binary v2.8.4 → v2.8.5;swift test 313 → **342 (+29 tests over v2.8.0 series)**
+- Refs PsychQuant/che-apple-mail-mcp#16 #17 #22 #26 #28 #89
+
+## [2.19.4] - 2026-05-11
+
+### Added
+- **#28 `crossValidateAttachments` helper** — extracted from inline filter closure shared between `list_attachments` and `list_attachments_batch`;6 unit tests covering filter behavior (matching / empty / missing-name / non-String-name / all-fields-preserved)
+- **#22 Item D — code fence language hint** — emits `class="language-<hint>"` on `<pre><code>` per CommonMark recommended pattern
+
+### Documentation
+- **#22 Items A/B/C** — documented in `spec.md` as Foundation parser limitations with workarounds (already-fixed indent / U+001E vanishingly improbable / bold-in-link Foundation limitation)
+
+### Notes
+- Binary v2.8.3 → v2.8.4;swift test 321 → 329 (+8 tests)
+- Refs PsychQuant/che-apple-mail-mcp#22 #28
+
+## [2.19.3] - 2026-05-11
+
+### Removed
+- **#82** — 4 dead AppleScript `script` variable declarations
+- **#83** — 3 deprecated `text(_:metadata:)` MCP SDK calls migrated to current API
+
+### Changed
+- **#84** — Retrofitted 31 lenient `XCTAssertTrue(script.contains)` assertions to `assertOrdered` for property-in-tell-block enforcement
+
+### Notes
+- Binary v2.8.2 → v2.8.3;pure cleanup,zero behavior change,swift test 321/0/8 unchanged
+- Refs PsychQuant/che-apple-mail-mcp#82 #83 #84
+
+## [2.19.2] - 2026-05-11
+
+### Added
+- **#87 `sanitize_links` hardening grab-bag** — 5 hygiene items:
+  - Allowlist tripwire test pinning `{http, https, mailto, tel}`
+  - 6 bypass-class regression tests
+  - `htmlEscape` defense-in-depth on `href` interpolation
+  - Empty-scheme behavior documented in 4 schema descriptions
+  - Payload-scaling latency test on synthesized 10×5MB fixture
+
+### Notes
+- Binary v2.8.1 → v2.8.2;zero behavior change,swift test 313 → 321 (+8 tests)
+- Refs PsychQuant/che-apple-mail-mcp#87
+
+## [2.19.1] - 2026-05-11
+
+### Documentation
+- **#86 `sanitize_links` schema description consistency** — XSS rationale + mode-restriction qualifier repeated across `create_draft` / `reply_email` / `forward_email` / `compose_email` (fixes tool-selecting LLM blindspot from cluster A)
+
+### Notes
+- Binary v2.8.0 → v2.8.1;pure schema text change,no behavior impact,swift test 313/0/8 unchanged
+- Refs PsychQuant/che-apple-mail-mcp#86
+
+## [2.19.0] - 2026-05-11
+
+### Added
+- **#19 `sanitize_links` opt-in URL scheme allowlist for markdown mode** — defends against `[click](javascript:alert('xss'))` and `data:`/`file:`/`vbscript:` URLs via closed allowlist `{http, https, mailto, tel}`;default `false` preserves backwards compat
+- **#85 formal spec.md Requirement+Scenarios** — codifies the `sanitize_links` contract + builder-layer wiring contract tests pinning `sanitizeLinks` forwarding across the 4 script-builder functions
+- **#73 `extractHTMLBody` base64+UTF-8-QP decoding fixes** — multipart HTML with quoted-printable + UTF-8 nested transfer encodings now decode correctly
+
+### Changed
+- **#20** — dead spec scenario delete + count-free CHANGELOG + `assertOrdered` helper
+- **#21** — reply/forward AppleScript-html-denial documentation
+- **#25** — `list_attachments_batch` SQLite+`.emlx` cross-validation parity
+- **#27 + #32** — `attachmentNames` <200ms latency budget test + parity invariant
+
+### Notes
+- Binary v2.7.2 → v2.8.0;47 → **48 tools** (sanitize_links param surface);swift test 309 → 313 / 0 failures / 8 skipped
+- Refs PsychQuant/che-apple-mail-mcp#19 #85 #73
+
+## [2.18.1] - 2026-05-10
+
+### Fixed
+- **#77 wrapper sidecar tracks actual binary tag** (not plugin shell version) — two-part fix:
+  1. `plugin.json` adds explicit `binary_version` field (e.g. `"2.7.2"`),disambiguating from plugin shell's own `version` (e.g. `"2.18.1"`)。Wrapper reads it preferentially;falls back to `version` for plugins that haven't migrated。
+  2. Wrapper writes the **actual downloaded binary tag** to the sidecar,parsed from the GitHub release URL path between `/releases/download/` and the next `/`。即便 `DESIRED` 寫錯(legacy 走 shell `version` 的 plugin),sidecar 仍誠實反映 disk 上實際版本 — 下次 compare honest,不再 structurally lying
+
+### Notes
+- Binary v2.7.1 → v2.7.2 (#71 fallback parity + cluster #61-64 hardening);smoke tested wrapper bash syntax + plugin.json validity + binary_version field extraction + URL tag parser
+- Refs PsychQuant/che-apple-mail-mcp#77
+
 ## [2.18.0] - 2026-05-10
 
 ### Added
