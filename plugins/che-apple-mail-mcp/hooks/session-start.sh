@@ -28,9 +28,14 @@ PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
 [ -f "$RUNTIME_FILE" ] || exit 0
 [ -f "$PLUGIN_JSON" ] || exit 0
 
-# Read versions; jq returns "null" string for missing keys, so test for that too.
+# Read versions. Runtime state records BINARY tag (per #77 fix to wrapper).
+# Plugin.json has two fields since #77: .version (plugin shell) and
+# .binary_version (binary tag). Hook must compare against .binary_version
+# when present, falling back to .version for plugins not yet migrated.
+# Without this fallback chain, the hook compares runtime binary tag against
+# plugin shell version and triggers spurious kill every session (see #73).
 RUNTIME_VERSION=$(jq -r '.version_at_spawn // ""' "$RUNTIME_FILE" 2>/dev/null)
-PLUGIN_VERSION=$(jq -r '.version // ""' "$PLUGIN_JSON" 2>/dev/null)
+PLUGIN_VERSION=$(jq -r '.binary_version // .version // ""' "$PLUGIN_JSON" 2>/dev/null)
 
 [ -z "$RUNTIME_VERSION" ] && exit 0
 [ -z "$PLUGIN_VERSION" ] && exit 0

@@ -87,6 +87,16 @@ EOF
     fi
 }
 
+# v2.19.5+ schema (post-#77): plugin.json has both `version` (shell) and
+# `binary_version` (binary tag). Runtime state records binary tag.
+write_plugin_json_with_binary() {
+    local shell_version="$1"
+    local binary_version="$2"
+    cat > "$FAKE_PLUGIN/.claude-plugin/plugin.json" <<EOF
+{"name":"test","version":"$shell_version","binary_version":"$binary_version"}
+EOF
+}
+
 write_runtime_file() {
     local pid="$1"
     local version="$2"
@@ -207,6 +217,46 @@ EXIT=$?
 assert "exit 0" "[ $EXIT -eq 0 ]"
 assert "no warning emitted" "[ ! -s $TEST_DIR/hook.stderr ]"
 assert "mock PID still alive" "ps -p $PID -o pid= >/dev/null 2>&1"
+kill -KILL "$PID" 2>/dev/null || true
+
+# ============================================================
+# Case 7: binary_version field present, matches runtime → no kill (#73)
+# Verifies hook prefers .binary_version over .version when comparing
+# against runtime state. Pre-#73 fix: this would FAIL because hook
+# compared runtime binary tag (2.8.5) against plugin.json shell version
+# (2.19.5), triggering unnecessary kill on every session start.
+# ============================================================
+echo "Case 7: binary_version field present, matches runtime"
+reset_state
+start_mock_pid; PID=$LAST_MOCK_PID
+# Shell v2.19.5 + binary v2.8.5 (post-#77 two-field schema)
+write_plugin_json_with_binary "2.19.5" "2.8.5"
+# Runtime state records binary tag, not shell version
+write_runtime_file "$PID" "2.8.5"
+run_hook
+EXIT=$?
+assert "exit 0" "[ $EXIT -eq 0 ]"
+assert "no warning emitted" "[ ! -s $TEST_DIR/hook.stderr ]"
+assert "mock PID still alive (binary_version matches, no kill)" "ps -p $PID -o pid= >/dev/null 2>&1"
+kill -KILL "$PID" 2>/dev/null || true
+
+# ============================================================
+# Case 8: binary_version absent (legacy schema) → fallback to .version (#73)
+# When plugin.json has no binary_version field (pre-#77 plugins), hook
+# falls back to comparing against .version. Verifies backward compat.
+# ============================================================
+echo "Case 8: binary_version absent, fallback to .version"
+reset_state
+start_mock_pid; PID=$LAST_MOCK_PID
+# Legacy single-field schema (no binary_version)
+write_plugin_json "2.17.0"
+# Runtime version_at_spawn matches plugin.json version
+write_runtime_file "$PID" "2.17.0"
+run_hook
+EXIT=$?
+assert "exit 0" "[ $EXIT -eq 0 ]"
+assert "no warning emitted" "[ ! -s $TEST_DIR/hook.stderr ]"
+assert "mock PID still alive (legacy fallback works)" "ps -p $PID -o pid= >/dev/null 2>&1"
 kill -KILL "$PID" 2>/dev/null || true
 
 # ============================================================
