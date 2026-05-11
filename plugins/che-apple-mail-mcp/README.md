@@ -199,6 +199,8 @@ https://github.com/kiki830621/che-apple-mail-mcp
 
 ## Version History
 
+- **v2.19.6 shell + binary v2.8.5**（2026-05-12）— **hook compare 改 prefer `.binary_version`**（[#73](https://github.com/PsychQuant/psychquant-claude-plugins/issues/73)）。`hooks/session-start.sh` jq query 從 `'.version // ""'` 改 `'.binary_version // .version // ""'`,杜絕 v2.18.0 ~ v2.19.5 期間每次 session start spurious SIGTERM(runtime `version_at_spawn` 是 binary tag `2.8.5`,但 hook 比對 plugin shell `2.19.5` 永遠 mismatch trap)。Backward compat 保留 — legacy plugins(無 `binary_version`)走 `.version` fallback。Shell-only patch release,binary v2.8.5 不變。Tests 22/22 PASS;TDD RED → GREEN cycle proves fix。
+
 - **v2.19.1–v2.19.5 shell + binary v2.8.1–v2.8.5 patch series**（2026-05-11）— **markdown rendering richness + sanitize_links hardening + cleanup**。 串連發布的 5 個 patch:
   - **v2.19.5 / binary v2.8.5** — nested markdown lists ([#16](https://github.com/PsychQuant/che-apple-mail-mcp/issues/16)) + markdown tables with alignment ([#17](https://github.com/PsychQuant/che-apple-mail-mcp/issues/17)) + malformed multipart handler fallback ([#26](https://github.com/PsychQuant/che-apple-mail-mcp/issues/26)) + `list_emails` SQLite fast-path 3× IPC reduction ([#89](https://github.com/PsychQuant/che-apple-mail-mcp/issues/89))。swift test → 342 (+29 since v2.8.0 series began)
   - **v2.19.4 / binary v2.8.4** — `crossValidateAttachments` helper extracted + 6 filter tests ([#28](https://github.com/PsychQuant/che-apple-mail-mcp/issues/28)) + code fence language hint ([#22](https://github.com/PsychQuant/che-apple-mail-mcp/issues/22) Item D)

@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.19.6] - 2026-05-12
+
+### Fixed
+- **#73 hook compare prefers `.binary_version` over `.version`** — `hooks/session-start.sh` jq query 改 `'.binary_version // .version // ""'`,prefer binary tag(post-#77 two-field schema),fallback shell version 維持 backward compat。修掉 v2.18.0 ~ v2.19.5 期間每次 session start spurious SIGTERM(runtime `version_at_spawn` 是 binary tag e.g. `2.8.5`,但 hook 比對 `plugin.json.version` shell `2.19.5` 永遠 mismatch → kill MCP PID → respawn → +5s grace delay + `⚠ Killing stale CheAppleMailMCP PID ...` audit noise per session)。
+- **Test coverage**: tests/test-session-start-hook.sh 加 Case 7(`binary_version` present + matches runtime → no kill)+ Case 8(`binary_version` absent → fallback `.version`)+ helper `write_plugin_json_with_binary`。TDD RED phase Case 7 在 fix 前 FAIL(stderr `Killing stale` + PID killed),GREEN 後 22/22 PASS。
+
+### Notes
+- Pure shell-only patch release;binary v2.8.5 不變
+- 解 #77 fix 留下的 incomplete migration(wrapper 端已用 `binary_version`,hook 端沒同步)
+- Auto-close trap meta-issue([PsychQuant/issue-driven-development#74](https://github.com/PsychQuant/issue-driven-development/issues/74))filed during close — anti-trailer warning text 含 literal `Closes #N` substring 觸發 GitHub auto-close,本 v2.19.6 incident 首次踩到
+- 2 Low test-coverage gaps deferred to [psychquant-claude-plugins#67](https://github.com/PsychQuant/psychquant-claude-plugins/issues/67):Case 9(new-schema mismatch kill path)+ Case 10(empty-string binary_version edge)
+- Refs PsychQuant/psychquant-claude-plugins#73 #74
+
 ## [2.19.5] - 2026-05-11
 
 ### Added
