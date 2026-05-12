@@ -2,6 +2,10 @@
 
 Claude Code plugin for macOS Calendar & Reminders management using native EventKit.
 
+> ## ℹ️ Why use this plugin instead of the `.mcpb` Claude Desktop install?
+>
+> Claude Desktop **1.6608.2+** (2026-05-09 release) **broke Calendar / Reminders write access for `.mcpb` extension installs** — see [`PsychQuant/che-ical-mcp#132`](https://github.com/PsychQuant/che-ical-mcp/issues/132) and [`anthropics/claude-code#58239`](https://github.com/anthropics/claude-code/issues/58239). This Claude Code plugin path is **not affected** — it spawns the binary via a different process chain that doesn't go through the broken `disclaimer` wrapper. If you tried `.mcpb` and hit "Calendar access denied", install this plugin instead.
+
 ## Features
 
 - **29 MCP Tools**: Complete calendar and reminder management with attendees / organizer support, batch operations, undo/redo, and one-call cleanup
