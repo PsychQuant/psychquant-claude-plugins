@@ -130,9 +130,24 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 1.8.0 (matches MCP server version)
+Plugin version: 1.10.0 (matches MCP server version)
 
 ### Changelog
+
+**1.10.0** (2026-05-12)
+- **TCC drift detector + startup banner** (#122): single-shot `[banner]` line on MCP-server-mode startup with version/path/PID + drift signals (TCC.db path mismatch per-service, stale running processes). Banner is advisory, stderr-only, opt-out via `CHE_ICAL_MCP_NO_BANNER=1`. Hardened against CWE-117 stderr-injection on every interpolated value (R1 sanitization).
+- **R3.3 production POSIX hygiene fix**: parent pipe write-end fd close in `LiveTCCDatabaseSource` + `LiveProcessInventorySource`. R1's read-before-wait order fix was complementary; R3.3 completes the POSIX EOF contract that local macOS 26 masked via aggressive fd scheduling but GHA macos-15-arm64 reliably deadlocked on.
+- **#131 CI hardening**: 8 tests (5 binary-spawn banner + 3 real-server dispatch) compile-time excluded on CI via `#if !CI_BUILD` + `-Xswiftc -DCI_BUILD` workflow flag. Root cause: EventKit framework blocks on TCC prompt in macOS 15 (Sequoia) headless CI sandbox, where macOS 26 (Tahoe) returns `.denied` synchronously. CI runs 330/330; local runs 338/338. Tracked in #131.
+
+**1.9.1** (2026-05-11, plugin shell only)
+- 4 plugin-shell additions exposing v1.9.0 TCC features: `troubleshoot-tcc` skill (5-step diagnostic), `/check-tcc` slash command, `eventkit-error-debugging` rule (routes accessDenied/insufficientAccess/unknownAuthState investigations to TCC-first), CLAUDE.md plugin overview.
+
+**1.9.0** (2026-05-11)
+- **TCC access gate refactor** (#108 Phase 2, closes #109): removes process-lifetime `hasCalendarAccess`/`hasReminderAccess` cache anti-pattern; replaces with per-call `EKEventStore.authorizationStatus(for:)` cheap check via new `AuthorizationGate` + `AuthorizationStatusSource` test seam. Aligns with Apple TN3153 documented per-call pattern — TCC state changes surface immediately as actionable `accessDenied`/`insufficientAccess`/`unknownAuthState` errors instead of silent fail.
+- **`--print-tcc-path` diagnostic flag** (#109): prints binary path, bundle identifier, EventKit authorization status, `tccutil reset` snippet (with bundle ID interpolated), `sqlite3` TCC.db query snippet, and System Settings paths. Designed for `.mcpb` installed users who need to locate the extracted binary path before running `--setup` from Terminal.
+
+**1.8.1** (2026-05-11, documentation only)
+- `mcpb/README.md` post-install / upgrade TCC permission setup guide (#108 Phase 1). Diagnoses the silent-failure mode where reinstalling `.mcpb` invalidates the existing TCC grant.
 
 **1.8.0** (2026-05-11)
 - **Wire-format consistency wave** — closes #101 cluster (5 issues: #102 #103 #104 #106 #107) in 3 days, full IDD lifecycle + 6-AI ensemble verify per issue
