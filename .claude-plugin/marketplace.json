@@ -61,8 +61,8 @@
     },
     {
       "name": "r-shiny-debugger",
-      "version": "1.1.0",
-      "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）+ shiny-adaptive-walk 自我收斂測試 loop",
+      "version": "1.2.0",
+      "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）+ shiny-adaptive-walk 自我收斂測試 loop。/shiny-adaptive-walk default browser inverted to agent-browser (safari opt-in via --browser safari) since v1.2.0 (#77).",
       "author": {
         "name": "Che Cheng"
       },
