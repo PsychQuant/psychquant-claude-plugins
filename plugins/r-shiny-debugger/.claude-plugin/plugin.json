@@ -1,10 +1,10 @@
 {
   "name": "r-shiny-debugger",
-  "version": "1.0.0",
-  "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）",
+  "version": "1.1.0",
+  "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）+ shiny-adaptive-walk 自我收斂測試 loop",
   "author": {
     "name": "Che Cheng"
   },
   "license": "MIT",
-  "keywords": ["r", "shiny", "debug", "testing", "agent-browser"]
+  "keywords": ["r", "shiny", "debug", "testing", "agent-browser", "safari-browser", "adaptive-testing", "mp165"]
 }
