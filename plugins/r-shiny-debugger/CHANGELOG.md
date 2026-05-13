@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-13
+
+### Changed
+- **BREAKING**: Default discovery browser for `/shiny-adaptive-walk` is now `agent-browser` (headless Chromium) instead of `safari-browser`. Existing invocations without `--browser` flag now run headless. Pass `--browser safari` (or set `SHINY_ADAPTIVE_BROWSER=safari`) to preserve the previous visible-Safari behavior. Rationale: both engines render real DOM; safari's only unique value is live visibility, which costs nothing to opt into when needed and saves multi-hour unattended runs from per-iter Safari startup, user-profile drift, and tab-focus contention. Refs PsychQuant/psychquant-claude-plugins#77 + spectra change `adaptive-walk-agent-browser-default`.
+- Anti-pattern table entry `Use agent-browser for discovery walk → wrong` removed. Using `agent-browser` for discovery is now the recommended default; using `safari-browser` is the opt-in path.
+- Troubleshooting section restructured: separate `safari-browser missing` (only matters when `--browser safari` is opted into) and `agent-browser missing` (default-path failure mode) subsections.
+- `08-shiny-testing.md` narrow exception clause cross-reference updated to note safari is opt-in via `--browser safari`; clause text itself remains accurate.
+
+### Added
+- `--browser=safari|agent` flag and `SHINY_ADAPTIVE_BROWSER` env var. Precedence: flag > env var > static default (`agent`). Invalid values abort Step 0 pre-flight with a message naming the accepted set.
+- `browser_cmd()` shell helper dispatching the five discovery primitives (open / snapshot / click / fill / screenshot) to the selected CLI. Single source of truth — Step 3a contains no direct `safari-browser` / `agent-browser` invocations.
+- Per-iteration commit body now records `BROWSER=<safari|agent>` audit-trail line for traceability.
+- New documentation section `### When to opt into --browser safari` covering live-demo / teaching / in-the-moment debugging scenarios.
+
+### Verified (per spectra change ACs)
+- Phase 1 contract primitive tests (`test_contract_primitives.R`) pass.
+- Phase 2 walker tests (`test_smoke_lite_walker.R`) pass.
+- `grep "Use agent-browser for discovery walk"` against the skill markdown returns 0 hits (AC5).
+- `grep "When to opt into"` returns multiple hits (AC6).
+
 ## [1.1.0] - 2026-05-13
 
 ### Added
