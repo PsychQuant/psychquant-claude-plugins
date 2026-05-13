@@ -57,8 +57,8 @@
 
 ## 11. Final verification
 
-- [ ] 11.1 Open the QEF_DESIGN app locally and invoke `/shiny-adaptive-walk QEF_DESIGN` with no flag. Confirm AC1: `ps -ef | grep agent-browser` shows the process while running, no Safari process spawn, no window appears. (This task does not require a full convergence run — a single iteration is sufficient.)
-- [ ] 11.2 Invoke `/shiny-adaptive-walk QEF_DESIGN --browser safari`. Confirm AC2: a Safari window becomes visible (or focuses the matching tab), iteration completes, screenshots are equivalent to AC1's screenshots (modulo engine-level pixel differences).
+- [x] 11.1 Open the QEF_DESIGN app locally and invoke `/shiny-adaptive-walk QEF_DESIGN` with no flag. Confirm AC1: `ps -ef | grep agent-browser` shows the process while running, no Safari process spawn, no window appears. (This task does not require a full convergence run — a single iteration is sufficient.)
+- [x] 11.2 Invoke `/shiny-adaptive-walk QEF_DESIGN --browser safari`. Confirm AC2: a Safari window becomes visible (or focuses the matching tab), iteration completes, screenshots are equivalent to AC1's screenshots (modulo engine-level pixel differences).
 - [x] 11.3 After the two verification runs, inspect the produced commits: each per-iteration commit body SHALL contain exactly one `BROWSER=` line matching the selected mode. Run `git log --pretty=full $BRANCH -3 | grep BROWSER=` to confirm.
 - [x] 11.4 Run existing Phase 1 + Phase 2 unit tests from `kiki830621/ai_martech_global_scripts` (`NOT_CRAN=true Rscript -e 'testthat::test_file(...)'` for `test_contract_primitives.R` and `test_smoke_lite_walker.R`). Confirm AC4: both suites still pass.
 - [x] 11.5 Run `grep -n "Use agent-browser for discovery walk" plugins/r-shiny-debugger/commands/shiny-adaptive-walk.md` (AC5 — zero hits) and `grep -n "When to opt into" plugins/r-shiny-debugger/commands/shiny-adaptive-walk.md` (AC6 — at least one hit).
@@ -67,7 +67,7 @@
 
 - [x] 12.1 Bump `plugins/r-shiny-debugger/.claude-plugin/plugin.json` version from `1.1.0` to `1.2.0` (minor bump — BREAKING default change). Update CHANGELOG in the plugin entry if one exists.
 - [x] 12.2 Open a PR to `PsychQuant/psychquant-claude-plugins` main branch with summary, AC checklist, and reference to issue #77 + parent change.
-- [ ] 12.3 After merge, run `/plugin-tools:plugin-update r-shiny-debugger` to sync the marketplace `marketplace.json` and update the locally-installed plugin.
+- [x] 12.3 After merge, run `/plugin-tools:plugin-update r-shiny-debugger` to sync the marketplace `marketplace.json` and update the locally-installed plugin.
 
 ## 13. Spec and design coverage map
 
