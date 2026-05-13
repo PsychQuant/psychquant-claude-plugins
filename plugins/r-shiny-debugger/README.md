@@ -22,12 +22,13 @@ R Shiny App debug + adaptive testing tools。
 ## 前置需求
 
 ```bash
-# agent-browser (本地 dev default)
+# agent-browser (default for both /shiny-debug and /shiny-adaptive-walk discovery)
 npm install -g agent-browser
 agent-browser install
 
-# safari-browser (僅 adaptive-walk discovery phase 需要,macOS only)
+# safari-browser (opt-in for /shiny-adaptive-walk --browser safari, macOS only)
 # 安裝路徑見 https://github.com/...
+# 平常不需要;只在想看 adaptive-walk loop 即時跑(教學 / live demo / 視覺 debug)時才裝。
 
 # R + Shiny
 # 確保已安裝 R 和 shiny 套件
@@ -43,8 +44,14 @@ agent-browser install
 /shiny-debug 上傳 CSV 後圖表會更新
 
 # Adaptive testing loop(需要 spectra change adaptive-dashboard-test-loop merged)
-/shiny-adaptive-walk QEF_DESIGN
+/shiny-adaptive-walk QEF_DESIGN                  # default: agent-browser (headless)
+/shiny-adaptive-walk QEF_DESIGN --browser safari # opt-in: visible Safari for live watch
 /shiny-adaptive-walk D_RACING --budget 50 --max-iter 3
+
+# Browser mode rationale: default is headless agent-browser (faster, reproducible,
+# no macOS Safari tab-focus contention). --browser safari is opt-in for live demo /
+# teaching / in-the-moment visual debugging. See shiny-adaptive-walk.md
+# "When to opt into --browser safari" for details.
 ```
 
 ## Tool 對比
