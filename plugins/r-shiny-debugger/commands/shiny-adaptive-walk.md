@@ -1,13 +1,13 @@
 ---
-description: Self-converging adaptive walker for MP165 dashboard testing — discovers defects via safari-browser + LLM judge, auto-mutates test infra, files real bugs as /idd-issue. Spectra: adaptive-dashboard-test-loop (#653)
-argument-hint: <COMPANY> [--budget N] [--max-iter N] [--no-pr]
+description: Self-converging adaptive walker for MP165 dashboard testing — discovers defects via agent-browser (or opt-in safari-browser) + LLM judge, auto-mutates test infra, files real bugs as /idd-issue. Spectra: adaptive-dashboard-test-loop (#653) + adaptive-walk-agent-browser-default
+argument-hint: <COMPANY> [--budget N] [--max-iter N] [--no-pr] [--browser=safari|agent]
 ---
 
 # Shiny Adaptive Walk
 
 Self-converging test-builder loop for MP165 dashboard rendering acceptance. Each iteration:
 
-1. Walks the company dashboard via **safari-browser** (visible to user, real renderer = ground truth)
+1. Walks the company dashboard via **agent-browser** by default (headless Chromium — fast, stable, reproducible). Opt into visible **safari-browser** via `--browser safari` for live-watch scenarios.
 2. LLM judges each rendered screenshot for defects
 3. Bifurcates per defect:
    - **test_infra_gap** → skill auto-mutates `qef_design.yaml` / `contracts.R` / `run_smoke_lite.R`
@@ -20,7 +20,8 @@ Refs: spectra change `adaptive-dashboard-test-loop` (issue #653) / sister of `/s
 ## 使用方式
 
 ```
-/shiny-adaptive-walk QEF_DESIGN                    # default config
+/shiny-adaptive-walk QEF_DESIGN                    # default config (browser=agent)
+/shiny-adaptive-walk QEF_DESIGN --browser safari   # opt into visible Safari (live watch)
 /shiny-adaptive-walk QEF_DESIGN --budget 50        # cap LLM calls at 50
 /shiny-adaptive-walk QEF_DESIGN --max-iter 3       # cap iterations at 3 (default 5)
 /shiny-adaptive-walk QEF_DESIGN --no-pr            # don't open PR after converge
@@ -32,8 +33,8 @@ Required argument: `<COMPANY>` matching `app_config.yaml` company code (QEF_DESI
 
 | Rule | Detail |
 |------|--------|
-| **Visible discovery** | safari-browser (real macOS Safari) — user can watch each iter. Per principle `08-shiny-testing.md` narrow exception clause for adaptive-walker. |
-| **Mechanical regression** | agent-browser (headless Chromium) — confirms mutations don't break existing tests + new contracts catch defects. |
+| **Discovery walk** | Default `agent-browser` (headless Chromium) — fast, reproducible, no tab-focus contention. Opt into `safari-browser` via `--browser safari` for live observation; see "When to opt into `--browser safari`" below. Both engines render real DOM; `08-shiny-testing.md` narrow exception clause covers the opt-in safari path. |
+| **Mechanical regression** | `agent-browser` (headless Chromium) — confirms mutations don't break existing tests + new contracts catch defects. Independent of the discovery `--browser` setting. |
 | **Mutation boundary** | Skill CAN edit test infra (`98_test/e2e/**`, `23_deployment/dashboard_presence_gate.R`, `04_utils/fn_debug_mode.R`). Skill MUST NOT touch production code (`10_rshinyapp_components/`, `16_derivations/`, `04_utils/fn_analysis_*.R`, `update_scripts/ETL/`, `update_scripts/DRV/`) → files `/idd-issue` instead. |
 | **Atomic per-iter commit** | Each iteration ships as ONE commit `iter-N: <summary> (refs <#issue>)`. If post-mutation tests fail, `git reset --hard HEAD~1` reverts the iter. |
 | **LLM budget cap** | `MP165_ADAPTIVE_BUDGET=100` env var (default 100 calls per session). Short-circuit DIMINISHING when exhausted. |
@@ -47,9 +48,20 @@ Required argument: `<COMPANY>` matching `app_config.yaml` company code (QEF_DESI
 ### Step 0: Pre-flight checks
 
 ```bash
-# Required tools
-which safari-browser || abort "safari-browser CLI required (macOS only). See $L4_ENT/.../08-shiny-testing.md Live URL section"
-which agent-browser  || abort "agent-browser CLI required. npm install -g agent-browser && agent-browser install"
+# Browser selection — flag overrides env var overrides static `agent` default.
+# BROWSER_FLAG is set by the flag-parsing pass below (empty if --browser not given).
+BROWSER="${BROWSER_FLAG:-${SHINY_ADAPTIVE_BROWSER:-agent}}"
+case "$BROWSER" in
+  safari|agent) ;;
+  *) abort "--browser must be one of: safari, agent (got: $BROWSER)" ;;
+esac
+
+# Required tools — only the selected browser's CLI is required.
+if [ "$BROWSER" = "safari" ]; then
+  which safari-browser || abort "safari-browser CLI required for --browser safari (macOS only). Pass --browser agent to switch, or install safari-browser. See $L4_ENT/.../08-shiny-testing.md Live URL section"
+else
+  which agent-browser  || abort "agent-browser CLI required for default browser mode. npm install -g agent-browser && agent-browser install (or pass --browser safari if safari-browser is available)"
+fi
 which gh             || abort "gh CLI required"
 command -v Rscript   || abort "R + Rscript required"
 
@@ -64,6 +76,9 @@ Parse flags:
 - `--budget N` → override `MP165_ADAPTIVE_BUDGET` to N
 - `--max-iter N` → override `MP165_MAX_ITER` (default 5)
 - `--no-pr` → skip auto-PR at end
+- `--browser safari|agent` → override `SHINY_ADAPTIVE_BROWSER` env var (precedence: flag > env > `agent`)
+
+No tab-focus / window-count probing is performed — browser mode is determined explicitly by the precedence chain above. There is no runtime auto-fallback.
 
 ### Step 1: Working tree + branch setup
 
@@ -134,9 +149,24 @@ if [ -z "$VERDICT" ]; then
 fi
 ```
 
-#### Step 3a: Discovery walk (safari-browser, visible to user)
+#### Step 3a: Discovery walk
+
+The discovery walk uses the browser selected in Step 0 (`$BROWSER`). All five discovery primitives (`open` / `snapshot` / `click` / `fill` / `screenshot`) flow through a single dispatcher helper:
 
 ```bash
+# Single source of truth for browser dispatch.
+# safari mode appends --url "$URL_SUBSTR" for tab targeting;
+# agent mode runs headless with a single ephemeral context (no --url needed).
+# Supported subcommands: open / snapshot / click / fill / screenshot.
+browser_cmd() {
+  local subcmd="$1"; shift
+  if [ "$BROWSER" = "safari" ]; then
+    safari-browser "$subcmd" "$@" --url "$URL_SUBSTR"
+  else
+    agent-browser "$subcmd" "$@"
+  fi
+}
+
 discover_defects() {
   # 1. Start Shiny app via nohup
   cd "$COMPANY_DIR"
@@ -155,38 +185,38 @@ discover_defects() {
   URL=$(grep "Listening on" .shiny-debug/shiny.log | tail -1 | grep -oE "http://[^[:space:]]+")
   URL_SUBSTR=$(echo "$URL" | sed -E 's#https?://##; s#/$##')
 
-  # 3. Open in safari-browser with --url lock (per 08-shiny-testing.md narrow exception)
-  safari-browser open "$URL" --url "$URL_SUBSTR"
+  # 3. Open the app (safari uses --url tab targeting; agent uses headless single-context)
+  browser_cmd open "$URL"
   sleep 2
 
   # 4. Login
-  safari-browser snapshot -i --url "$URL_SUBSTR" > /tmp/snap_login.txt
+  browser_cmd snapshot -i > /tmp/snap_login.txt
   PWD_REF=$(extract_ref_from_snap /tmp/snap_login.txt "textbox.*密碼|textbox.*password")
   SUBMIT_REF=$(extract_ref_from_snap /tmp/snap_login.txt "button.*進入|button.*Login")
-  safari-browser fill "${PWD_REF:-@e1}" VIBE --url "$URL_SUBSTR"
-  safari-browser click "${SUBMIT_REF:-@e2}" --url "$URL_SUBSTR"
+  browser_cmd fill "${PWD_REF:-@e1}" VIBE
+  browser_cmd click "${SUBMIT_REF:-@e2}"
   sleep 3
 
   # 5. Walk top-level + sub-tabs, screenshot each
   SCREENSHOTS=()
   for tab in "總覽儀表板" "TagPilot" "Marketing Vital-Signs" "BrandEdge" "InsightForge 360" "報告中心"; do
-    safari-browser snapshot -i --url "$URL_SUBSTR" > "/tmp/snap_${tab}.txt"
+    browser_cmd snapshot -i > "/tmp/snap_${tab}.txt"
     TAB_REF=$(extract_ref_from_snap "/tmp/snap_${tab}.txt" "link.*${tab}")
     [ -n "$TAB_REF" ] || continue
 
-    safari-browser click "$TAB_REF" --url "$URL_SUBSTR"
+    browser_cmd click "$TAB_REF"
     sleep 2.5  # bs4Dash accordion settle
 
     # Take screenshot for top-level
-    safari-browser screenshot "/tmp/walk_iter${ITER}_${tab}.png" --url "$URL_SUBSTR"
+    browser_cmd screenshot "/tmp/walk_iter${ITER}_${tab}.png"
     SCREENSHOTS+=("/tmp/walk_iter${ITER}_${tab}.png")
 
     # Re-snap to find sub-tabs (reuse run_smoke_lite.R::.smoke_extract_sub_tab_refs)
     SUB_REFS=$(R -e "source('shared/global_scripts/98_test/e2e/run_smoke_lite.R'); cat(.smoke_extract_sub_tab_refs(snap_text, '$tab', remaining_tabs))")
     for sub_ref in $SUB_REFS; do
-      safari-browser click "$sub_ref" --url "$URL_SUBSTR"
+      browser_cmd click "$sub_ref"
       sleep 1
-      safari-browser screenshot "/tmp/walk_iter${ITER}_${tab}_${sub_ref}.png" --url "$URL_SUBSTR"
+      browser_cmd screenshot "/tmp/walk_iter${ITER}_${tab}_${sub_ref}.png"
       SCREENSHOTS+=("/tmp/walk_iter${ITER}_${tab}_${sub_ref}.png")
     done
   done
@@ -194,6 +224,8 @@ discover_defects() {
   kill -TERM "$APP_PID" 2>/dev/null
 }
 ```
+
+No literal `safari-browser` or `agent-browser` CLI invocation should appear in Step 3a outside the `browser_cmd` helper.
 
 #### Step 3b: LLM judge classification (per screenshot)
 
@@ -380,10 +412,18 @@ run_safety_gate() {
   return 0
 }
 
-# Commit + safety check + rollback if needed
+# Commit + safety check + rollback if needed.
+# Per-iter commit body carries an audit-trail line BROWSER=<safari|agent>
+# so commit history records which browser produced this iter's evidence.
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
-  git commit -m "iter-$ITER: $ITER_SUMMARY (refs #$PARENT_ISSUE)" 2>&1
+  COMMIT_BODY="BROWSER=$BROWSER"
+  if [ -n "$ITER_BODY_EXTRA" ]; then
+    COMMIT_BODY="$COMMIT_BODY
+
+$ITER_BODY_EXTRA"
+  fi
+  git commit -m "iter-$ITER: $ITER_SUMMARY (refs #$PARENT_ISSUE)" -m "$COMMIT_BODY" 2>&1
 
   if ! run_safety_gate; then
     git reset --hard HEAD~1
@@ -580,7 +620,6 @@ Final yaml `# === auto-suggested ===` block contains `# (none — already covere
 | Don't | Do |
 |-------|----|
 | Edit production code (UI components, business logic) | File `/idd-issue` — skill respects bug ownership boundary |
-| Use `agent-browser` for discovery walk | Use `safari-browser` (real renderer, visible to user, principle exception) |
 | Skip per-iter regression gate | ALWAYS run test_dir + mechanical gate; auto-rollback on failure |
 | File duplicate bug issues | Compute composite signature + `gh issue list --search` before filing |
 | Run on dirty working tree | Refuse start with uncommitted changes (per Step 1) |
@@ -597,6 +636,7 @@ Final yaml `# === auto-suggested ===` block contains `# (none — already covere
 | `MP165_MAX_ITER` | 5 | Max iterations before MAX_ITER_REACHED |
 | `PARENT_ISSUE` | 653 | Issue # used in branch name + commit refs |
 | `OPEN_PR` | true | If "false", skill doesn't auto-create PR at end |
+| `SHINY_ADAPTIVE_BROWSER` | `agent` | Discovery browser. Values: `safari` or `agent`. Overridden by `--browser` flag when both are set. See "When to opt into `--browser safari`" below. |
 
 ### Flags
 
@@ -605,6 +645,21 @@ Final yaml `# === auto-suggested ===` block contains `# (none — already covere
 | `--budget N` | Override `MP165_ADAPTIVE_BUDGET` to N |
 | `--max-iter N` | Override `MP165_MAX_ITER` to N |
 | `--no-pr` | Skip auto-PR (sets `OPEN_PR=false`) |
+| `--browser safari\|agent` | Discovery browser. Default `agent`. Overrides `SHINY_ADAPTIVE_BROWSER` env var. See "When to opt into `--browser safari`" below. |
+
+### When to opt into `--browser safari`
+
+The default `agent-browser` (headless Chromium) is the right choice for almost every invocation: unattended runs, CI, multi-hour cross-company rollouts, and any case where nobody is watching the loop iterate. Headless is faster (no Safari startup or window animation per iteration), more reproducible (ephemeral context, no user-profile cookies or extensions), and immune to macOS Safari's tab-focus contention.
+
+Opt into `--browser safari` only when realtime visibility is the value:
+
+| Scenario | Why safari |
+|----------|------------|
+| Live demo / teaching | The audience needs to see the loop walk the dashboard |
+| In-the-moment debugging | You want to watch each click land in a real Safari window |
+| Visual regression spot-check | You're suspicious of an engine-specific WebKit rendering issue |
+
+If none of those apply, leave the default. Both engines render real DOM; for Shiny apps built on bs4Dash + plotly + DT there is no meaningful rendering difference. The "real renderer ground truth" framing that earlier versions of this skill carried was Safari-bias, not fact.
 
 ---
 
@@ -615,20 +670,34 @@ Final yaml `# === auto-suggested ===` block contains `# (none — already covere
 - **Parent issue**: kiki830621/ai_martech_global_scripts#653
 - **MP165 v1.2 amendment**: codifies dual-track architecture (Track A declarative `qef_design.yaml` baseline + Track B adaptive walker overlay)
 - **Prior art**: `/glue-bridge` MP102 v1.3 self-converging review pattern (CONVERGED / PLATEAUED / DIMINISHING verdicts)
-- **Principle exception**: `00_principles/.claude/rules/08-shiny-testing.md` narrow exception clause permits safari-browser on local for adaptive-walker discovery (real-renderer ground truth)
+- **Principle exception**: `00_principles/.claude/rules/08-shiny-testing.md` narrow exception clause permits safari-browser on local for adaptive-walker discovery. The clause stays accurate as written; default browser is `agent-browser` since the `adaptive-walk-agent-browser-default` change (issue PsychQuant/psychquant-claude-plugins#77), and safari is opt-in via `--browser safari`.
+- **Default browser change**: PsychQuant/psychquant-claude-plugins#77 — inverted default from safari to agent.
 - **Bug filing discipline**: IC_R011 commercial low-bar filing
 
 ---
 
 ## Troubleshooting
 
-### safari-browser missing or wrong version
+### safari-browser missing (only matters when `--browser safari` is selected)
 
 ```bash
 safari-browser --version
-# If missing: not installed (macOS only). agent-browser is fallback for local dev,
-# but skill REQUIRES safari-browser for real-renderer ground truth visibility.
 ```
+
+If `safari-browser` is missing and you passed `--browser safari` (or set `SHINY_ADAPTIVE_BROWSER=safari`), Step 0 pre-flight aborts with a message naming the missing CLI. Two ways forward:
+
+- Drop the safari opt-in: invoke without `--browser` (and unset `SHINY_ADAPTIVE_BROWSER`) — skill runs the default headless `agent-browser` path.
+- Install safari-browser: macOS-only. See `$L4_ENT/.../08-shiny-testing.md` Live URL section.
+
+If you did NOT opt into safari, this section does not apply — the default `agent-browser` path bypasses safari-browser entirely.
+
+### agent-browser missing (default path)
+
+```bash
+agent-browser --version
+```
+
+If `agent-browser` is missing and you are on the default browser mode (no `--browser` flag and no `SHINY_ADAPTIVE_BROWSER=safari`), Step 0 pre-flight aborts. Install with `npm install -g agent-browser && agent-browser install`. Most macOS dev environments already have it (used by `/shiny-debug` sister skill). Common in bare Linux CI containers.
 
 ### Branch collision
 
