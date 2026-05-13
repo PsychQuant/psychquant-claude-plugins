@@ -66,24 +66,24 @@
 ## 12. Release
 
 - [x] 12.1 Bump `plugins/r-shiny-debugger/.claude-plugin/plugin.json` version from `1.1.0` to `1.2.0` (minor bump — BREAKING default change). Update CHANGELOG in the plugin entry if one exists.
-- [ ] 12.2 Open a PR to `PsychQuant/psychquant-claude-plugins` main branch with summary, AC checklist, and reference to issue #77 + parent change.
+- [x] 12.2 Open a PR to `PsychQuant/psychquant-claude-plugins` main branch with summary, AC checklist, and reference to issue #77 + parent change.
 - [ ] 12.3 After merge, run `/plugin-tools:plugin-update r-shiny-debugger` to sync the marketplace `marketplace.json` and update the locally-installed plugin.
 
 ## 13. Spec and design coverage map
 
 This section maps the specification requirements (`specs/shiny-adaptive-walk-browser/spec.md`) and design decisions (`design.md`) to the implementation tasks above. Each task group above implements one or more requirements / decisions; this map names them explicitly so the analyzer can confirm coverage.
 
-- [ ] 13.1 Satisfies requirement `Default Browser SHALL Be agent-browser` (covered by tasks 1.2, 11.1).
-- [ ] 13.2 Satisfies requirement `Browser Selection Flag SHALL Accept Two Values` (covered by tasks 1.1, 1.3).
-- [ ] 13.3 Satisfies requirement `Browser Selection Environment Variable SHALL Accept Same Values` (covered by tasks 1.2, 1.3).
-- [ ] 13.4 Satisfies requirement `Pre-flight SHALL Check Only Selected Browser CLI` (covered by tasks 2.1, 2.2, 2.3).
-- [ ] 13.5 Satisfies requirement `Single Dispatcher Helper SHALL Route Discovery Primitives` (covered by tasks 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6).
-- [ ] 13.6 Satisfies requirement `Per-Iteration Commit Body SHALL Record Browser Mode` (covered by tasks 5.1, 5.2, 11.3).
-- [ ] 13.7 Satisfies requirement `Anti-Pattern Table SHALL NOT Forbid agent-browser for Discovery` (covered by tasks 6.1, 6.2, 11.5).
-- [ ] 13.8 Satisfies requirement `Documentation SHALL Explain When to Opt Into safari` (covered by tasks 7.2, 8.1, 8.2, 10.1, 11.5).
-- [ ] 13.9 Implements design decision `Default browser: agent` (covered by tasks 1.2, 11.1).
-- [ ] 13.10 Implements design decision `Dispatcher: helper function (Option A)` (covered by tasks 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6).
-- [ ] 13.11 Implements design decision `Selection precedence: flag > env > static default` (covered by tasks 1.1, 1.2, 1.3).
-- [ ] 13.12 Implements design decision `Pre-flight: mode-specific CLI presence check` (covered by tasks 2.1, 2.2, 2.3).
-- [ ] 13.13 Implements design decision "Audit trail: per-iteration commit body emits `BROWSER=<mode>`" (covered by tasks 5.1, 5.2, 11.3).
-- [ ] 13.14 Implements design decision `Anti-pattern table entry removed, not qualified` (covered by tasks 6.1, 6.2, 11.5).
+- [x] 13.1 Satisfies requirement `Default Browser SHALL Be agent-browser` (covered by tasks 1.2, 11.1).
+- [x] 13.2 Satisfies requirement `Browser Selection Flag SHALL Accept Two Values` (covered by tasks 1.1, 1.3).
+- [x] 13.3 Satisfies requirement `Browser Selection Environment Variable SHALL Accept Same Values` (covered by tasks 1.2, 1.3).
+- [x] 13.4 Satisfies requirement `Pre-flight SHALL Check Only Selected Browser CLI` (covered by tasks 2.1, 2.2, 2.3).
+- [x] 13.5 Satisfies requirement `Single Dispatcher Helper SHALL Route Discovery Primitives` (covered by tasks 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6).
+- [x] 13.6 Satisfies requirement `Per-Iteration Commit Body SHALL Record Browser Mode` (covered by tasks 5.1, 5.2, 11.3).
+- [x] 13.7 Satisfies requirement `Anti-Pattern Table SHALL NOT Forbid agent-browser for Discovery` (covered by tasks 6.1, 6.2, 11.5).
+- [x] 13.8 Satisfies requirement `Documentation SHALL Explain When to Opt Into safari` (covered by tasks 7.2, 8.1, 8.2, 10.1, 11.5).
+- [x] 13.9 Implements design decision `Default browser: agent` (covered by tasks 1.2, 11.1).
+- [x] 13.10 Implements design decision `Dispatcher: helper function (Option A)` (covered by tasks 3.1, 3.2, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6).
+- [x] 13.11 Implements design decision `Selection precedence: flag > env > static default` (covered by tasks 1.1, 1.2, 1.3).
+- [x] 13.12 Implements design decision `Pre-flight: mode-specific CLI presence check` (covered by tasks 2.1, 2.2, 2.3).
+- [x] 13.13 Implements design decision "Audit trail: per-iteration commit body emits `BROWSER=<mode>`" (covered by tasks 5.1, 5.2, 11.3).
+- [x] 13.14 Implements design decision `Anti-pattern table entry removed, not qualified` (covered by tasks 6.1, 6.2, 11.5).
