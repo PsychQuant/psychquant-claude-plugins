@@ -388,6 +388,16 @@
       },
       "source": "./plugins/docflow",
       "category": "productivity"
+    },
+    {
+      "name": "math-tools",
+      "version": "0.1.0",
+      "description": "v0.1.0: Scaffolding for academic math article editing — 3 skills (propositions / proofread / manuscript-audit) + 3 frozen baseline rules (manuscript-jsonl-sync / manuscript-consistency-audit / code-and-manuscript-sync). Covers JSONL-driven prop extraction + R1-R8 mechanical gate, 6-layer L1-L5 + location-drift proofread workflow, R1-R4 cross-doc audit (working-file path leak, cite drift, code-manuscript symbol drift, prop-iso bijection). Dogfood origin: PsychQuantHsu/psychophysical_representations #107 proofread workflow experiment (3 pilots, 286-prop full L4 walk demonstrated, 5 findings shipped). v0.1.0 ships rules + methodology docs only;skill execution bodies + scripts (validate-propositions.py / refresh-prop-locations.py / audit-symbols.py / audit-citations.py / audit-code-manuscript.py / run-audit.sh) remain in source repo until v0.2.0 extraction.",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/math-tools",
+      "category": "development"
     }
   ]
 }
