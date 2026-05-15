@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-05-15
+
+### Added
+- **Phase 1 temporal anchors**: explicit questions for today's date, writer's lifecycle stage (onboarding week N / post-acceptance / mid-sabbatical etc.), and last contact/event with the recipient. Required before writing any time-relative phrasing ("recently", "前幾天", "上週", "last month"). Real-world trigger: AI defaulted to "陳老師前幾天提到..." when the actual conversation was 1 week earlier at a specific named meeting (storyline 會議, 2026-05-08). Recipient's memory of the event would not match "前幾天" → instant AI-generation tell.
+
+### Changed
+- **Golden Rule (T-schema)**: time phrasing now explicitly listed as a referent. Words like "recently / 前幾天 / 上週" must be anchored to a specific date verified with the writer, not guessed by the AI. Anchored phrasing ("5/8 在 storyline 會議時") carries the same warmth without the AI smell.
+- **Phase 5 anti-pattern checklist**: added row for "vague temporal phrasing without verified anchor". Fix is to ask the writer for the specific date and replace with anchored form.
+
 ## [2.6.0] - 2026-05-07
 
 ### Added
