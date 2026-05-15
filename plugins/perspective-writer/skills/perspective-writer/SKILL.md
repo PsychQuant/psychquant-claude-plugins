@@ -32,6 +32,12 @@ for a claim, either ask the user or don't make the claim.
 This principle overrides tone-matching. A sentence with perfect voice but no referent is worse than
 an awkward sentence that points to something real.
 
+**Time phrasing is a referent.** Words like "recently", "last week", "前幾天", "上週", "earlier this month"
+all assert a specific time. Their referent must come from the writer's *verified* memory, not the AI's
+guess. If the writer says 陳老師 mentioned X "前幾天" but the actual conversation happened 6 weeks ago,
+the recipient reads "前幾天" and instantly distrusts the letter. Anchor every time-phrase to a specific
+date (YYYY-MM-DD) before writing it. See Phase 1 "Temporal anchors" for the questions to ask.
+
 **But T-schema alone is not enough.** Every sentence must simultaneously satisfy two constraints:
 1. **T-schema**: it points to something concrete and verifiable.
 2. **Writing goal**: it serves the document's purpose at the right level of detail.
@@ -130,11 +136,18 @@ Read the user's existing materials to build a mental model of who they are and h
   (See Golden Rule above.) Match their specificity level, not just their voice.
 
 **What you must ask the user directly:**
+
+*Internal state:*
 - "What's your actual feeling about this?" (nervous? excited? uncertain?)
 - "What do you most want the recipient to take away?"
 - "Is there anything you're worried about with this letter?"
 
-Do not guess these. A person's internal state determines their writing tone, and you cannot infer it from their CV.
+*Temporal anchors (critical — see "Time phrasing as referent" under Golden Rule):*
+- **Today's date** — explicitly state YYYY-MM-DD as the reference point for every "recently / 前幾天 / 上週 / last month" phrasing. Use system context (currentDate) when available, otherwise ask.
+- **Writer's lifecycle stage** — what stage is the writer in right now? (e.g., onboarding week 2 of new postdoc, first semester teaching, mid-sabbatical, post-acceptance pre-start, application phase). This affects self-positioning ("I am..." vs "I will be..."), tense, and how much credentials need explaining.
+- **Last contact / event with the recipient** — when, where, what context? Required before writing any "recently / last week / 前幾天 / 上次" phrasing. Convert into a specific date and verify against the writer's memory.
+
+Do not guess any of these. A person's internal state determines their writing tone, and you cannot infer it from their CV. Time phrasings ("recently", "前幾天", "上週") that don't match the recipient's own memory of when an event happened are an immediate AI-generation tell — the recipient reads "前幾天" and thinks "wait, when?"
 
 ## Phase 2: Understand the Recipient
 
@@ -255,6 +268,7 @@ Before presenting the draft, check for these AI writing tells and remove every i
 | Starting paragraphs with "在...方面" | Formulaic topic sentence structure | Vary your openings |
 | "不僅...更..." "不僅...也..." | AI loves this construction. Humans use it sparingly. | Use it at most once per document |
 | Ending with "期盼" "期許" "展望" | Overly formal, sounds like a press release | End like a person: "謝謝老師" or "希望有機會跟老師聊聊" |
+| Vague temporal phrasing without verified anchor ("recently", "前幾天", "上次", "earlier") | If the writer hasn't told you the specific date, AI defaults to "前幾天" / "recently" — but the recipient knows when things actually happened and will notice the mismatch. Pure AI tell. | Ask the writer for the specific date. Replace "前幾天" with "上週四" or "5/8 在 storyline 會議時" — anchored phrasings carry the same warmth without the AI smell. |
 | Extra `---` / `***` hrules inside letter body | AI uses horizontal rules to segment emails into card-like sections. Humans don't—they use paragraph breaks. | Delete every hrule except the Phase 5b wrapper pair. One paragraph = one idea; adjacent paragraphs separated by blank lines, not hrules |
 | **Adjacent structural dividers** | Two lines with only whitespace between (e.g., section-closing rule + next-section-opening rule, or heading-trailing rule right before `---`). This is the *actual* AI tell—not the total count of lines but the back-to-back pair. | Remove one side of the pair. Default to keeping the semantically stronger line (e.g., keep the wrapper; remove the heading-trailing decorative `::after` rule) |
 | `2px double` borders (in HTML/PDF drafts) | Double-line borders are AI design reflex for emphasis (e.g., total row, CTA divider) | Use `1px solid`. Emphasis comes from *weight difference* against neighboring soft rules, not from doubling the line itself |
