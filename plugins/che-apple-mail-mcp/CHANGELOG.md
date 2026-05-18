@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.20.0] - 2026-05-18
+
+### Added
+- **#76 + #84 Layer 2 corpus refinement** — six opt-in config fields for `/archive-mail` (`sender_includes` / `sender_excludes` / `recipient_includes` / `recipient_excludes` / `subject_includes` / `subject_excludes`) implementing a two-layer corpus model: `filters` defines Layer 1 search-time corpus; the six new fields are Layer 2 post-fetch refinement applied after Step 3 fetch and before Step 4 dedup. Thread-coherent (any message matching includes keeps the whole thread; any matching excludes drops it), case-insensitive substring matching with bare-value normalization (display name stripped for sender / recipient, `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` prefixes stripped for subject), excludes-precedence on the same axis (blacklist wins when both lists match the same email). New spec `openspec/specs/archive-mail-corpus-refinement/spec.md`. Step 4.5 Phase 2 preview gains a refinement statistics block (kept / dropped totals + per-category breakdown) when at least one field is non-empty; omitted entirely when all six unset. 100% backward compatible — unset and empty lists behave identically to v2.19.7. Closes #76 + #84.
+- **Malformed refinement value detection** — Step 1 config parsing now validates the six refinement fields and aborts at parse time with `Error: <field> must be a YAML multi-line block-style sequence of strings ...` plus non-zero exit when a scalar or unsupported inline list (other than `[]`) is provided. Empty-string entries within a sequence (`sender_excludes: [""]`) are silently dropped at parse time and behave identically to `sender_excludes: []`.
+
+### Changed
+- **plugin.json description** — narrative re-led with the v2.20.0 corpus-refinement story; pre-v2.20.0 release history preserved verbatim.
+
 ## [2.19.6] - 2026-05-12
 
 ### Fixed

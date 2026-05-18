@@ -29,6 +29,14 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 | `output_dir` | 覆寫 default `communication/emails` |
 | `last_archived` | 給 search_emails 設 `date_from`(只抓此時點之後的信)|
 | `exclude_mailboxes` | search 跳過(垃圾郵件 / 草稿等)|
+| `sender_includes` | Layer 2 post-fetch: keep thread 若任一 message sender 含 substring(v2.20.0+, #84)|
+| `sender_excludes` | Layer 2 post-fetch: drop thread 若任一 message sender 含 substring(v2.20.0+, #84)|
+| `recipient_includes` | Layer 2 post-fetch: keep thread 若任一 message recipient 含 substring(v2.20.0+, #84)|
+| `recipient_excludes` | Layer 2 post-fetch: drop thread 若任一 message recipient 含 substring(v2.20.0+, #84)|
+| `subject_includes` | Layer 2 post-fetch: keep thread 若任一 message bare subject 含 substring(v2.20.0+, #76)|
+| `subject_excludes` | Layer 2 post-fetch: drop thread 若任一 message bare subject 含 substring(v2.20.0+, #76)|
+
+兩層 corpus model:`filters` / `subject_keywords` / `exclude_mailboxes` 是 Layer 1 search-time(定義 corpus);6 個 `*_includes` / `*_excludes` 是 Layer 2 post-fetch refinement(thread-coherent narrowing,excludes-precedence on same axis,case-insensitive substring)。完整契約見 spec `openspec/specs/archive-mail-corpus-refinement/spec.md`。
 
 命令列參數仍可覆寫 config(傳一個 filter 就只用該 filter,不讀 config 的 filters 清單)。詳細 schema 見 plugin CLAUDE.md。
 
@@ -93,6 +101,12 @@ TaskCreate(subject="report_and_audit",
 CFG_OUTPUT_DIR=""
 LAST_ARCHIVED=""
 EXCLUDE_MBX=""
+SENDER_INCLUDES=""
+SENDER_EXCLUDES=""
+RECIPIENT_INCLUDES=""
+RECIPIENT_EXCLUDES=""
+SUBJECT_INCLUDES=""
+SUBJECT_EXCLUDES=""
 if [ -f "${CONFIG_FILE}" ]; then
     # Parse YAML config (top-level scalars + sequences only)
     # 兼容 pure YAML(`.yaml` v2.16.0+)與 frontmatter-wrapped(`.md` legacy);awk pattern 對兩者皆 work
@@ -100,6 +114,43 @@ if [ -f "${CONFIG_FILE}" ]; then
     CFG_OUTPUT_DIR=$(awk '/^output_dir:[ \t]*/{sub(/^output_dir:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
     LAST_ARCHIVED=$(awk '/^last_archived:[ \t]*/{sub(/^last_archived:[ \t]*/,"");print;exit}' "${CONFIG_FILE}")
     EXCLUDE_MBX=$(awk '/^exclude_mailboxes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+
+    # Layer 2 post-fetch corpus refinement (v2.20.0+, #76 + #84):
+    # Six opt-in corpus-refinement fields. Same awk shape as exclude_mailboxes — multi-line `  - item` block-style only.
+    # Full spec: openspec/specs/archive-mail-corpus-refinement/spec.md
+    SENDER_INCLUDES=$(awk '/^sender_includes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    SENDER_EXCLUDES=$(awk '/^sender_excludes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    RECIPIENT_INCLUDES=$(awk '/^recipient_includes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    RECIPIENT_EXCLUDES=$(awk '/^recipient_excludes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    SUBJECT_INCLUDES=$(awk '/^subject_includes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+    SUBJECT_EXCLUDES=$(awk '/^subject_excludes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+
+    # Validation: malformed refinement value aborts with explicit error (spec ADDED Requirement).
+    # Sequence-form: `<field>:` on its own line, with `  - item` lines following → awk parser handles cleanly.
+    # Inline scalar or non-empty inline list on the same line → refuse here, do not silently coerce.
+    # Empty inline list `[]` and bare `<field>:` (no value) are both valid sequence forms.
+    for _f in sender_includes sender_excludes recipient_includes recipient_excludes subject_includes subject_excludes; do
+        _line=$(awk -v field="^${_f}:" '$0 ~ field {print; exit}' "${CONFIG_FILE}")
+        if [ -n "$_line" ]; then
+            _val=$(printf '%s' "$_line" | sed -E "s/^${_f}:[[:space:]]*//")
+            if [ -n "$_val" ] && [ "$_val" != "[]" ]; then
+                echo "Error: ${_f} must be a YAML multi-line block-style sequence of strings (\`${_f}:\` on its own line followed by indented \`  - item\` lines). Got inline value: ${_val}" >&2
+                exit 1
+            fi
+        fi
+    done
+
+    # Strip empty entries from refinement lists per spec (sender_excludes: [""] ≡ sender_excludes: []).
+    # The awk above prints raw item text; drop blank lines, "" and '' entries here.
+    _strip_empty_refinement_entries() {
+        printf '%s\n' "$1" | awk 'NF > 0 && $0 != "\"\"" && $0 != "'"'"''"'"'"'
+    }
+    SENDER_INCLUDES=$(_strip_empty_refinement_entries "$SENDER_INCLUDES")
+    SENDER_EXCLUDES=$(_strip_empty_refinement_entries "$SENDER_EXCLUDES")
+    RECIPIENT_INCLUDES=$(_strip_empty_refinement_entries "$RECIPIENT_INCLUDES")
+    RECIPIENT_EXCLUDES=$(_strip_empty_refinement_entries "$RECIPIENT_EXCLUDES")
+    SUBJECT_INCLUDES=$(_strip_empty_refinement_entries "$SUBJECT_INCLUDES")
+    SUBJECT_EXCLUDES=$(_strip_empty_refinement_entries "$SUBJECT_EXCLUDES")
 fi
 
 # output_dir precedence (高 → 低):
@@ -466,7 +517,92 @@ search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
 
 ### Step 4: 過濾新郵件
 
-對每封搜尋到的郵件,依當前 `dedup_strategy` 套用 dedup logic。**v2.17.0+ #49**:除了既有 `INDEX_FILE` 來源的 Message-ID set,**也必須消費 Step 2.1 累積的 `EXTENDED_DEDUP_IDS`**(從 sibling-archive symlink 抽出的 historical Message-ID)。
+Step 4 分兩個 sub-step:**先 Layer 2 pre-dedup refinement**(v2.20.0+,新,#76 + #84),**再 dedup**(原行為)。
+
+#### Step 4.0: Pre-dedup refinement (Layer 2, v2.20.0+, #76 + #84)
+
+Refinement executes after fetch and before dedup,對應 spec `openspec/specs/archive-mail-corpus-refinement/spec.md`。6 個 opt-in config 欄位(`sender_includes` / `sender_excludes` / `recipient_includes` / `recipient_excludes` / `subject_includes` / `subject_excludes`)在 thread 層級過濾 fetched corpus:case-insensitive substring matching with bare-value normalization、per-axis includes whitelist and excludes blacklist with excludes-precedence、per-thread coherence(任一 message 命中 → 整 thread keep/drop)。
+
+實作 sketch:
+
+```python
+import re
+
+_RE_FWD_PREFIX = re.compile(r'^(Re|RE|Fwd|FW|转发|轉寄):\s*')
+
+def _bare_email(addr_field):
+    """Strip display name. '"Name" <foo@bar>' → 'foo@bar'; lowercase."""
+    m = re.search(r'<([^>]+)>', addr_field or "")
+    raw = m.group(1) if m else (addr_field or "")
+    return raw.strip().strip('"').lower()
+
+def _bare_subject(subject):
+    """Strip leading Re:/Fwd:/转发:/轉寄: prefixes; lowercase."""
+    s = subject or ""
+    while True:
+        m = _RE_FWD_PREFIX.match(s)
+        if not m: break
+        s = s[m.end():]
+    return s.strip().lower()
+
+def _matches_any_substring(target_lower, substrs):
+    """Case-insensitive substring matching with bare-value normalization (target already lowered)."""
+    return any(s.strip().lower() in target_lower for s in substrs if s.strip())
+
+def _thread_passes_refinement(thread_messages, config):
+    """Per-axis includes whitelist + excludes blacklist with excludes-precedence.
+    Per-thread coherence: any message matches includes → keep thread; any matches excludes → drop thread."""
+    senders    = [_bare_email(m['sender']) for m in thread_messages]
+    recipients = [_bare_email(r) for m in thread_messages for r in (m.get('to', []) + m.get('cc', []))]
+    subjects   = [_bare_subject(m['subject']) for m in thread_messages]
+
+    # Includes whitelist (skip axis if list empty per spec empty-list-as-unset)
+    for axis_values, includes in [
+        (senders,    config.get('sender_includes',    [])),
+        (recipients, config.get('recipient_includes', [])),
+        (subjects,   config.get('subject_includes',   [])),
+    ]:
+        if includes and not any(_matches_any_substring(v, includes) for v in axis_values):
+            return False, 'includes_filter'  # whitelist active and no message matches → drop
+
+    # Excludes blacklist (excludes win when both set on same axis per spec ADDED Requirement)
+    for axis_values, excludes, reason in [
+        (senders,    config.get('sender_excludes',    []), 'sender_excludes'),
+        (recipients, config.get('recipient_excludes', []), 'recipient_excludes'),
+        (subjects,   config.get('subject_excludes',   []), 'subject_excludes'),
+    ]:
+        if excludes and any(_matches_any_substring(v, excludes) for v in axis_values):
+            return False, reason
+
+    return True, None
+
+def apply_refinement(fetched, config):
+    """Group fetched by thread key (bare subject); drop threads per per-thread coherence rule."""
+    threads = {}
+    for email in fetched:
+        threads.setdefault(_bare_subject(email['subject']), []).append(email)
+
+    stats = {'kept': 0, 'dropped_sender_excludes': 0, 'dropped_recipient_excludes': 0,
+             'dropped_subject_excludes': 0, 'dropped_includes_filter': 0}
+    refined = []
+    for thread in threads.values():
+        passed, reason = _thread_passes_refinement(thread, config)
+        if passed:
+            refined.extend(thread)
+            stats['kept'] += 1
+        else:
+            stats[f'dropped_{reason}'] += 1
+    return refined, stats
+
+# Pre-dedup refinement runs HERE, before the dedup pseudocode below.
+refined, refinement_stats = apply_refinement(fetched, config)
+```
+
+Refinement runs **before** dedup,所以被排除的 thread Message-ID **不會**進 `email_index.json` 或 `threads.json`。同一個 refinement config 在後續 run 仍會 drop 同一批 thread,不會 re-surface 為 new。下面的 dedup pseudocode 中的 `fetched` 應視為 refinement 之後的 `refined` corpus。
+
+#### Step 4.1: Dedup (既有行為,v2.17.0+ #49)
+
+對每封 refined 後的郵件,依當前 `dedup_strategy` 套用 dedup logic。**v2.17.0+ #49**:除了既有 `INDEX_FILE` 來源的 Message-ID set,**也必須消費 Step 2.1 累積的 `EXTENDED_DEDUP_IDS`**(從 sibling-archive symlink 抽出的 historical Message-ID)。
 
 ```python
 # Build the canonical "known" Message-ID set per dedup_strategy
@@ -520,6 +656,14 @@ Threads 分布:
        Participants: {p1, p2, p3}
   ⚠ [{date}] {thread_key} ({M} msgs)  ← potential false positive
        Reason: sender 不在 filter, 僅 subject 含關鍵字
+
+Corpus refinement (includes/excludes) — v2.20.0+, only shown when ≥1 refinement field non-empty:
+  Phase 2 preview surfaces refinement statistics: kept {kept} / dropped {dropped} threads.
+  Dropped by sender_excludes:    {N} threads     # category omitted if N=0
+  Dropped by recipient_excludes: {N} threads     # category omitted if N=0
+  Dropped by subject_excludes:   {N} threads     # category omitted if N=0
+  Filtered out by includes:      {N} threads     # category omitted if N=0
+  (When all six refinement fields are unset or empty, the entire refinement block is omitted from preview.)
 
 附件預估:{K} 個 ({total_size})
 ```
@@ -1065,3 +1209,51 @@ attachment_routing:
 ```
 
 設定 `subject_keywords` 後，Step 3 會自動做三輪搜尋（sender + subject keyword + thread-subject expansion）並去重。Step 8 Coverage Audit 會報告覆蓋率。
+
+## Corpus refinement 設定範例(v2.20.0+, two-layer model)
+
+Two-layer model — `filters` (search-time) vs `*_includes` (post-fetch restriction) 的具體用法:`filters` 把寬網撒到 Mail.app(Step 3 MCP query),refinement 在 fetch 完之後縮窄到只關心的 sender / recipient / subject(Step 4.0 thread-level)。
+
+**範例 1**:對中研院 email 設 OR-search(三個 email 任一命中即拉),但要排除誤命中的補習班信件(#84)和訂閱噪音:
+
+```yaml
+filters:                              # Layer 1 search-time corpus 定義
+  - che830621@as.edu.tw
+  - che830621@gate.sinica.edu.tw
+  - che830621@stat.sinica.edu.tw
+
+recipient_excludes:                   # Layer 2 post-fetch: drop 寄到補習班的信(整 thread)
+  - EDUCATION5361@yahoo.com.tw
+
+subject_excludes:                     # Layer 2 post-fetch: drop 訂閱確認 noise
+  - 訂閱確認信
+  - 取得官方
+```
+
+**範例 2**:`filters` 撒寬,`sender_includes` 在 fetch 後再縮窄到某域名(#84 use case for narrowing collaborator scope):
+
+```yaml
+filters:
+  - yfhsu                             # 任何提到 yfhsu 的信都先拉進來
+sender_includes:                      # ...但 fetch 後只保留 sender 含 @gate.sinica 的
+  - "@gate.sinica.edu.tw"
+```
+
+**範例 3**:workspace 按 topic scoping(#76 use case),只歸檔 subject 命中關鍵字的 thread:
+
+```yaml
+filters:
+  - yfhsu
+subject_includes:                     # whitelist: 只保留 bare subject 含這些字串的 thread
+  - affine
+  - Iverson
+  - similarity
+```
+
+關鍵語意(完整契約見 spec `openspec/specs/archive-mail-corpus-refinement/spec.md`):
+
+- 6 個欄位全為 opt-in。unset 或空 list 都 = no refinement on that axis(100% backward compat)
+- **Case-insensitive substring match**:sender / recipient 比對 bare email(strip display name);subject 比對 bare subject(strip 前綴 `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:`)
+- **同軸 includes + excludes 同設**:excludes win(blacklist 優先 — `sender_includes` 命中但 `sender_excludes` 也命中 → drop)
+- **Per-thread coherence**:thread 內任一 message 命中 → 整 thread keep / drop。Trap:thread 中某 message 不小心 CC 到被 exclude 的地址會拖整個 thread 下水。
+- **Refinement 在 dedup 之前**:被排除的 thread Message-ID 不會進 `email_index.json`,後續 run 仍會 drop 同一批 thread,不會 re-surface 為 new。
