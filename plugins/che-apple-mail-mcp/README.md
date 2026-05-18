@@ -26,8 +26,19 @@ macOS Apple Mail MCP server with native AppleScript integration.
 /archive-mail some@example.com communications
 ```
 
-**v2.12.0–v2.17.0 highlights**:
+**v2.12.0–v2.19.7 highlights**:
 
+- **Shell v2.19.7 / Binary v2.9.0** (2026-05-18) — MCP-tool layer bug-fix cluster:
+    - `#99` `list_attachments` no longer silently returns `[]` for Outlook 16 Windows attachments with RFC 2231 + nested RFC 2047 filenames (Chinese filenames ≥ 64 UTF-8 bytes triggered RFC 2231 continuation split + base64-encoded inner encoded-word; parser previously returned raw `=?utf-8?B?...?=` → `crossValidateAttachments` dropped all rows)
+    - `#101` `save_attachment` accepts optional `account_id` (UUID) for multi-account-same-display-name disambiguation; eliminates `-1728 "Can't get account"` when iCloud catch-all alias collides with Gmail same address
+    - `#104 PR-A` 5 mutation tools (`mark_read`, `flag_email`, `set_flag_color`, `set_background_color`, `mark_as_junk`) gain optional `account_id` parameter; shares `AppleScriptRefBuilder.resolveMsgRef` chokepoint with `save_attachment` so future PR-B/C/D (move/copy/delete, compose, mailbox CRUD) are pure call-site swaps
+    - `#106` `EnvelopeIndexReader` reverse-lookup cache + `accountUUIDs(forName:)` primitive eliminates 4 duplicated O(n) account-map scans; collision-aware path enables `#101` `account_id` discovery
+- **Shell v2.19.5–v2.19.6** — Binary v2.8.5 ship + spurious-SIGTERM fix:
+    - `v2.19.6` `#73`: `hooks/session-start.sh` compare 改 prefer `.binary_version` (post-`#77` schema), fallback `.version`, eliminates every-session-start spurious SIGTERM (runtime tag vs shell version permanent mismatch trap)
+    - `v2.19.5` ships binary v2.8.5: `#16` nested markdown lists with depth-aware `<ul>`/`<ol>`, `#17` markdown tables with `<table>`/`<thead>`/`<tbody>` + per-column alignment, `#22` markdown hardening Item D code-fence language + spec docs, `#26` malformed multipart throws `emlxParseFailed` for handler fallback, `#28` `crossValidateAttachments` helper + 6 filter tests, `#89` `list_emails` SQLite do/catch + AppleScript 3× IPC reduction
+- **Shell v2.18.0–v2.18.1** — Staleness Detection + #71/#61-64 fixes:
+    - `v2.18.0` `#76` Staleness Detection: wrapper writes runtime state file on spawn (pid / started_at / version_at_spawn); new `hooks/session-start.sh` detects `plugin.json` ↔ in-memory binary version drift, SIGTERM (+5s grace, SIGKILL fallback) stale PID so Claude Code re-spawns with new binary. Solves "plugin update but current session keeps running old binary" silent staleness.
+    - `v2.18.1` `#71` `get_email_metadata` SQLite fallback parity + cluster `#61-64` `attachmentFragment` hardening
 - **v2.17.0** (#49) — Workspace Layout Detection + sibling-archive dedup:當 `output_dir` 既無命令列也無 config 給定時,probe `communications/email/` → `correspondence/emails/` → default,detect 到既有 layout 自動 adapt(detection-first,not prescriptive)。`${output_dir}` 下 symlink 到歷史 archive(transitioned-project pattern,e.g. chchen_lab `email/application/`)時,讀其下 markdown 的 `message_id:` frontmatter 併入 dedup,避免被 forward 回的舊 thread re-archive。Read-only,讀既有 explicit `output_dir:` config 的 workspace 行為 100% 不變。詳見下方 [Workspace Patterns](#workspace-patterns-v2170)。
 - **v2.15.0** (#45) — Inline `cid:` 圖片保留路徑:從 HTML body 解析 `<img src="cid:..." alt="...">` → save 到 `attachments/<stem>/inline/<filename>`,Markdown 加獨立 `Inline images:` section(`![]()` syntax 直接 render),Step 8a Coverage Audit 拆 explicit + inline 兩部分。修掉 dogfood gap:archive 「Solution? (affine repre + Iverson)」 thread CleanShot screenshot 全 miss
 - **v2.14.0** (#18) — Opt-in `dedup_strategy` config:`index`(預設) | `last_archived`(輕量,以 ISO date 作 date_from) | `both`(雙 dedup);零 breaking,既有 archive 走 default
