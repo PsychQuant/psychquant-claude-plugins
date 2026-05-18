@@ -1,0 +1,8 @@
+{
+  "name": "che-latex-mcp",
+  "version": "0.5.0",
+  "description": "讓 AI 完全清楚 LaTeX 修正的結果 — 改一行 source 立刻知道 PDF 第幾頁變了、變成什麼樣、有沒有副作用、有沒有新 bug、PDF review 的紅圈對到哪個 source 位置。通用 LaTeX 工具,任何專案都可用。20 tools（編譯 / git ref 視覺 diff / layout overlap 偵測 / 字型缺字 / 半形標點 / chunk preview / annotation 抽取 + grep 反查）+ 4 skills。",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["mcp", "latex", "xelatex", "pdf", "typesetting", "visual-diff", "layout-detection", "macos"]
+}

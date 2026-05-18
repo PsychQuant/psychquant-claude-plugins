@@ -1,0 +1,7 @@
+{
+  "che-latex-mcp": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-latex-mcp-wrapper.sh",
+    "description": "LaTeX 專案管理 — 編譯、視覺 diff、排版偵測、字型/標點檢查（18 tools）"
+  }
+}

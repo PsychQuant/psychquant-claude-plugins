@@ -9,6 +9,16 @@
   "homepage": "https://github.com/PsychQuant/psychquant-claude-plugins",
   "plugins": [
     {
+      "name": "che-latex-mcp",
+      "version": "0.5.0",
+      "description": "讓 AI 完全清楚 LaTeX 修正的結果 — 改一行 source 立刻知道 PDF 第幾頁變了、變成什麼樣、有沒有副作用、有沒有新 bug、PDF review 紅圈對到哪個 source。通用 LaTeX 工具,任何專案可用。20 tools + 4 skills。v0.5.0 新增 Pillar 5 annotation workflow + 修 server.waitUntilCompleted() bug。",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-latex-mcp",
+      "category": "productivity"
+    },
+    {
       "name": "mcp-tools",
       "version": "1.16.0",
       "description": "MCP Server 開發工具集：mcp-new-app、mcp-deploy、mcp-install、mcp-upgrade、mcp-sign-pipeline（macOS 26 簽章）、mcp-clone、mcp-publish、mcp-sync、mcp-diagnose、mcp-debug、mcp-test、mcp-to-plugin、mcp-issue",
