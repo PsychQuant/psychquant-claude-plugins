@@ -99,11 +99,13 @@ Skipping these phases is not allowed. If you don't have enough information, ask.
 This skill runs in one of two modes. Identify which one before Phase 0:
 
 - **Compose** — writing a new letter or document from scratch. Run every phase in order.
-- **Revise** — iteratively editing an existing draft: the user points at a draft file and asks to change a sentence, fix a paragraph, adjust tone, or smooth the logic. Once a first draft exists, this is the most common mode.
+- **Revise** — iteratively editing an existing draft. The draft may be a file the user points at, text pasted inline, or a draft produced earlier in the conversation; the request is to change a sentence, fix a paragraph, adjust tone, or smooth the logic. Once a first draft exists, this is the most common mode.
 
-**The Revise trap.** Once a draft exists it is tempting to skip Phase 1-3 — "the draft is already here, I already understand the writer and the recipient" — and jump straight to editing. Do not. Phase 1-3 is exactly where the prior correspondence gets read. A revision that changes *how the recipient's words are paraphrased*, or *what the writer claims*, is only safe when it is re-anchored to the real interaction history. Wording that merely reads smoothly can still have drifted from what was actually said.
+**Independent of mode**: whenever prior correspondence with the recipient exists, reading it (Phase 1-2) is mandatory. This also covers the in-between case — replying to an incoming message when no draft yet exists — because a reply is anchored to what the other side actually said, so the prior message is read first.
 
-**Revise mode does not skip Phase 1-3.** It still reads the prior correspondence — the recipient's actual archived messages, the earlier drafts — before touching the draft. The phases are lighter in Revise mode (you are confirming, not building from nothing), but never skipped.
+**The Revise trap.** Once a draft exists it is tempting to skip the understanding phases (Phase 1-3) — "the draft is already here, I already understand the writer and the recipient" — and jump straight to editing. Do not. Phase 1-2 is where the prior correspondence actually gets read (Phase 3 then re-derives the writer's perspective from it). A revision that changes *how the recipient's words are paraphrased*, or *what the writer claims*, is only safe when it is re-anchored to the real interaction history. Wording that merely reads smoothly can still have drifted from what was actually said.
+
+**Revise mode does not skip the understanding phases.** It still reads the prior correspondence — the recipient's actual archived messages, the earlier drafts — before touching the draft. The phases are lighter in Revise mode (you are confirming, not building from nothing), but never skipped.
 
 ## Phase 0: Bootstrap Stage Task List（強制）
 
@@ -132,7 +134,7 @@ TaskCreate(name="phase7_persist_rules",            description="Phase 7: 徵詢�
 Read the user's existing materials to build a mental model of who they are and how they write.
 
 **Sources to check:**
-- Previous sent emails or correspondence — **if a prior-correspondence archive exists, read the actual messages; do not merely ask whether it exists.** This is the ground truth for the writer's voice and for what each side actually said. In Revise mode (see "Mode: Compose vs. Revise") reading it is mandatory.
+- Previous sent emails or correspondence — **if a prior-correspondence archive exists, read the actual messages; do not merely ask whether it exists.** This is the ground truth for the writer's voice and for what each side actually said. Reading it is mandatory whenever it exists, not only in Revise mode (see "Mode: Compose vs. Revise").
 - Blog posts or personal writing
 - The current conversation history (how the user talks to you is how they talk)
 - Application materials, CV, academic papers
@@ -387,7 +389,7 @@ Do NOT duplicate its logic here.
 
 Each user edit begins another Revise pass. Per "Mode: Compose vs. Revise", a revision is not mere
 wording polish — before reworking the draft again, re-anchor to the prior correspondence
-(Phase 1-3). Do not skip it just because a draft already exists.
+(Phase 1-2). Do not skip it just because a draft already exists.
 
 ## Phase 7: Persist for Next Time
 
