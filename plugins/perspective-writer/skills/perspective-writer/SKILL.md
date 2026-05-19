@@ -94,13 +94,24 @@ looks impressive on paper.
 Before you write a single word of the actual letter, you must complete two phases of understanding.
 Skipping these phases is not allowed. If you don't have enough information, ask.
 
+## Mode: Compose vs. Revise
+
+This skill runs in one of two modes. Identify which one before Phase 0:
+
+- **Compose** — writing a new letter or document from scratch. Run every phase in order.
+- **Revise** — iteratively editing an existing draft: the user points at a draft file and asks to change a sentence, fix a paragraph, adjust tone, or smooth the logic. Once a first draft exists, this is the most common mode.
+
+**The Revise trap.** Once a draft exists it is tempting to skip Phase 1-3 — "the draft is already here, I already understand the writer and the recipient" — and jump straight to editing. Do not. Phase 1-3 is exactly where the prior correspondence gets read. A revision that changes *how the recipient's words are paraphrased*, or *what the writer claims*, is only safe when it is re-anchored to the real interaction history. Wording that merely reads smoothly can still have drifted from what was actually said.
+
+**Revise mode does not skip Phase 1-3.** It still reads the prior correspondence — the recipient's actual archived messages, the earlier drafts — before touching the draft. The phases are lighter in Revise mode (you are confirming, not building from nothing), but never skipped.
+
 ## Phase 0: Bootstrap Stage Task List（強制）
 
 **在動任何事之前**先用 `TaskCreate` 為這個 stage 建 todo list，確保 7 個 phase 都有被追蹤：
 
 ```
-TaskCreate(name="phase1_understand_writer",        description="Phase 1: 讀 user 材料建立 voice model + 問情緒狀態")
-TaskCreate(name="phase2_understand_recipient",     description="Phase 2: 研究收件人背景、power dynamic、cultural context")
+TaskCreate(name="phase1_understand_writer",        description="Phase 1: 讀 user 材料（含與收件人的往來歸檔原文）建立 voice model + 問情緒狀態")
+TaskCreate(name="phase2_understand_recipient",     description="Phase 2: 讀與收件人的真實往來原文 + 研究背景、power dynamic、cultural context")
 TaskCreate(name="phase3_simulate",                 description="Phase 3: 寫出 simulation 段落再開始 draft")
 TaskCreate(name="phase4_write_draft",              description="Phase 4: 初稿（Lead with WHY、Voice matching、Pressure calibration）")
 TaskCreate(name="phase5_antipatterns_check",       description="Phase 5+5b: 過 anti-pattern checklist、用 horizontal rule 包裹輸出")
@@ -120,8 +131,8 @@ TaskCreate(name="phase7_persist_rules",            description="Phase 7: 徵詢�
 
 Read the user's existing materials to build a mental model of who they are and how they write.
 
-**Sources to check (ask the user which are available):**
-- Previous sent emails or correspondence
+**Sources to check:**
+- Previous sent emails or correspondence — **if a prior-correspondence archive exists, read the actual messages; do not merely ask whether it exists.** This is the ground truth for the writer's voice and for what each side actually said. In Revise mode (see "Mode: Compose vs. Revise") reading it is mandatory.
 - Blog posts or personal writing
 - The current conversation history (how the user talks to you is how they talk)
 - Application materials, CV, academic papers
@@ -157,7 +168,12 @@ Research who the recipient is and what the relationship looks like from the writ
 - The recipient's position, research area, recent work
 - The power dynamic (professor you've never met? someone who knows your advisor? a peer?)
 - Cultural context (Taiwanese academic norms? Japanese? Western?)
-- Any prior interaction between the writer and recipient
+- Any prior interaction between the writer and recipient — **read the actual archived messages, both sides, verbatim**
+
+**Paraphrasing the recipient is a referent (T-schema).** When the letter restates something the recipient said, check that restatement against the recipient's actual words. Two distinct moves — do not conflate them:
+
+- *Softening the tentativeness of a polite refusal* is allowed: "we may be able to consider" need not harden into "you will consider."
+- *Erasing factual guidance the recipient gave* is not allowed: a concrete time ("in a year"), a condition, an instruction — these are referents, not bookkeeping to be loosened away. Drop one and every downstream judgment that rested on it (how early is "early", whether an apology is warranted, whether a deadline was missed) drifts silently — invisibly, because the reworded sentence still reads fine.
 
 **Then ask yourself (and write down the answers before drafting):**
 - What does this person probably care about when reading this letter?
@@ -368,6 +384,10 @@ invoke the **`draft-learner`** skill: `/perspective-writer:draft-learner`
 
 This skill handles diffing, rule extraction, and updating `.claude/rules/` automatically.
 Do NOT duplicate its logic here.
+
+Each user edit begins another Revise pass. Per "Mode: Compose vs. Revise", a revision is not mere
+wording polish — before reworking the draft again, re-anchor to the prior correspondence
+(Phase 1-3). Do not skip it just because a draft already exists.
 
 ## Phase 7: Persist for Next Time
 
