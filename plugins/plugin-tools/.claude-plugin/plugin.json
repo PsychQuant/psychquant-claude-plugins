@@ -1,7 +1,7 @@
 {
   "name": "plugin-tools",
-  "version": "1.16.0",
-  "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug. v1.16.0 (#60): plugin-update 新增 Phase 0.5 git-state preview + 5-case AskUserQuestion confirmation gate(clean+0/clean+N/dirty+0/dirty+N/diverged),把舊有 Phase 1 Step 2 narrative advisory 升格為 explicit AskUserQuestion dispatch;default option = abort for any non-clean state(只有 unambiguous clean+unpushed 才 default push as-is);idd-all unattended mode auto-abort + 結構化錯誤;cross-plugin commits warn-only(Tier A scope,active scope guard 留給 #65)。",
+  "version": "1.17.0",
+  "description": "Claude Code Plugin 完整生命週期工具：plugin-create、plugin-upgrade、plugin-deploy、plugin-update、plugin-health、plugin-debug. v1.17.0 (#66): plugin-update 新增 (a) Phase 0.3 Sync Intent Gate — pre-flight 偵測 binary-backed plugin、比對 marketplace.json drift + 30 天內 shell 改動 + binary repo `main` 是否超前 last release;nothing-to-sync 案例 abort early (no-op short-circuit),救 v1.16.0 之前「跑了 plugin-update 卻什麼都沒同步」的盲點;(b) Phase 1.5 Step 2 新增 Signal 2 (binary repo main vs last release drift) — git -C <binary-repo> log v$BINARY_VERSION..main 偵測 [Unreleased] backlog,提示先 cd binary repo 跑 release.sh + bump binary_version。v1.16.0 (#60): plugin-update Phase 0.5 git-state preview + 5-case AskUserQuestion confirmation gate(clean+0/clean+N/dirty+0/dirty+N/diverged),idd-all unattended mode auto-abort,cross-plugin commits warn-only(Tier A;Tier C scope guard 留給 #65)。",
   "author": {
     "name": "Che Cheng"
   },
