@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-05-20
+
+### Added
+- **Mode: Compose vs. Revise section** (#86): the skill now explicitly distinguishes drafting a new letter from iteratively revising an existing draft. Revise mode does not skip Phase 1-2 (the understanding phases where prior correspondence gets read). Real-world trigger: a host-inquiry letter was iteratively revised across many rounds while Phase 1-3 was silently skipped every round — the recipient's verbatim "If you contact me in a year" was softened into "at a later point" with no archive re-read, and downstream judgments built on the erased timeline drifted unrecoverably.
+- **Phase 5 anti-pattern row — English sincerity-intensifier adverbs**: `sincerely`, `deeply`, `truly`, `genuinely`, `wholeheartedly`, `really`, `very much` modifying verbs of gratitude / hope / appreciation. Native English correspondence carries sincerity in the verb structure, not in adverbs; stacking intensifiers ("I deeply appreciate", "I sincerely hope") reads as ESL or AI. Fix is almost always deletion. `Sincerely yours` at sign-off is the one fixed-slot exception.
+- **Mode-independent rule**: whenever prior correspondence with the recipient exists, reading it (Phase 1-2) is mandatory — covers the in-between case (reply to an incoming message when no draft yet exists).
+
+### Changed
+- **Phase 0 TaskList** (#86): `phase1_understand_writer` and `phase2_understand_recipient` task descriptions now explicitly require reading the recipient's archived correspondence, not merely asking whether it exists.
+- **Phase 1 "Sources to check"** (#86): the recipient's prior-correspondence archive is no longer an "ask which are available" item; it is a mandatory-read-if-it-exists item. Other sources (blog / CV / etc.) remain ask-which.
+- **Phase 2 paraphrasing rule** (#86): paraphrasing the recipient is now an explicit T-schema referent. Distinguishes "softening the tentativeness of a polite refusal" (allowed — keep `may be able to consider` tentative) from "erasing factual guidance" (not allowed — a concrete time / condition / instruction the recipient gave is a referent, not bookkeeping to be loosened away). Erasing one and every downstream judgment drifts silently — invisibly, because the reworded sentence still reads fine.
+- **Phase 6b** (#86): cross-references the new Mode section. Each user edit begins another Revise pass; re-anchor to prior correspondence before reworking the draft again.
+- **Span label correction** (#86 verify): the reading claim now says "Phase 1-2" (where prior correspondence actually gets read) rather than "Phase 1-3" (Phase 3 is Simulate and reads nothing). The "understanding phases" label is kept for the Phase 1-3 block as a whole.
+
 ## [2.7.0] - 2026-05-15
 
 ### Added
