@@ -170,6 +170,16 @@
       "category": "development"
     },
     {
+      "name": "che-transport-mcp",
+      "version": "0.2.0",
+      "description": "Taiwan TDX transport MCP — 23 tools across Rail / Bus / Bike / Air / Maritime / Traffic / Parking. Wraps PsychQuant/che-transport-mcp v0.2.0 binary with version-aware auto-download (release-pinned + sha256 sidecar), 3-tier cache TTL (24h static / 1h timetable / 0s live), parallel cross-system station search, NSQL confirmation discipline for ambiguous queries.",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-transport-mcp",
+      "category": "productivity"
+    },
+    {
       "name": "che-dropbox-ignore",
       "version": "2.1.0",
       "description": "Dropbox 同步排除管理 — 自動對 .git、build artifacts 等設定 com.dropbox.ignored xattr",
@@ -197,16 +207,6 @@
         "name": "Che Cheng"
       },
       "source": "./plugins/archive-first",
-      "category": "productivity"
-    },
-    {
-      "name": "codex-batch",
-      "version": "1.0.0",
-      "description": "Batch content generation using Codex CLI (GPT-5.5) — parallel codex exec with large reference docs as context",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": "./plugins/codex-batch",
       "category": "productivity"
     },
     {
