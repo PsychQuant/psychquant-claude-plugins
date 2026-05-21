@@ -63,14 +63,22 @@ PID_FILE="$pid_file"
 mkdir -p "\$(dirname "\$LOCK_DIR")"
 mkdir -p "\$(dirname "\$PID_FILE")"
 
-# Source the helper from the real wrapper by extracting just the
-# emit_mcp_error_response function (if defined). Falls back to a no-op
-# stub if the helper isn't there yet — this lets the RED test phase work
-# before we add the helper.
+# Source the helpers from the real wrapper. read_initialize_id (PR-1b) reads
+# stdin briefly to extract the JSON-RPC initialize id so the response can be
+# matched by Claude Code's MCP client. emit_mcp_error_response writes the
+# JSON envelope. Falls back to no-op stubs if helpers aren't defined yet —
+# this lets RED test phase work before helpers are added.
+read_initialize_id() {
+    printf 'null'   # no-op stub — overridden if real helper exists
+}
 emit_mcp_error_response() {
     : # no-op stub — overridden if real helper exists
 }
 
+if grep -q '^read_initialize_id' "$WRAPPER" 2>/dev/null; then
+    # shellcheck disable=SC1090
+    eval "\$(sed -n '/^read_initialize_id()/,/^}\$/p' "$WRAPPER")"
+fi
 if grep -q '^emit_mcp_error_response' "$WRAPPER" 2>/dev/null; then
     # shellcheck disable=SC1090
     eval "\$(sed -n '/^emit_mcp_error_response()/,/^}\$/p' "$WRAPPER")"
@@ -88,7 +96,9 @@ if ! mkdir "\$LOCK_DIR" 2>/dev/null; then
             exit 1
         }
     else
-        emit_mcp_error_response "\${OWNER_PID:-0}"
+        # PR-1b: read initialize id from stdin so MCP client matches the response.
+        REQ_ID=\$(read_initialize_id)
+        emit_mcp_error_response "\${OWNER_PID:-0}" "\$REQ_ID"
         echo "\$BINARY_NAME: Another instance is already running (lock held by PID \${OWNER_PID:-?}). Use the existing Claude Code window, or kill the previous wrapper first." >&2
         exit 1
     fi
@@ -224,6 +234,58 @@ else
         pass "error.data.recoveryCommand starts with 'pkill'"
     else
         fail "expected recoveryCommand starting with 'pkill', got: '$RECOVERY'"
+    fi
+fi
+rm -rf "$LOCK_DIR"
+
+# ---------------------------------------------------------------
+# PR-1b: wrapper must read initialize id from stdin and respond with matching id
+# so Claude Code's MCP client surfaces error.message instead of dropping the
+# response as unmatched. Without this, id stays null and Claude Code falls
+# back to generic -32000 (empirically confirmed on 2026-05-22).
+test_case "test_lock_refused_with_initialize_request_id_matches"
+rm -rf "$LOCK_DIR"
+mkdir -p "$LOCK_DIR"
+echo $$ > "$LOCK_DIR/owner.pid"
+
+# Feed a JSON-RPC initialize request to stdin; wrapper should respond with id=42
+INIT_REQ='{"jsonrpc":"2.0","id":42,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{}}}'
+STDOUT=$(printf '%s\n' "$INIT_REQ" | "$FAKE_WRAPPER" 2>/dev/null)
+FIRST_LINE=$(echo "$STDOUT" | head -1)
+
+if [ -z "$FIRST_LINE" ]; then
+    fail "expected JSON envelope on stdout, got empty"
+else
+    RESP_ID=$(echo "$FIRST_LINE" | jq -c '.id' 2>/dev/null)
+    if [ "$RESP_ID" = "42" ]; then
+        pass "response.id matches request.id (42)"
+    else
+        fail "expected response.id == 42, got: $RESP_ID (full: $FIRST_LINE)"
+    fi
+fi
+rm -rf "$LOCK_DIR"
+
+# ---------------------------------------------------------------
+# Stdin timeout fallback: when no initialize arrives (e.g. direct shell debug),
+# read_initialize_id should return null after timeout and emit envelope with
+# id:null. Verifies the v1.3.2 PR-90 behavior is preserved as fallback.
+test_case "test_lock_refused_no_stdin_falls_back_to_null_id"
+rm -rf "$LOCK_DIR"
+mkdir -p "$LOCK_DIR"
+echo $$ > "$LOCK_DIR/owner.pid"
+
+# Empty stdin → read_initialize_id gets immediate EOF, no id available
+STDOUT=$("$FAKE_WRAPPER" < /dev/null 2>/dev/null)
+FIRST_LINE=$(echo "$STDOUT" | head -1)
+
+if [ -z "$FIRST_LINE" ]; then
+    fail "expected JSON envelope even on empty stdin, got empty"
+else
+    RESP_ID=$(echo "$FIRST_LINE" | jq -c '.id' 2>/dev/null)
+    if [ "$RESP_ID" = "null" ]; then
+        pass "response.id falls back to null when stdin has no initialize"
+    else
+        fail "expected response.id == null on empty stdin, got: $RESP_ID"
     fi
 fi
 rm -rf "$LOCK_DIR"
