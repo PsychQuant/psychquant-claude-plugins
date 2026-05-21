@@ -75,9 +75,40 @@ The binary reads credentials from macOS keychain service `che-transport-tdx`. Se
 
 | Scenario | Action |
 |----------|--------|
-| Upgrade plugin shell (skills / hooks / wrapper) | `/plugin-tools:plugin-update che-transport-mcp` |
-| Upgrade binary version | Bump `version` in `.claude-plugin/plugin.json`; wrapper auto-downloads on next MCP spawn (sidecar at `~/bin/.CheTransportMCP.version` tracks installed version) |
+| Upgrade plugin shell only (skills / hooks / wrapper) | `/plugin-tools:plugin-update che-transport-mcp` |
+| Upgrade binary version (full chain) | See **Full upgrade chain** below |
 | Plugin not picking up changes | `Cmd+Q` Claude Code + reopen; closing the window is not enough for MCP servers |
+
+### Full upgrade chain (binary + plugin)
+
+Triggered when there's a new binary release (new tools, bug fixes, or schema changes in the underlying Swift MCP). Three repos are touched in order:
+
+1. **Source repo** `PsychQuant/che-transport-mcp`
+   - Bump `Sources/CheTransportMCP/Version.swift` (`AppVersion.version = "X.Y.Z"`)
+   - Bump `mcpb/manifest.json` version to match (build-mcpb.sh enforces parity)
+   - Move CHANGELOG `[Unreleased]` content under `[X.Y.Z] — YYYY-MM-DD`
+   - Commit + push
+   - `export DEVELOPER_ID=F2523DCF6D02BE99B67C7D27F633119292DA4934 NOTARY_PROFILE=che-mcps-notary`
+   - `make release-signed` (universal build → Developer ID sign → Apple notarize → pack .mcpb; ~2-10 min)
+   - `git tag vX.Y.Z && git push --tags`
+   - `gh release create vX.Y.Z mcpb/server/CheTransportMCP mcpb/server/CheTransportMCP.sha256 mcpb/che-transport-mcp-X.Y.Z.mcpb mcpb/che-transport-mcp-X.Y.Z.mcpb.sha256 --repo PsychQuant/che-transport-mcp --title "vX.Y.Z — …" --notes-file <notes>`
+   - **Critical**: include the **raw `CheTransportMCP` binary** as a release asset, not just the `.mcpb`. The wrapper greps `browser_download_url` looking for `/CheTransportMCP"` — without the raw binary asset, auto-download fails (the .mcpb is a Claude Desktop bundle, not what the wrapper consumes)
+
+2. **Marketplace repo** `PsychQuant/psychquant-claude-plugins`
+   - Bump `plugins/che-transport-mcp/.claude-plugin/plugin.json` version to `X.Y.Z`
+   - Bump matching entry in `.claude-plugin/marketplace.json`
+   - Optionally refresh the description / keywords if the surface area changed
+   - The fastest path: `/plugin-tools:plugin-update che-transport-mcp` — it bumps both files + commits + pushes + runs `claude plugin marketplace update` + `claude plugin update` automatically
+
+3. **End-user side** (automatic, no action needed)
+   - Wrapper sees `plugin.json.version` ≠ `~/bin/.CheTransportMCP.version` sidecar
+   - Re-downloads pinned tag `vX.Y.Z` from GitHub Release on next MCP spawn (atomic `.tmp + mv` swap)
+   - Falls back to `releases/latest` if pinned tag missing
+   - If anon GitHub API rate limit (60/hr) hit, wrapper preserves the existing binary instead of failing — graceful degradation
+
+### Plugin-shell-only changes
+
+If you only touched skills / hooks / wrapper / CLAUDE.md / README (no binary code change), skip Step 1 entirely. Just bump the *plugin* version (not the binary version) in `plugin.json`, then `/plugin-tools:plugin-update che-transport-mcp`. By convention shell-only bumps use the same major.minor as the binary but add a patch (e.g. binary `0.2.0`, shell `0.2.1`).
 
 ## References
 
