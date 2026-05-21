@@ -99,6 +99,33 @@ if [[ -z "$TELEGRAM_API_ID" || -z "$TELEGRAM_API_HASH" ]]; then
     exit 1
 fi
 
+# --- MCP-shaped error envelope helper (#31) ---
+# When the atomic-claim lock below refuses startup, Claude Code's MCP
+# transport otherwise sees the wrapper exit non-zero with no stdout and
+# surfaces a generic "-32000 Server error" to the user. By emitting a
+# JSON-RPC 2.0 error envelope to stdout BEFORE exit, Claude Code's MCP
+# client can render error.message — turning the opaque -32000 into a
+# human-readable instruction. id=null is spec-valid (the request id
+# isn't known here because we haven't read stdin yet); idd-verify will
+# confirm whether Claude Code's client matches null-id error to the
+# pending initialize. If not, a follow-up PR can implement
+# read-stdin-extract-id-then-respond.
+#
+# The function is JSON-safe by construction: the only dynamic value
+# (lock holder PID) is gated by `[[ ... =~ ^[0-9]+$ ]]` upstream, so no
+# escaping is needed for the printf format string.
+emit_mcp_error_response() {
+    local owner_pid="${1:-0}"
+    local pid_phrase=""
+    local pid_field="null"
+    if [[ "$owner_pid" =~ ^[0-9]+$ ]] && [ "$owner_pid" != "0" ]; then
+        pid_phrase=" (lock held by PID ${owner_pid})"
+        pid_field="${owner_pid}"
+    fi
+    printf '{"jsonrpc":"2.0","id":null,"error":{"code":-32000,"message":"Another instance of CheTelegramAllMCP is already running%s. Use the existing Claude Code window, or kill the previous wrapper first.","data":{"lockHolderPid":%s,"recoveryCommand":"pkill CheTelegramAllMCP && rm -rf ~/.cache/che-telegram-all-mcp.lock","docsUrl":"https://github.com/PsychQuant/psychquant-claude-plugins/blob/main/plugins/che-telegram-mcp/README.md#multi-session-limitation"}}}\n' \
+        "$pid_phrase" "$pid_field"
+}
+
 # --- Atomic-claim lock (#10) ---
 # TDLib DB is single-instance — two MCP servers can't share it. The previous
 # PID-tracking strategy (#8) is racy on multi-window scenarios: window B reads
@@ -115,6 +142,8 @@ if command -v flock >/dev/null 2>&1; then
     LOCK_MODE="flock"
     exec 200>"$LOCK_FILE"
     if ! flock -n 200; then
+        # flock has no caller-visible owner PID, so emit without it.
+        emit_mcp_error_response 0
         echo "$BINARY_NAME: Another instance is already running. Use the existing Claude Code window, or kill the previous wrapper first." >&2
         exit 1
     fi
@@ -132,6 +161,7 @@ else
                 exit 1
             }
         else
+            emit_mcp_error_response "${OWNER_PID:-0}"
             echo "$BINARY_NAME: Another instance is already running (lock held by PID ${OWNER_PID:-?}). Use the existing Claude Code window, or kill the previous wrapper first." >&2
             exit 1
         fi
