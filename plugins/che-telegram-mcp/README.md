@@ -200,10 +200,15 @@ When you need to free the lock for the current session:
 
 ```bash
 # 1. Kill any running telegram-all binary (single instance assumption — safe).
-pkill CheTelegramAllMCP
+#    Use `2>/dev/null` and `; ` (not `&&`) — the orphan-lock case (where
+#    you most need recovery) has no process to kill, and `&&` would skip
+#    the cleanup below. `; ` ensures the lock removal always runs.
+pkill CheTelegramAllMCP 2>/dev/null
 
-# 2. Remove the lock directory.
-rm -rf ~/.cache/che-telegram-all-mcp.lock
+# 2. Remove BOTH lock variants. macOS without flock uses `.lock` directory;
+#    Linux with flock uses `.lock.flock` file. The wrapper picks one at
+#    runtime — recovery should clean both so it works on any platform.
+rm -rf ~/.cache/che-telegram-all-mcp.lock ~/.cache/che-telegram-all-mcp.lock.flock
 
 # 3. (Optional) Confirm no stale process holds TDLib DB files.
 lsof ~/Library/Application\ Support/che-telegram-all-mcp/tdlib/db.sqlite 2>/dev/null
@@ -211,7 +216,7 @@ lsof ~/Library/Application\ Support/che-telegram-all-mcp/tdlib/db.sqlite 2>/dev/
 # 4. Restart Claude Code or run /mcp to reconnect.
 ```
 
-Step 1 is graceful — the binary handles `SIGTERM` and `wait`s for TDLib to checkpoint the WAL before exiting. Step 2 removes the wrapper's atomic-claim guard. After both, the next Claude Code session that spawns `telegram-all` will succeed.
+Step 1 is graceful — the binary handles `SIGTERM` and `wait`s for TDLib to checkpoint the WAL before exiting. Step 2 removes the wrapper's atomic-claim guard (both `.lock` directory for mkdir mode and `.lock.flock` file for flock mode). After both, the next Claude Code session that spawns `telegram-all` will succeed.
 
 ### Pre-v1.3.2 symptom
 
@@ -231,9 +236,19 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.3.0 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
+Plugin version: 1.3.2 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
 
 ### Changelog
+
+**1.3.2** (2026-05-21)
+
+- **Lock-refused branch emits MCP JSON-RPC error envelope to stdout** (refs [che-msg#31](https://github.com/PsychQuant/che-msg/issues/31)). When a second Claude Code session tries to spawn `telegram-all` while a stale session still holds the TDLib lock, the wrapper now writes a `{"jsonrpc":"2.0","id":null,"error":{...}}` envelope to stdout before exit. Claude Code's MCP client surfaces `error.message` (e.g. `"Another instance of CheTelegramAllMCP is already running (lock held by PID 11252). Use the existing Claude Code window, or kill the previous wrapper first."`) instead of generic `-32000 Server error`. `error.data` carries `lockHolderPid`, `recoveryCommand`, and `docsUrl`.
+- **Multi-session limitation README section** documents the TDLib upstream constraint + recovery cookbook + Strategy B/C explicit non-decisions.
+- **Recovery cookbook hardened**: `pkill ... ; rm -rf ...` (semicolon, not `&&`) so cleanup runs even when no process exists to kill — the orphan-lock case is exactly when cleanup matters most. Also covers both `.lock` (mkdir mode) and `.lock.flock` (flock mode) paths.
+
+**1.3.1** (2026-05-07)
+
+- **Atomic-claim lock**: wrapper now uses `flock` (Linux) or `mkdir` (macOS fallback) to prevent two simultaneous wrappers from racing the TDLib lock. Second wrapper fail-fast with stderr message instead of silent SIGTERM cross-fire. Stale-lock cleanup removes orphaned locks whose owner PID is dead. New regression test (`test-wrapper-pid.sh` test 9). Resolves [#10](https://github.com/PsychQuant/psychquant-claude-plugins/issues/10).
 
 **1.3.0** (2026-04-28)
 
