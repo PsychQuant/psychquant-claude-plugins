@@ -75,9 +75,20 @@ The binary reads credentials from macOS keychain service `che-transport-tdx`. Se
 
 | Scenario | Action |
 |----------|--------|
-| Upgrade plugin shell only (skills / hooks / wrapper) | `/plugin-tools:plugin-update che-transport-mcp` |
+| Upgrade plugin shell only (skills / hooks / wrapper) | See **Plugin-shell-only changes** below |
 | Upgrade binary version (full chain) | See **Full upgrade chain** below |
 | Plugin not picking up changes | `Cmd+Q` Claude Code + reopen; closing the window is not enough for MCP servers |
+
+### Two version fields — `version` vs `binaryVersion`
+
+`plugin.json` carries **two** version numbers, deliberately decoupled:
+
+| Field | Tracks | Read by |
+|-------|--------|---------|
+| `version` | The plugin **shell** (skills, hooks, wrapper, docs) | Claude Code marketplace / `claude plugin update` |
+| `binaryVersion` | The **CheTransportMCP binary** release tag | `bin/che-transport-mcp-wrapper.sh` for auto-download |
+
+This split exists because the wrapper downloads the binary release tagged `v$binaryVersion`. If the wrapper read `version`, a shell-only bump (e.g. new skill) would make it chase a binary release tag that doesn't exist → 404 → fallback-to-latest with a lying sidecar. Keeping `binaryVersion` separate means shell and binary cadences are independent. The wrapper falls back to `version` if `binaryVersion` is absent (older plugin.json files).
 
 ### Full upgrade chain (binary + plugin)
 
@@ -95,20 +106,26 @@ Triggered when there's a new binary release (new tools, bug fixes, or schema cha
    - **Critical**: include the **raw `CheTransportMCP` binary** as a release asset, not just the `.mcpb`. The wrapper greps `browser_download_url` looking for `/CheTransportMCP"` — without the raw binary asset, auto-download fails (the .mcpb is a Claude Desktop bundle, not what the wrapper consumes)
 
 2. **Marketplace repo** `PsychQuant/psychquant-claude-plugins`
-   - Bump `plugins/che-transport-mcp/.claude-plugin/plugin.json` version to `X.Y.Z`
-   - Bump matching entry in `.claude-plugin/marketplace.json`
+   - Bump **both** `version` and `binaryVersion` in `plugins/che-transport-mcp/.claude-plugin/plugin.json` to `X.Y.Z` (a binary release moves both in lockstep)
+   - Bump matching `version` in `.claude-plugin/marketplace.json`
    - Optionally refresh the description / keywords if the surface area changed
-   - The fastest path: `/plugin-tools:plugin-update che-transport-mcp` — it bumps both files + commits + pushes + runs `claude plugin marketplace update` + `claude plugin update` automatically
+   - The fastest path: `/plugin-tools:plugin-update che-transport-mcp` — it bumps + commits + pushes + runs `claude plugin marketplace update` + `claude plugin update` automatically
 
 3. **End-user side** (automatic, no action needed)
-   - Wrapper sees `plugin.json.version` ≠ `~/bin/.CheTransportMCP.version` sidecar
+   - Wrapper sees `plugin.json.binaryVersion` ≠ `~/bin/.CheTransportMCP.version` sidecar
    - Re-downloads pinned tag `vX.Y.Z` from GitHub Release on next MCP spawn (atomic `.tmp + mv` swap)
    - Falls back to `releases/latest` if pinned tag missing
    - If anon GitHub API rate limit (60/hr) hit, wrapper preserves the existing binary instead of failing — graceful degradation
 
 ### Plugin-shell-only changes
 
-If you only touched skills / hooks / wrapper / CLAUDE.md / README (no binary code change), skip Step 1 entirely. Just bump the *plugin* version (not the binary version) in `plugin.json`, then `/plugin-tools:plugin-update che-transport-mcp`. By convention shell-only bumps use the same major.minor as the binary but add a patch (e.g. binary `0.2.0`, shell `0.2.1`).
+If you only touched skills / hooks / wrapper / CLAUDE.md / README (no binary code change), skip Step 1 entirely:
+
+- Bump only `version` in `plugin.json` (leave `binaryVersion` pinned to the current binary release)
+- Bump the matching entry in `marketplace.json`
+- `/plugin-tools:plugin-update che-transport-mcp`
+
+Because the wrapper reads `binaryVersion` (not `version`), a shell-only `version` bump will NOT trigger a spurious binary re-download. Convention: shell-only bumps keep the binary's major.minor and add a patch — e.g. binary `binaryVersion: 0.2.0`, shell `version: 0.2.1`.
 
 ## References
 

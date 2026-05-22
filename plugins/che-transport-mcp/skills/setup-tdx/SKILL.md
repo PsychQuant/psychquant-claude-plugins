@@ -1,6 +1,6 @@
 ---
 name: setup-tdx
-description: Guide user through obtaining TDX (運輸資料流通服務) credentials and seeding them into the macOS keychain so che-transport-mcp tools can authenticate. Use when user reports che-transport-mcp tools failing with "TDX auth failed" / "Missing TDX credentials" / "401" errors, when the SessionStart banner shows "⚠ TDX credentials missing", or when user explicitly asks to set up TDX / 註冊 TDX / 拿 TDX API key. The credentials live under keychain service "che-transport-tdx" with accounts "client_id" and "client_secret".
+description: Guide user through obtaining TDX (運輸資料流通服務) credentials and seeding them into the macOS keychain so che-transport-mcp tools can authenticate. Use when user reports che-transport-mcp tools failing with "TDX auth failed" / "Missing TDX credentials" / "401" errors, when the SessionStart banner shows "⚠ TDX credentials missing", or when user explicitly asks to set up TDX / 註冊 TDX / 拿 TDX API key / 設定憑證. The credentials live under keychain service "che-transport-tdx" with accounts "client_id" and "client_secret".
 allowed-tools:
   - Bash
   - Read
@@ -11,81 +11,91 @@ allowed-tools:
 
 TDX 運輸資料流通服務 is the Taiwan government open-data API that all 23 tools in this plugin query. Free tier = 50 requests/min, no card needed.
 
-## Step 1: Confirm credentials aren't already seeded
+This skill **launches the binary's interactive `--setup` flow in a real Terminal window**. That is deliberate: `CheTransportMCP --setup` reads `client_secret` via `getpass()` so the secret never echoes and never enters Claude Code's transcript. Do NOT try to seed the keychain via the Bash tool with the secret inline — that would leak it into the conversation log.
+
+The actual setup logic lives in the **signed + notarized Swift binary** (`CheTransportMCP --setup`) — interactive prompt, keychain write, and a live OAuth verification all in one code path that shares the keychain module with credential *reads*. The plugin ships a tiny `bin/setup-tdx.sh` whose only job is to be an `open`-able entry point that forwards to `wrapper --setup` (the wrapper auto-downloads the binary first if needed).
+
+## Step 1: Check if already seeded
 
 ```bash
-security find-generic-password -s che-transport-tdx -a client_id >/dev/null 2>&1 \
+security find-generic-password -s che-transport-tdx -a client_id  >/dev/null 2>&1 \
   && security find-generic-password -s che-transport-tdx -a client_secret >/dev/null 2>&1 \
-  && echo "✓ already seeded" \
-  || echo "⚠ missing — proceed to Step 2"
+  && echo "SEEDED" || echo "MISSING"
 ```
 
-If both exist, you're done — restart Claude Code (Cmd+Q + reopen) and try a tool like `mcp__che-transport-mcp__rail_list_systems`.
+If `SEEDED`: tell the user credentials already exist. Ask if they want to re-run setup anyway (e.g. credentials rotated / wrong). If they don't, stop here — just remind them to `Cmd+Q` + reopen Claude Code if tools still fail.
 
-## Step 2: Register a TDX account (user action)
+If `MISSING`: proceed.
 
-Direct the user to:
+## Step 2: Locate the launcher
 
-> https://tdx.transportdata.tw/register
-
-Free, no card, ~2 min. After signup the user needs to:
-
-1. Log in to <https://tdx.transportdata.tw/>
-2. Go to **會員中心 → API 金鑰**
-3. Create an "API Key" — the page shows `client_id` and `client_secret`
-4. Copy both somewhere reachable (Notes, password manager). The page won't redisplay client_secret after you leave.
-
-**Do NOT** paste either value into the chat. The keychain seed step uses interactive `read` so credentials never appear in Claude Code's transcript.
-
-## Step 3: Seed the keychain
-
-The source repo ships `scripts/setup-tdx.sh` which prompts interactively. The user has two paths:
-
-### Path A — source repo present
-
-If the user has cloned `PsychQuant/che-transport-mcp` locally:
+The launcher shim ships inside this plugin at `bin/setup-tdx.sh`. Find it (the version path segment changes between releases, so glob it):
 
 ```bash
-cd /path/to/che-transport-mcp
-make setup-tdx
+SETUP=$(ls ~/.claude/plugins/cache/*/che-transport-mcp/*/bin/setup-tdx.sh 2>/dev/null | sort -V | tail -1)
+echo "$SETUP"
 ```
 
-### Path B — keychain commands directly
-
-If the user only has the installed plugin (no source repo), they can seed manually:
+If empty, fall back to a broader search:
 
 ```bash
-# In Terminal (NOT this chat) — the read -s flag keeps the secret invisible
-read -p "client_id: " TDX_ID && \
-  security add-generic-password -U -s che-transport-tdx -a client_id -w "$TDX_ID" && \
-  read -s -p "client_secret: " TDX_SECRET && echo && \
-  security add-generic-password -U -s che-transport-tdx -a client_secret -w "$TDX_SECRET" && \
-  echo "✓ seeded"
-unset TDX_ID TDX_SECRET
+find ~/.claude/plugins -path '*che-transport-mcp*/bin/setup-tdx.sh' -type f 2>/dev/null | sort -V | tail -1
 ```
 
-The `-U` flag updates an existing entry if present.
+If still nothing, the plugin install is broken — tell the user to re-run `/plugin install che-transport-mcp@psychquant-claude-plugins`.
 
-## Step 4: Verify
+## Step 3: Launch in a real Terminal window
 
 ```bash
-# Quick sanity check — does the binary accept the creds?
-~/bin/CheTransportMCP --check-auth
+open -a Terminal "$SETUP"
 ```
 
-Expected output: `✓ TDX credentials valid`.
+This opens a **separate Terminal window** running `wrapper --setup`, which:
 
-If it errors:
-- `auth failed: HTTP 401` → credentials wrong or keychain entry malformed. Re-run Step 3 carefully.
-- `Network error` → check internet / TDX endpoint reachability.
-- `Keychain item not found` → keychain seeding silently no-op'd. Re-run Step 3 in Terminal (the `read` command does not work inside Claude Code's chat).
+1. Auto-downloads the `CheTransportMCP` binary if it isn't installed yet
+2. Runs `CheTransportMCP --setup` — prints the TDX register URL, prompts for `client_id` (visible) and `client_secret` (hidden via `getpass`)
+3. Writes both to keychain service `che-transport-tdx` via the binary's `Auth.save`
+4. Verifies with a real OAuth round-trip against TDX
+5. Prints a reminder to restart Claude Code
 
-## Step 5: Restart Claude Code
+Tell the user clearly:
 
-Even after `--check-auth` succeeds, the MCP server already spawned needs a restart to pick up the new creds. **Cmd+Q (fully quit)** + reopen Claude Code. Closing the window is not enough.
+> 已幫你開了一個 Terminal 視窗。請在**那個視窗**裡完成設定 — client_secret 全程不會經過這裡的對話記錄。完成後回來這裡告訴我。
+
+Then wait for the user to report back.
+
+## Step 4: Confirm result
+
+After the user says they're done, re-check:
+
+```bash
+security find-generic-password -s che-transport-tdx -a client_id  >/dev/null 2>&1 \
+  && security find-generic-password -s che-transport-tdx -a client_secret >/dev/null 2>&1 \
+  && echo "SEEDED ✓" || echo "STILL MISSING"
+```
+
+If still missing, the user likely aborted or hit an error in the script window — ask what the script printed, and walk them through re-running `bash "$SETUP"`.
+
+## Step 5: Restart reminder
+
+Even after credentials verify, the MCP server already spawned by the current Claude Code session won't see them. The user must **fully quit Claude Code (Cmd+Q)** and reopen. Closing the window is not enough — MCP server processes outlive a closed window.
+
+## Fallback: no Terminal.app available
+
+If `open -a Terminal` is unavailable (SSH session, headless), tell the user to run the binary's `--setup` directly in whatever interactive shell they have. Emphasize: run it in a **terminal, not in Claude Code chat** — the secret prompt needs a TTY.
+
+```bash
+~/bin/CheTransportMCP --setup
+```
+
+Same interactive flow, no shell-script middleman. If the binary isn't at `~/bin/CheTransportMCP` yet, run the wrapper instead (it downloads then forwards):
+
+```bash
+~/.claude/plugins/cache/*/che-transport-mcp/*/bin/che-transport-mcp-wrapper.sh --setup
+```
 
 ## When NOT to invoke this skill
 
 - User reports tools returning empty arrays `{"matches": [], "trains": []}` — that's "empty ≠ error" by design, not a credential issue
 - User reports `429 rate limit` — credentials are fine, slow down request rate
-- User reports `Invalid station '...'` — credentials are fine, query format wrong (NSQL discipline applies: use `rail_search_stations` first to get IDs)
+- User reports `Invalid station '...'` — credentials are fine, query format wrong (use `rail_search_stations` first to get IDs)

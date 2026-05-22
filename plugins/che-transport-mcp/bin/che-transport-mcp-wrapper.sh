@@ -25,11 +25,22 @@ VERSION_FILE="$INSTALL_DIR/.${BINARY_NAME}.version"
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
 
-# Read desired version from plugin.json (empty string on any failure → fallback to "latest").
+# Read the desired *binary* version from plugin.json.
+#
+# IMPORTANT: this is "binaryVersion", NOT "version". The plugin shell version
+# ("version") and the binary release version ("binaryVersion") are decoupled —
+# a shell-only update (new skill, doc fix) bumps "version" but must NOT make the
+# wrapper chase a binary release tag that doesn't exist. Falls back to "version"
+# for backward compatibility with plugin.json files predating the split, then to
+# "latest" if neither field is parseable.
 DESIRED_VERSION=""
 if [[ -f "$PLUGIN_JSON" ]]; then
-    DESIRED_VERSION=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
+    DESIRED_VERSION=$(grep -oE '"binaryVersion":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
         | head -1 | cut -d'"' -f4 || true)
+    if [[ -z "$DESIRED_VERSION" ]]; then
+        DESIRED_VERSION=$(grep -oE '"version":[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null \
+            | head -1 | cut -d'"' -f4 || true)
+    fi
 fi
 
 # Read currently installed version from sidecar (empty string if file missing/unreadable).
