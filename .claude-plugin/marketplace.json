@@ -171,8 +171,8 @@
     },
     {
       "name": "che-transport-mcp",
-      "version": "0.2.1",
-      "description": "Taiwan TDX transport MCP — 23 tools across Rail / Bus / Bike / Air / Maritime / Traffic / Parking. Wraps PsychQuant/che-transport-mcp binary (binaryVersion 0.2.1) with version-aware auto-download, 3-tier cache TTL (24h static / 1h timetable / 0s live), parallel cross-system station search, NSQL confirmation discipline. v0.2.1: TDX credential setup is a built-in `CheTransportMCP --setup` subcommand (getpass-hidden prompt, shared keychain code with --check-auth); setup-tdx skill launches it in a real Terminal window so the secret never enters the transcript. Wrapper reads decoupled binaryVersion field.",
+      "version": "0.2.2",
+      "description": "Taiwan TDX transport MCP — 23 tools across Rail / Bus / Bike / Air / Maritime / Traffic / Parking. Wraps PsychQuant/che-transport-mcp binary (binaryVersion 0.2.1) with version-aware auto-download, 3-tier cache TTL (24h static / 1h timetable / 0s live), parallel cross-system station search, NSQL confirmation discipline. Built-in `CheTransportMCP --setup` subcommand (getpass-hidden prompt, shared keychain code with --check-auth). v0.2.2 shell: setup-tdx skill hand-holds first-time users with no TDX account through registration + API-key retrieval (會員中心 → 資料服務 → API 金鑰 → 編輯) before launching --setup.",
       "author": {
         "name": "Che Cheng"
       },
