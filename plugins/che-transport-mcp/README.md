@@ -24,7 +24,7 @@ The wrapper auto-downloads the signed + notarized `CheTransportMCP` binary from 
 /che-transport-mcp:setup-tdx
 ```
 
-The skill walks you through `security add-generic-password` calls under keychain service `che-transport-tdx`. **Run the actual `security` / `read` commands in Terminal, not in Claude Code's chat** — that way credentials never appear in the transcript.
+The skill opens a **real Terminal window** running `CheTransportMCP --setup` — a subcommand of the signed binary that prompts for `client_id` / `client_secret` (the secret hidden via `getpass`), writes them to keychain service `che-transport-tdx`, and verifies with a live OAuth round-trip. The secret is typed into that separate window, so it never appears in Claude Code's transcript.
 
 4. **Quit Claude Code fully** (Cmd+Q) and reopen so the MCP server picks up the new credentials.
 
