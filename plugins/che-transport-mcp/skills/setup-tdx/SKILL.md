@@ -73,40 +73,67 @@ Notes to relay:
 
 Wait until the user confirms they have both values before continuing.
 
-## Step 4: Locate the launcher
+## Step 4: Pick the credential-entry path
 
-The launcher shim ships inside this plugin at `bin/setup-tdx.sh`. Find it (the version path segment changes between releases, so glob it):
+Two paths exist; **prefer (A)**. The preference is purely UX — both paths have the same security property (typed values never enter this Claude Code session).
+
+### (A) `che-keychain` is installed → direct native dialog
+
+Detect:
+
+```bash
+which che-keychain >/dev/null 2>&1 || [ -x ~/bin/che-keychain ] && echo "PRESENT" || echo "ABSENT"
+```
+
+If `PRESENT`, invoke directly via the Bash tool. che-keychain pops a native NSAlert (`client_id` visible + `client_secret` masked, in **one** dialog). User types into that dialog; this Claude Code session never sees the values.
+
+```bash
+che-keychain set-pair \
+  --service che-transport-tdx \
+  --visible-account client_id \
+  --secure-account client_secret \
+  --visible-label "TDX client_id" \
+  --secure-label "TDX client_secret" \
+  --title "che-transport-mcp — TDX setup" \
+  --explain "Free TDX account: https://tdx.transportdata.tw/register  •  會員中心 → 資料服務 → API 金鑰 → 編輯"
+```
+
+Exit codes from the Bash tool: `0` stored, `2` user cancelled, other → error (see stderr).
+
+After exit `0`, run the OAuth verification step yourself via the CheTransportMCP binary (skip to **Step 6**):
+
+```bash
+~/bin/CheTransportMCP --check-auth
+```
+
+Tell the user clearly:
+
+> 已彈出 che-keychain 對話框 — 請在**那個視窗**輸入 client_id / client_secret。client_secret 全程不會經過這裡的對話。完成後我會自動驗證。
+
+If `che-keychain` is `ABSENT`, point the user at <https://github.com/PsychQuant/che-keychain> as a one-time install, OR proceed with path (B).
+
+### (B) Fallback — Terminal window running the binary's built-in `--setup`
+
+If `che-keychain` isn't installed (or the user doesn't want to install it), launch the plugin's launcher shim in a real Terminal window. The shim forwards to `wrapper --setup` → `CheTransportMCP --setup` (getpass-based; CheTransportMCP v0.2.2+ also auto-detects che-keychain itself, so if che-keychain shows up later this same shim picks it up).
+
+Locate the shim:
 
 ```bash
 SETUP=$(ls ~/.claude/plugins/cache/*/che-transport-mcp/*/bin/setup-tdx.sh 2>/dev/null | sort -V | tail -1)
-echo "$SETUP"
+[ -z "$SETUP" ] && SETUP=$(find ~/.claude/plugins -path '*che-transport-mcp*/bin/setup-tdx.sh' -type f 2>/dev/null | sort -V | tail -1)
 ```
 
-If empty, fall back to a broader search:
+If still empty, the plugin install is broken — tell the user to `/plugin install che-transport-mcp@psychquant-claude-plugins`.
 
-```bash
-find ~/.claude/plugins -path '*che-transport-mcp*/bin/setup-tdx.sh' -type f 2>/dev/null | sort -V | tail -1
-```
-
-If still nothing, the plugin install is broken — tell the user to re-run `/plugin install che-transport-mcp@psychquant-claude-plugins`.
-
-## Step 5: Launch in a real Terminal window
+Launch:
 
 ```bash
 open -a Terminal "$SETUP"
 ```
 
-This opens a **separate Terminal window** running `wrapper --setup`, which:
+Tell the user:
 
-1. Auto-downloads the `CheTransportMCP` binary if it isn't installed yet
-2. Runs `CheTransportMCP --setup` — prompts for `client_id` (visible) and `client_secret` (hidden via `getpass`)
-3. Writes both to keychain service `che-transport-tdx` via the binary's `Auth.save`
-4. Verifies with a real OAuth round-trip against TDX
-5. Prints a reminder to restart Claude Code
-
-Tell the user clearly:
-
-> 已幫你開了一個 Terminal 視窗。請在**那個視窗**裡貼上 client_id / client_secret 完成設定 — client_secret 全程不會經過這裡的對話記錄。完成後回來這裡告訴我。
+> 已開了一個 Terminal 視窗。請在**那個視窗**裡完成 — client_secret 用 getpass 隱藏輸入，全程不會經過這裡的對話。完成後回來告訴我。
 
 Then wait for the user to report back.
 
@@ -120,9 +147,10 @@ security find-generic-password -s che-transport-tdx -a client_id  >/dev/null 2>&
   && echo "SEEDED ✓" || echo "STILL MISSING"
 ```
 
-If still missing, the user likely aborted or hit an error in the Terminal window. Ask what the script printed:
-- `verification failed: ... HTTP 401` → the key pair was wrong or mis-copied (trailing space, swapped id/secret). Re-run from Step 5; double-check against the TDX 編輯 page.
-- The user closed the window early → just re-run Step 5.
+If still missing, the user likely aborted or hit an error in the dialog / Terminal window. Ask what was reported:
+- `che-keychain` returned exit code `2` → user cancelled. Just re-run from Step 4.
+- `verification failed: ... HTTP 401` → key pair was wrong or mis-copied (trailing space, swapped id/secret). Re-run from Step 4; double-check against the TDX 編輯 page.
+- The user closed the dialog / Terminal early → just re-run Step 4.
 
 ## Step 7: Restart Claude Code
 
