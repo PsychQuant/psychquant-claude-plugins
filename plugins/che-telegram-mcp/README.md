@@ -240,9 +240,9 @@ Plugin version: 1.3.2 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-teleg
 
 ### Changelog
 
-**1.3.2** (2026-05-21)
+**1.3.2** (2026-05-22)
 
-- **Lock-refused branch emits MCP JSON-RPC error envelope to stdout** (refs [che-msg#31](https://github.com/PsychQuant/che-msg/issues/31)). When a second Claude Code session tries to spawn `telegram-all` while a stale session still holds the TDLib lock, the wrapper now writes a `{"jsonrpc":"2.0","id":null,"error":{...}}` envelope to stdout before exit. Claude Code's MCP client surfaces `error.message` (e.g. `"Another instance of CheTelegramAllMCP is already running (lock held by PID 11252). Use the existing Claude Code window, or kill the previous wrapper first."`) instead of generic `-32000 Server error`. `error.data` carries `lockHolderPid`, `recoveryCommand`, and `docsUrl`.
+- **Lock-refused branch emits MCP JSON-RPC error envelope to stdout** (refs [che-msg#31](https://github.com/PsychQuant/che-msg/issues/31)). When a second Claude Code session tries to spawn `telegram-all` while a stale session still holds the TDLib lock, the wrapper now writes a `{"jsonrpc":"2.0","id":<matches initialize request>,"error":{...}}` envelope to stdout before exit. The wrapper reads the first line of stdin (2s timeout) to extract the JSON-RPC `initialize` request's `id` and responds with the matching id, so Claude Code's MCP client surfaces `error.message` (e.g. `"Another instance of CheTelegramAllMCP is already running (lock held by PID 11252). Use the existing Claude Code window, or kill the previous wrapper first."`) instead of generic `-32000 Server error`. Falls back to `id: null` only when stdin is empty (direct-shell debug). `error.data` carries `lockHolderPid`, `recoveryCommand`, and `docsUrl`.
 - **Multi-session limitation README section** documents the TDLib upstream constraint + recovery cookbook + Strategy B/C explicit non-decisions.
 - **Recovery cookbook hardened**: `pkill ... ; rm -rf ...` (semicolon, not `&&`) so cleanup runs even when no process exists to kill — the orphan-lock case is exactly when cleanup matters most. Also covers both `.lock` (mkdir mode) and `.lock.flock` (flock mode) paths.
 
