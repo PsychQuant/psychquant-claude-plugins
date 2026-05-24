@@ -2,7 +2,7 @@
 name: macdoc
 description: |
   macOS 原生文件處理 CLI 工具的使用指南。
-  當需要做格式轉換（SRT→HTML、MD→HTML、DOCX→MD）、
+  當需要做格式轉換（SRT→HTML、MD→HTML、HTML→PDF、DOCX→MD）、
   VLM OCR（PDF/圖片→文字）、或 SRT 逐字稿處理時使用。
   觸發詞：「macdoc」「轉換格式」「OCR」「逐字稿轉HTML」
   「手寫筆記辨識」「PDF轉文字」
@@ -17,7 +17,7 @@ description: |
 
 | 子命令 | 用途 | 常用場景 |
 |--------|------|---------|
-| `convert` | 格式轉換 | SRT→HTML、MD→HTML、DOCX→MD |
+| `convert` | 格式轉換 | SRT→HTML、MD→HTML、HTML→PDF、DOCX→MD |
 | `ocr` | VLM OCR | PDF/圖片→文字（手寫筆記辨識） |
 | `config` | 設定管理 | AI CLI 工具、OCR host/model 預設值 |
 | `pdf` | PDF→LaTeX | 學術 PDF 處理（較少用） |
@@ -33,13 +33,14 @@ macdoc convert --to <format> [options] <input>
 
 ### 支援格式
 
-| --to | 說明 | 範例 |
-|------|------|------|
-| `html` | 轉 HTML | SRT→逐字稿網頁、MD→講義網頁 |
-| `md` | 轉 Markdown | DOCX→MD |
-| `docx` | 轉 Word | MD→DOCX |
-| `pdf` | 轉 PDF | MD→PDF（透過 textutil） |
-| `json` | 轉 JSON | SRT→結構化 JSON |
+| --to | 來源 | 說明 | Backend |
+|------|------|------|---------|
+| `html` | SRT, MD | 逐字稿網頁、講義網頁 | macdoc converters |
+| `md` | DOCX | Word 轉 Markdown | word-to-md-swift |
+| `docx` | MD | Markdown 轉 Word | md-to-word-swift |
+| `pdf` | MD | 純文字/Markdown 轉 PDF | textutil |
+| `pdf` | HTML/HTM | HTML（含 CSS、`@page`、分頁規則）轉 PDF，保留版面 | playwright Chromium |
+| `json` | SRT | 逐字稿轉結構化 JSON | srt-to-html-swift |
 
 ### 常用選項
 
@@ -52,6 +53,14 @@ macdoc convert --to <format> [options] <input>
 | `--hard-breaks` | 軟換行視為硬換行 |
 | `--frontmatter` | 包含 YAML frontmatter |
 | `--html-extensions` | MD 中保留 `<u>/<sup>/<sub>/<mark>` |
+
+### 前置需求
+
+HTML→PDF 需要 Playwright CLI 與 Chromium：
+
+```bash
+pip install playwright && playwright install chromium
+```
 
 ### 常用工作流
 
@@ -74,6 +83,14 @@ macdoc convert --to html --full --output lecture.html notes.md
 ```
 
 產出的是裸 HTML，需要手動替換 `<head>` 加入 CSS 連結和 lecture-header。
+
+#### HTML → 保留排版 PDF
+
+```bash
+macdoc convert --to pdf styled-quote.html --output quote.pdf
+```
+
+這條路徑走 playwright Chromium，會保留 HTML/CSS、`@page`、`page-break-*`、grid 等版面規則；不要改用 `textutil`。
 
 #### DOCX → Markdown
 
@@ -308,5 +325,6 @@ macdoc config ocr list
 
 ## 版本紀錄
 
+- **1.1.1**：補上 HTML→PDF via playwright Chromium 文件；支援完整 CSS、`@page` 與分頁規則的保留排版 PDF 工作流
 - **1.1.0**：新增 `config ocr` 子命令組,支援具名 host profile(`--host kyle` 等),預設 host/model 可存 config
 - **1.0.0**：初版
