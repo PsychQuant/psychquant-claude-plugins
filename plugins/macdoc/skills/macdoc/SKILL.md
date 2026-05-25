@@ -33,13 +33,22 @@ macdoc convert --to <format> [options] <input>
 
 ### 支援格式
 
-| --to | 說明 | 範例 |
-|------|------|------|
-| `html` | 轉 HTML | SRT→逐字稿網頁、MD→講義網頁 |
-| `md` | 轉 Markdown | DOCX→MD |
-| `docx` | 轉 Word | MD→DOCX |
-| `pdf` | 轉 PDF | MD→PDF（透過 textutil） |
-| `json` | 轉 JSON | SRT→結構化 JSON |
+| --to | 說明 | 範例 | Backend |
+|------|------|------|---------|
+| `html` | 轉 HTML | SRT→逐字稿網頁、MD→講義網頁 | swift-markdown |
+| `md` | 轉 Markdown | DOCX→MD | ooxml-swift |
+| `docx` | 轉 Word | MD→DOCX | word-builder-swift |
+| `pdf` | 轉 PDF — MD 來源 | MD→PDF（純文字） | textutil |
+| `pdf` | 轉 PDF — HTML 來源 | HTML（含 CSS / `@page` / page-break / grid）→ PDF，**完整保留排版** | **playwright Chromium** |
+| `json` | 轉 JSON | SRT→結構化 JSON | bib-apa-to-json-swift |
+
+**HTML→PDF 路徑前置需求**:
+
+```bash
+pip install playwright && playwright install chromium
+```
+
+完整 CSS / `@page` rule / `page-break-*` / CSS Grid 都正常保留 — **不要**為了避開「textutil 洗 CSS」而繞道用 `chrome --headless` 或 `wkhtmltopdf`,macdoc 已內建 playwright 路徑（#69 實作）。
 
 ### 常用選項
 
@@ -54,6 +63,17 @@ macdoc convert --to <format> [options] <input>
 | `--html-extensions` | MD 中保留 `<u>/<sup>/<sub>/<mark>` |
 
 ### 常用工作流
+
+#### HTML（含完整 CSS / 排版）→ PDF
+
+```bash
+# HTML（含 @page / page-break / grid / 自訂 fonts）→ PDF，CSS 完整保留
+macdoc convert --to pdf styled-quote.html --output quote.pdf
+```
+
+前置需求:`pip install playwright && playwright install chromium`。
+
+**不要繞道**用 `chrome --headless` / `wkhtmltopdf` — macdoc 已內建 playwright 路徑（#69 實作）。
 
 #### SRT → 可搜尋的逐字稿 HTML
 
