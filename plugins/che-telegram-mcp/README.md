@@ -178,6 +178,54 @@ Or just ask naturally:
 
 `get_me`, `get_updates`, `send_message`, `forward_message`, `get_chat`, `get_chat_administrators`, `get_chat_member_count`, `get_chat_member`, `set_chat_title`, `set_chat_description`, `pin_chat_message`, `unpin_chat_message`, `unpin_all_chat_messages`, `ban_chat_member`, `unban_chat_member`, `restrict_chat_member`, `promote_chat_member`, `leave_chat`, `delete_message`, `edit_message_text`, `copy_message`, `send_photo`, `send_document`, `send_video`, `send_audio`, `send_sticker`, `send_location`, `send_poll`, `set_my_commands`, `get_my_commands`, `delete_my_commands`
 
+## Multi-session limitation
+
+`telegram-all` uses [TDLib](https://core.telegram.org/tdlib), which keeps the session in a SQLite database with an exclusive WAL lock — **only one process can hold it at a time**. `telegram-bot` is not affected (Bot API is HTTP-based and stateless, so any number of Claude Code sessions can run it in parallel).
+
+If you have **two or more Claude Code sessions open simultaneously**, only the first session can spawn `telegram-all`. The second session's wrapper detects the lock + refuses to start (preventing TDLib database corruption from concurrent writes).
+
+### What you'll see in v1.3.2+
+
+`/mcp` displays a human-readable error such as:
+
+```
+mcp__plugin_che-telegram-mcp_telegram-all: Another instance of CheTelegramAllMCP is already running (lock held by PID 11252). Use the existing Claude Code window, or kill the previous wrapper first.
+```
+
+The error envelope also carries `data.recoveryCommand` and `data.docsUrl` (this section) for clients that show structured error data.
+
+### Recovery cookbook
+
+When you need to free the lock for the current session:
+
+```bash
+# 1. Kill any running telegram-all binary (single instance assumption — safe).
+#    Use `2>/dev/null` and `; ` (not `&&`) — the orphan-lock case (where
+#    you most need recovery) has no process to kill, and `&&` would skip
+#    the cleanup below. `; ` ensures the lock removal always runs.
+pkill CheTelegramAllMCP 2>/dev/null
+
+# 2. Remove BOTH lock variants. macOS without flock uses `.lock` directory;
+#    Linux with flock uses `.lock.flock` file. The wrapper picks one at
+#    runtime — recovery should clean both so it works on any platform.
+rm -rf ~/.cache/che-telegram-all-mcp.lock ~/.cache/che-telegram-all-mcp.lock.flock
+
+# 3. (Optional) Confirm no stale process holds TDLib DB files.
+lsof ~/Library/Application\ Support/che-telegram-all-mcp/tdlib/db.sqlite 2>/dev/null
+
+# 4. Restart Claude Code or run /mcp to reconnect.
+```
+
+Step 1 is graceful — the binary handles `SIGTERM` and `wait`s for TDLib to checkpoint the WAL before exiting. Step 2 removes the wrapper's atomic-claim guard (both `.lock` directory for mkdir mode and `.lock.flock` file for flock mode). After both, the next Claude Code session that spawns `telegram-all` will succeed.
+
+### Pre-v1.3.2 symptom
+
+If you're on `che-telegram-mcp` plugin **v1.3.1 or earlier**, the lock-refused branch only wrote to stderr (which Claude Code's MCP transport doesn't surface), so users would just see a generic `-32000 Server error` with no recovery hint. Upgrade to **v1.3.2+** for the human-readable message described above. See [#31](https://github.com/PsychQuant/che-msg/issues/31) for the diagnosis.
+
+### Why we don't auto-clean stale binaries
+
+Killing a TDLib process mid-write can corrupt the database (WAL checkpoint mid-flight). The wrapper deliberately requires manual intervention so the user — who knows whether the other Claude Code session is genuinely abandoned or just backgrounded — makes the destructive call.
+
 ## Permissions
 
 This plugin requires:
@@ -188,9 +236,19 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.3.0 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
+Plugin version: 1.3.2 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
 
 ### Changelog
+
+**1.3.2** (2026-05-22)
+
+- **Lock-refused branch emits MCP JSON-RPC error envelope to stdout** (refs [che-msg#31](https://github.com/PsychQuant/che-msg/issues/31)). When a second Claude Code session tries to spawn `telegram-all` while a stale session still holds the TDLib lock, the wrapper now writes a `{"jsonrpc":"2.0","id":<matches initialize request>,"error":{...}}` envelope to stdout before exit. The wrapper reads the first line of stdin (2s timeout) to extract the JSON-RPC `initialize` request's `id` and responds with the matching id, so Claude Code's MCP client surfaces `error.message` (e.g. `"Another instance of CheTelegramAllMCP is already running (lock held by PID 11252). Use the existing Claude Code window, or kill the previous wrapper first."`) instead of generic `-32000 Server error`. Falls back to `id: null` only when stdin is empty (direct-shell debug). `error.data` carries `lockHolderPid`, `recoveryCommand`, and `docsUrl`.
+- **Multi-session limitation README section** documents the TDLib upstream constraint + recovery cookbook + Strategy B/C explicit non-decisions.
+- **Recovery cookbook hardened**: `pkill ... ; rm -rf ...` (semicolon, not `&&`) so cleanup runs even when no process exists to kill — the orphan-lock case is exactly when cleanup matters most. Also covers both `.lock` (mkdir mode) and `.lock.flock` (flock mode) paths.
+
+**1.3.1** (2026-05-07)
+
+- **Atomic-claim lock**: wrapper now uses `flock` (Linux) or `mkdir` (macOS fallback) to prevent two simultaneous wrappers from racing the TDLib lock. Second wrapper fail-fast with stderr message instead of silent SIGTERM cross-fire. Stale-lock cleanup removes orphaned locks whose owner PID is dead. New regression test (`test-wrapper-pid.sh` test 9). Resolves [#10](https://github.com/PsychQuant/psychquant-claude-plugins/issues/10).
 
 **1.3.0** (2026-04-28)
 

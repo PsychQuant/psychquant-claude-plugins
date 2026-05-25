@@ -99,6 +99,90 @@ if [[ -z "$TELEGRAM_API_ID" || -z "$TELEGRAM_API_HASH" ]]; then
     exit 1
 fi
 
+# --- MCP-shaped error envelope helpers (#31) ---
+# When the atomic-claim lock below refuses startup, Claude Code's MCP
+# transport otherwise sees the wrapper exit non-zero with no stdout and
+# surfaces a generic "-32000 Server error" to the user. By emitting a
+# JSON-RPC 2.0 error envelope to stdout BEFORE exit, Claude Code's MCP
+# client can render error.message — turning the opaque -32000 into a
+# human-readable instruction.
+#
+# PR-1b (empirical-driven, 2026-05-22): the v1.3.2 first attempt used
+# `id: null` per JSON-RPC 2.0 § 5 ("If there was an error in detecting
+# the id... it MUST be Null"). Empirical two-session reproduction in
+# Claude Code showed the client drops null-id responses as unmatched
+# transport noise and still surfaces generic -32000. Fix: read stdin
+# briefly to capture the initialize request's id and respond with
+# matching id so the MCP client recognizes the response.
+#
+# The functions are JSON-safe by construction: the only dynamic values
+# (lock holder PID, request id) are either gated by numeric regex
+# upstream or extracted via jq / strict bash regex.
+
+# Read first line of stdin (expected: JSON-RPC initialize request) with a
+# short timeout, extract the request id. Falls back to "null" if stdin is
+# empty, times out, or doesn't contain valid JSON.
+#
+# Output format mirrors JSON literal: numeric id printed unquoted (e.g.
+# `42`), string id wrapped in JSON quotes (e.g. `"abc"`), missing/invalid
+# id returns `null`. Caller substitutes this directly into the JSON
+# envelope's `"id":<x>` slot.
+#
+# Timeout is 2s — Claude Code MCP transport typically sends initialize
+# within milliseconds of spawning the child process. Longer timeout
+# would delay wrapper exit and could push Claude Code into its own
+# transport timeout.
+read_initialize_id() {
+    local line=""
+    local id="null"
+
+    if IFS= read -r -t 2 line 2>/dev/null && [ -n "$line" ]; then
+        if command -v jq >/dev/null 2>&1; then
+            # jq -c outputs JSON-compact form: number unquoted, string with
+            # quotes, null as literal `null`. Perfect for direct substitution.
+            local extracted
+            extracted=$(printf '%s' "$line" | jq -c '.id' 2>/dev/null || true)
+            if [ -n "$extracted" ]; then
+                id="$extracted"
+            fi
+        else
+            # Fallback for environments without jq. Handles integer ids
+            # and quoted string ids — covers MCP 1.0 spec (id is string,
+            # number, or null per JSON-RPC 2.0).
+            if [[ "$line" =~ \"id\"[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+                id="${BASH_REMATCH[1]}"
+            elif [[ "$line" =~ \"id\"[[:space:]]*:[[:space:]]*\"([^\"]+)\" ]]; then
+                id="\"${BASH_REMATCH[1]}\""
+            fi
+        fi
+    fi
+
+    printf '%s' "$id"
+}
+
+# Emit JSON-RPC 2.0 error envelope to stdout. owner_pid is the lock holder's
+# PID (0 = unknown, e.g. flock branch). request_id is the JSON id from the
+# pending initialize, output of read_initialize_id — substituted directly
+# into the envelope.
+emit_mcp_error_response() {
+    local owner_pid="${1:-0}"
+    local request_id="${2:-null}"
+    local pid_phrase=""
+    local pid_field="null"
+    if [[ "$owner_pid" =~ ^[0-9]+$ ]] && [ "$owner_pid" != "0" ]; then
+        pid_phrase=" (lock held by PID ${owner_pid})"
+        pid_field="${owner_pid}"
+    fi
+    # recoveryCommand uses `;` instead of `&&` because the orphan-lock case
+    # (most common stuck-state) has NO process to kill — pkill exits 1, which
+    # would short-circuit `&&` and skip the lock cleanup. Semicolon ensures
+    # both steps run regardless. Both lock paths are removed: `.lock` (mkdir
+    # mode) and `.lock.flock` (flock mode), so the same command works on
+    # macOS (mkdir) and Linux (flock).
+    printf '{"jsonrpc":"2.0","id":%s,"error":{"code":-32000,"message":"Another instance of CheTelegramAllMCP is already running%s. Use the existing Claude Code window, or kill the previous wrapper first.","data":{"lockHolderPid":%s,"recoveryCommand":"pkill CheTelegramAllMCP 2>/dev/null; rm -rf ~/.cache/che-telegram-all-mcp.lock ~/.cache/che-telegram-all-mcp.lock.flock","docsUrl":"https://github.com/PsychQuant/psychquant-claude-plugins/blob/main/plugins/che-telegram-mcp/README.md#multi-session-limitation"}}}\n' \
+        "$request_id" "$pid_phrase" "$pid_field"
+}
+
 # --- Atomic-claim lock (#10) ---
 # TDLib DB is single-instance — two MCP servers can't share it. The previous
 # PID-tracking strategy (#8) is racy on multi-window scenarios: window B reads
@@ -115,6 +199,11 @@ if command -v flock >/dev/null 2>&1; then
     LOCK_MODE="flock"
     exec 200>"$LOCK_FILE"
     if ! flock -n 200; then
+        # PR-1b: read initialize id from stdin before emitting response, so
+        # Claude Code's MCP client matches the error to its pending request.
+        # flock has no caller-visible owner PID, so emit without it.
+        REQ_ID=$(read_initialize_id)
+        emit_mcp_error_response 0 "$REQ_ID"
         echo "$BINARY_NAME: Another instance is already running. Use the existing Claude Code window, or kill the previous wrapper first." >&2
         exit 1
     fi
@@ -132,6 +221,11 @@ else
                 exit 1
             }
         else
+            # PR-1b: read initialize id from stdin before emitting response,
+            # so Claude Code's MCP client matches the error to its pending
+            # request and surfaces error.message instead of generic -32000.
+            REQ_ID=$(read_initialize_id)
+            emit_mcp_error_response "${OWNER_PID:-0}" "$REQ_ID"
             echo "$BINARY_NAME: Another instance is already running (lock held by PID ${OWNER_PID:-?}). Use the existing Claude Code window, or kill the previous wrapper first." >&2
             exit 1
         fi
