@@ -170,20 +170,6 @@
       "category": "development"
     },
     {
-      "name": "che-transport-mcp",
-      "version": "0.2.3",
-      "description": "Taiwan TDX transport MCP — 23 tools across Rail / Bus / Bike / Air / Maritime / Traffic / Parking. Wraps PsychQuant/che-transport-mcp binary (binaryVersion 0.2.2) with version-aware auto-download, 3-tier cache TTL (24h static / 1h timetable / 0s live), parallel cross-system station search, NSQL confirmation discipline. v0.2.3: soft dependency on PsychQuant/che-keychain — when installed, setup-tdx skill invokes it directly for a native NSAlert (id + secret in one dialog), no Terminal window needed. Binary v0.2.2 also auto-delegates --setup to che-keychain if present. Falls back to in-binary getpass otherwise. (Plugin shell now lives in the source repo at PsychQuant/che-transport-mcp/plugin; this entry is a pointer.)",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": {
-        "source": "git-subdir",
-        "url": "PsychQuant/che-transport-mcp",
-        "path": "plugin"
-      },
-      "category": "productivity"
-    },
-    {
       "name": "che-dropbox-ignore",
       "version": "2.1.0",
       "description": "Dropbox 同步排除管理 — 自動對 .git、build artifacts 等設定 com.dropbox.ignored xattr",
