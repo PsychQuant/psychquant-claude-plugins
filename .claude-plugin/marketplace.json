@@ -340,16 +340,6 @@
       "category": "development"
     },
     {
-      "name": "parallel-ai-agents",
-      "version": "2.5.1",
-      "description": "平行派發任務給多個 AI agent（Claude + Codex），獨立執行後交叉比對結果。Codex 改走直接 HTTP wrapper（bin/codex-call，Swift script）取代 codex exec subprocess，解決 hang 問題且避開 Python 版本飄移",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": "./plugins/parallel-ai-agents",
-      "category": "development"
-    },
-    {
       "name": "macdoc",
       "version": "1.1.0",
       "description": "macOS 原生文件處理 CLI — 格式轉換、VLM OCR（含 host profile 設定）、SRT 處理",
