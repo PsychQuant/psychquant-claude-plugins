@@ -134,9 +134,14 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 1.10.0 (matches MCP server version)
+Plugin version: 1.11.0 (matches MCP server version)
 
 ### Changelog
+
+**1.11.0** (2026-06-10)
+- **TCC healing re-prompt unblocked** (#154): `Entitlements.plist` now ships `com.apple.security.personal-information.calendars` + `.reminders`. Long-lived installs upgraded from the pre-v1.7.1 ad-hoc era could hit silent permanent Calendar denial on macOS 26.5 — the TCC row stays pinned to the old build's cdhashes while the healing re-prompt was policy-blocked (binary had no entitlements), with every diagnostic reporting green. First launch of this build is finally allowed to re-prompt; approving rewrites the row keyed to the Developer ID requirement. New `EntitlementsPlistTests` + value-aware signed-binary release gate.
+- **BREAKING**: deploy floor raised to macOS 14.0 (Sonoma) (#119)
+- Non-interactive EventKit access hardening (#131/#143/#144) + verify follow-ups (#146–#150); 401 tests
 
 **1.10.0** (2026-05-12)
 - **TCC drift detector + startup banner** (#122): single-shot `[banner]` line on MCP-server-mode startup with version/path/PID + drift signals (TCC.db path mismatch per-service, stale running processes). Banner is advisory, stderr-only, opt-out via `CHE_ICAL_MCP_NO_BANNER=1`. Hardened against CWE-117 stderr-injection on every interpolated value (R1 sanitization).
