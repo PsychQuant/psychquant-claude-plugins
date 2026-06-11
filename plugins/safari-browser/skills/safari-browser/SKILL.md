@@ -211,6 +211,21 @@ safari-browser pdf --window 2 --allow-hid out.pdf
 safari-browser upload --native "input[type=file]" file.mp3 --window 2
 ```
 
+**Reusing a lock flag across commands — use a bash array, not a string.**
+To lock several commands to the same document, store the flag in an **array** so
+it word-splits in both shells. A plain string + unquoted `$LOCK` breaks under zsh
+(Claude Code's Bash runs zsh), which does NOT word-split unquoted variables —
+`--url plaud` is then passed as one token and the CLI errors `Unknown option
+'--url plaud'`:
+
+```bash
+LOCK=(--url plaud)                       # ✅ array — splits in bash AND zsh
+safari-browser snapshot "${LOCK[@]}"
+safari-browser get url  "${LOCK[@]}"
+
+# ❌ LOCK="--url plaud"; safari-browser snapshot $LOCK   # breaks under zsh
+```
+
 **Default `screenshot` behavior** (#23 R7): when AX permission is granted, default `screenshot` (no flag) uses AX SPI for reliable identity (no title/bounds heuristic). Without AX permission, falls back to legacy CG name match.
 
 **`screenshot --window N`** (#23 R6 C1): requires Accessibility permission. Uses `_AXUIElementGetWindow` private SPI for reliable AS↔CG mapping. Eliminates the wrong-window failure modes that bedevil bounds-/title-based matching. Strict fail-closed: throws `windowIdentityAmbiguous` when multiple visible windows can't be uniquely identified, instead of silently picking one.
