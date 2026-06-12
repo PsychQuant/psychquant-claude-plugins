@@ -210,6 +210,8 @@ https://github.com/kiki830621/che-apple-mail-mcp
 
 ## Version History
 
+- **v2.21.0 shell + binary v2.11.0**（2026-06-12）— **Gmail mailbox-resolution pair**（closes [#173](https://github.com/PsychQuant/che-apple-mail-mcp/issues/173) / [#174](https://github.com/PsychQuant/che-apple-mail-mcp/issues/174)）。巢狀 Gmail mailbox 路徑（`[Gmail]/全部郵件`）經 container chain 在 `resolveMailboxRef` chokepoint 解析（~14 寫入工具受惠）；`list_drafts` 移除硬編 `Drafts`，改 unified-drafts-children 反查（語系/provider 無關）+ optional `account_id`；`save_attachment` 新增 email→UUID 帳號正規化（多匹配列候選不自動挑、升級記 stderr）與 `-1719`/`-1728`/`-10000` per-object-class actionable hints。雙 PR（[#181](https://github.com/PsychQuant/che-apple-mail-mcp/pull/181) / [#187](https://github.com/PsychQuant/che-apple-mail-mcp/pull/187)）各經 6-AI ensemble verify（0 blocking）；測試 +36；follow-ups #176/#179/#180/#182/#183/#185/#186。
+
 - **v2.19.6 shell + binary v2.8.5**（2026-05-12）— **hook compare 改 prefer `.binary_version`**（[#73](https://github.com/PsychQuant/psychquant-claude-plugins/issues/73)）。`hooks/session-start.sh` jq query 從 `'.version // ""'` 改 `'.binary_version // .version // ""'`,杜絕 v2.18.0 ~ v2.19.5 期間每次 session start spurious SIGTERM(runtime `version_at_spawn` 是 binary tag `2.8.5`,但 hook 比對 plugin shell `2.19.5` 永遠 mismatch trap)。Backward compat 保留 — legacy plugins(無 `binary_version`)走 `.version` fallback。Shell-only patch release,binary v2.8.5 不變。Tests 22/22 PASS;TDD RED → GREEN cycle proves fix。
 
 - **v2.19.1–v2.19.5 shell + binary v2.8.1–v2.8.5 patch series**（2026-05-11）— **markdown rendering richness + sanitize_links hardening + cleanup**。 串連發布的 5 個 patch:
