@@ -3,7 +3,9 @@
 ## Purpose
 
 守住 `Workflow`/`Agent` fan-out 的啟動節奏，防止 back-to-back 暴衝撞上 Anthropic 的
-acceleration-limit / short-burst 節流（429 / 529）。致敬「最燙的 bucket」。
+acceleration-limit / short-burst 節流（429 / 529）。
+
+> 🥁 命名彩蛋：「HOT LIMIT」致敬 T.M.Revolution（西川貴教）1998 同名單曲。三層雙關 — API rate **limit** × 那首歌 × bucket 燙（**hot**）。
 
 ## Components
 
