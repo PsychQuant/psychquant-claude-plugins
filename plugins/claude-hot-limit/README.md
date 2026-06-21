@@ -1,6 +1,6 @@
 # claude-hot-limit
 
-> 致敬「最燙的 bucket」。
+> 致敬 T.M.Revolution《HOT LIMIT》——一個防 fan-out 暴衝撞上限的工具，用一個以「逼近上限」聞名的梗命名。
 
 當 Claude Code 在設定 / 啟動 **agents 或 workflows** 時，防止 back-to-back 暴衝撞上
 Anthropic 的 **acceleration-limit / short-burst 節流**（429，以及 529
@@ -63,3 +63,16 @@ claude --plugin-dir ./plugins/claude-hot-limit
 echo '{"tool_name":"Workflow","tool_input":{}}' | \
   CLAUDE_PLUGIN_DATA=/tmp/cht python3 hooks/pacing-guard.py
 ```
+
+
+---
+
+## 🥁 命名彩蛋
+
+`HOT LIMIT` 致敬 **T.M.Revolution（西川貴教）1998 年同名單曲**（以及那套傳說級的膠帶造型）。三層雙關：
+
+1. API rate **limit** — plugin 真正在做的事
+2. **HOT LIMIT** — 那首歌（真·致敬）
+3. **hot** — bucket 燙、撞節流（debug 時的主題）
+
+一個防止 fan-out「尺度逼近上限」的安全工具，叫一個以「尺度逼近上限」聞名的梗命名。
