@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- docs：加入 HOT LIMIT 命名彩蛋（致敬 T.M.Revolution 1998 同名單曲）。README footnote + CLAUDE.md Purpose；無功能變動。
+
 ## 1.0.0
 
 初版。
