@@ -8,6 +8,7 @@ R Shiny App debug + adaptive testing tools。
 |------|------|
 | `/shiny-debug` | 單次互動式功能測試 + debug,Log-First 原則 |
 | `/shiny-adaptive-walk` | 自我收斂 adaptive testing loop — discover + classify + mutate test infra,real bug 開 `/idd-issue`(MP165 v1.2 Track B) |
+| `/connect-cloud-logs` | **部署後** Posit Connect Cloud runtime log 診斷(lag/crash) — `/shiny-debug` 的 remote 版,雙路徑 safari-browser(主)+ agent-browser(network 進階) |
 
 ## 特色
 
@@ -47,6 +48,10 @@ agent-browser install
 /shiny-adaptive-walk QEF_DESIGN                  # default: agent-browser (headless)
 /shiny-adaptive-walk QEF_DESIGN --browser safari # opt-in: visible Safari for live watch
 /shiny-adaptive-walk D_RACING --budget 50 --max-iter 3
+
+# 部署後 Connect Cloud runtime log 診斷(lag/crash)
+/connect-cloud-logs                              # 互動式,問你要看哪個 content
+/connect-cloud-logs MAMBA                        # 直接指定公司
 
 # Browser mode rationale: default is headless agent-browser (faster, reproducible,
 # no macOS Safari tab-focus contention). --browser safari is opt-in for live demo /
