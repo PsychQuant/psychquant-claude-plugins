@@ -1,10 +1,10 @@
 {
   "name": "r-shiny-debugger",
-  "version": "1.2.0",
-  "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）+ shiny-adaptive-walk 自我收斂測試 loop",
+  "version": "1.3.0",
+  "description": "功能測試導向的 R Shiny App Debug 工具，整合 agent-browser（前端）與 R console（後端）+ shiny-adaptive-walk 自我收斂測試 loop + connect-cloud-logs 部署後 Posit Connect Cloud runtime log 診斷",
   "author": {
     "name": "Che Cheng"
   },
   "license": "MIT",
-  "keywords": ["r", "shiny", "debug", "testing", "agent-browser", "safari-browser", "adaptive-testing", "mp165"]
+  "keywords": ["r", "shiny", "debug", "testing", "agent-browser", "safari-browser", "adaptive-testing", "mp165", "posit-connect-cloud", "deployment-logs"]
 }
