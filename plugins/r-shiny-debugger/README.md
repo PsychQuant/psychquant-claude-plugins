@@ -60,6 +60,7 @@ agent-browser install
 |------|------|
 | Local dev 單次 debug,知道要測什麼 | `/shiny-debug` |
 | Live remote URL verification(Posit Connect)| `safari-browser` CLI 直接調用 |
+| **部署後 Connect Cloud runtime log(lag/crash 診斷)** | **`/connect-cloud-logs`** |
 | 不知道有什麼 bug,讓 skill 主動探索 + 補 test | `/shiny-adaptive-walk` |
 | CI 自動化迴歸 | `shinytest2` test files in `98_test/e2e/` |
 

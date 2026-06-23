@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-23
+
+### Added
+- New command `/connect-cloud-logs [公司]` — 抓取並分析 **Posit Connect Cloud**（SaaS）部署後的 runtime log，診斷部署後才出現的 lag / crash / 資料異常 bug。`/shiny-debug`（local app log）的 remote 部署版。
+- 雙路徑設計：**Path A safari-browser**（簡單主路，真實 Safari cookie 持久）+ **Path B agent-browser**（進階，可看 network request timing 診斷慢 XHR/DB call）。
+- 完整記錄 agent-browser 的 auth 持久化「設定眉角」：`state save/load`（跨 headed→headless 橋接）、`AGENT_BROWSER_SESSION_NAME` vs `AGENT_BROWSER_SESSION` 區別、`--persist` 的 `Unknown command` parser 雷、headed/headless 是不同 instance 的致命陷阱。
+- 踩雷速查表 + lag 專屬診斷（metrics 曲線 + log timestamp gap，因 lag 通常不跳紅字）。
+
+### Verified (2026-06-23 spike)
+- **Connect Cloud 無 programmatic log API / CLI / API key** — 官方 `docs.posit.co/connect-cloud` system 文件 WebFetch 確認；網路上的 `CONNECT_API_KEY` / `connectapi` / `usermanager` 全是 self-hosted Posit Connect，不適用 Cloud SaaS。
+- agent-browser auth 機制（`state save/load` / `--session-name` env）來自官方 `agent-browser skills get core --full`（line 218-228、406-410）。
+- agent-browser headed/headless 不同 instance、`--persist` 單獨用報 `Unknown command` — 實機觀察。
+
+### Pending live verification
+- Path A/B 的 **virtualized list 完整抓取流程（A3 滾動累積參數）** 與 Logs 面板端到端抓取尚未實機跑過一遍 — command 內已標 🔧「首次實機微調」。下次有 Connect Cloud 登入時跑一遍任一公司 content 確認滾動圈數/像素，並把 metrics 截圖判讀填回範例。
+
 ## [1.2.0] - 2026-05-13
 
 ### Changed
