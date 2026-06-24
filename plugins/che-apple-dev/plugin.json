@@ -1,7 +1,7 @@
 {
   "name": "che-apple-dev",
-  "description": "Apple platform development toolkit — build, deploy, debug, device management for Xcode projects",
-  "version": "1.1.0",
+  "description": "Apple platform development toolkit — build, deploy, debug, device management for Xcode projects; Apple Developer Portal automation via Safari (Sign In / OAuth setup, and agreement acceptance to unblock notarization when the Program License Agreement updates)",
+  "version": "1.2.0",
   "author": {
     "name": "Che Cheng"
   }
