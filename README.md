@@ -28,6 +28,18 @@
 /plugin install che-ical-mcp@PsychQuant/psychquant-claude-plugins
 ```
 
+## 遷移公告（2026-07）
+
+`che-word-mcp` 與 `macdoc` 兩個 plugins 已遷移至 [PsychQuant/macdoc marketplace](https://github.com/PsychQuant/macdoc)（PsychQuant/macdoc#112）。既有安裝者請重新指向新 marketplace：
+
+```bash
+claude plugin uninstall che-word-mcp@psychquant-claude-plugins   # 或 macdoc@psychquant-claude-plugins
+claude plugin marketplace add PsychQuant/macdoc
+claude plugin install che-word-mcp@macdoc                        # 或 macdoc@macdoc
+```
+
+新 marketplace 另提供 `che-pdf-mcp`、`che-pptx-mcp`（首發），wrapper 含強化的供應鏈驗證（強制 sha256 + Developer ID 簽章鏈 + exec-time 重驗）。
+
 ## Plugins
 
 | Plugin | 說明 | MCP Tools |
@@ -35,7 +47,6 @@
 | **che-things-mcp** | Things 3 任務管理 | 47 |
 | **che-ical-mcp** | macOS 行事曆 & 提醒事項 | 20 |
 | **che-apple-mail-mcp** | Apple Mail 郵件管理 + 歸檔 | 60+ |
-| **che-word-mcp** | Word 文件處理 | 104 |
 | **che-duckdb-mcp** | DuckDB 資料庫操作 | 14 |
 | **mcp-tools** | MCP Server 開發工具集 | - |
 | **r-shiny-debugger** | R Shiny App 功能測試 | - |
