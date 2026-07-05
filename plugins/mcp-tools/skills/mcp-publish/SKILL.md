@@ -64,13 +64,20 @@ gh release list --repo "$OWNER_REPO" --limit 3
 # 專案名稱
 PROJECT_NAME=$(basename $(pwd))
 
+# GitHub owner — namespace 用，一律從 remote 推導，不要硬編碼
+# （umbrella 內兩種都有：個人 repo = kiki830621，org repo = PsychQuant）
+OWNER=$(echo "$OWNER_REPO" | cut -d/ -f1)
+
 # 最新版本和 Release 資訊
 LATEST_TAG=$(gh release list --repo "$OWNER_REPO" --limit 1 --json tagName -q '.[0].tagName')
 LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/^v//')
 echo "專案: $PROJECT_NAME"
 echo "Repo: $OWNER_REPO"
+echo "Owner: $OWNER"
 echo "最新版本: $LATEST_TAG ($LATEST_VERSION)"
 ```
+
+> **⚠️ Namespace 隨 repo owner 走**：MCP Registry 的 server `name` 就是唯一識別。`io.github.kiki830621/X` 與 `io.github.PsychQuant/X` 是**兩個不同的 server**（repo 若在 org 間轉移，發布到新 owner 命名空間 = 新增條目，舊條目停在最後發布的版本）。所有 server.json 模板的 `{owner}` 一律代入上面推導的 `$OWNER`，且必須與 `repository.url` 的 owner 一致。發到 `io.github.<org>/*`（如 PsychQuant）需登入的 GitHub 帳號是該 org 成員。
 
 ### Step 4: 安裝 mcp-publisher CLI
 
@@ -169,17 +176,17 @@ rm /tmp/_verify_binary
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.kiki830621/{project-name}",
+  "name": "io.github.{owner}/{project-name}",
   "description": "{description, max 100 chars}",
   "version": "{version}",
   "repository": {
-    "url": "https://github.com/kiki830621/{project-name}",
+    "url": "https://github.com/{owner}/{project-name}",
     "source": "github"
   },
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/kiki830621/{project-name}/releases/download/v{version}/{BinaryName}",
+      "identifier": "https://github.com/{owner}/{project-name}/releases/download/v{version}/{BinaryName}",
       "version": "{version}",
       "transport": {
         "type": "stdio"
@@ -195,11 +202,11 @@ rm /tmp/_verify_binary
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.kiki830621/{project-name}",
+  "name": "io.github.{owner}/{project-name}",
   "description": "{description, max 100 chars}",
   "version": "{version}",
   "repository": {
-    "url": "https://github.com/kiki830621/{project-name}",
+    "url": "https://github.com/{owner}/{project-name}",
     "source": "github"
   },
   "packages": [
@@ -220,11 +227,11 @@ rm /tmp/_verify_binary
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.kiki830621/{project-name}",
+  "name": "io.github.{owner}/{project-name}",
   "description": "{description, max 100 chars}",
   "version": "{version}",
   "repository": {
-    "url": "https://github.com/kiki830621/{project-name}",
+    "url": "https://github.com/{owner}/{project-name}",
     "source": "github"
   },
   "packages": [
@@ -244,7 +251,7 @@ rm /tmp/_verify_binary
 
 | 錯誤 | 正確 |
 |------|------|
-| `"name": "che-word-mcp"` | `"name": "io.github.kiki830621/che-word-mcp"` |
+| `"name": "che-word-mcp"` | `"name": "io.github.{owner}/che-word-mcp"`（`{owner}` = repo owner）|
 | `"version_detail": {...}` | `"version": "1.0.0"` |
 | `"registry_type"` (snake_case) | `"registryType"` (camelCase) |
 | `"file_sha256"` (snake_case) | `"fileSha256"` (camelCase) |
@@ -356,9 +363,9 @@ mcp-publisher login github
 這會顯示 device code，需要在瀏覽器中前往 https://github.com/login/device 輸入。
 
 **Namespace 規則**：
-- GitHub 認證後，你的 namespace 是 `io.github.{username}`
-- 例如：`io.github.kiki830621/che-ical-mcp`
-- 只能發布到你的 namespace 下
+- GitHub 認證後，你的 namespace 是 `io.github.{username}`，以及**你所屬 org 的** `io.github.{org}`
+- 例如：`io.github.kiki830621/che-ical-mcp`（個人）或 `io.github.PsychQuant/che-ical-mcp`（org，登入帳號須為 PsychQuant 成員）
+- server.json 的 `name` owner 必須與 `repository.url` 的 owner 一致
 
 **注意**：token 會過期，如果 publish 時收到 401 錯誤，重新 `mcp-publisher login github`。
 
@@ -378,14 +385,14 @@ CLI 會：
 ```
 Publishing to https://registry.modelcontextprotocol.io...
 ✓ Successfully published
-✓ Server io.github.kiki830621/{project-name} version {version}
+✓ Server io.github.{owner}/{project-name} version {version}
 ```
 
 **預期輸出**（更新）：
 ```
 Publishing to https://registry.modelcontextprotocol.io...
 ✓ Successfully published
-✓ Server io.github.kiki830621/{project-name} version {new-version}
+✓ Server io.github.{owner}/{project-name} version {new-version}
 ```
 
 **注意**：不能覆蓋已發布的版本。如果版本號相同會報錯，必須使用新版本號。
@@ -412,7 +419,7 @@ curl -s "https://registry.modelcontextprotocol.io/v0.1/servers?search=$PROJECT_N
 git add server.json
 git commit -m "Add server.json for MCP Registry publishing
 
-Published as io.github.kiki830621/{project-name} on the official MCP Registry.
+Published as io.github.{owner}/{project-name} on the official MCP Registry.
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 git push origin main
@@ -434,7 +441,7 @@ git push origin main
 ```markdown
 ### MCP Registry
 
-Published on the [Official MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.kiki830621/{project-name}`.
+Published on the [Official MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.{owner}/{project-name}`.
 ```
 
 **檢查**：如果 README 已有此資訊則跳過。所有語言版本的 README 都要同步更新。
@@ -576,7 +583,7 @@ open "https://mcpservers.org"
 ## 專案資訊
 - 專案: {project-name}
 - 版本: {version}
-- Namespace: io.github.kiki830621/{project-name}
+- Namespace: io.github.{owner}/{project-name}
 
 ## 發布狀態
 
