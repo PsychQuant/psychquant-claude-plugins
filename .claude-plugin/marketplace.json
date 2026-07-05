@@ -290,16 +290,6 @@
       "category": "productivity"
     },
     {
-      "name": "che-axiom-systems",
-      "version": "1.0.0",
-      "description": "Axiomatization Systems — 跨領域形式化公理體系的建立、驗證與查詢。基於 ASBE 方法論。axiom-create、axiom-validate、axiom-lookup",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": "./plugins/che-axiom-systems",
-      "category": "productivity"
-    },
-    {
       "name": "lean-prover",
       "version": "1.1.0",
       "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with Mathlib API rules, codex-prove-assist, lean-prover agent, and auto-commit",
