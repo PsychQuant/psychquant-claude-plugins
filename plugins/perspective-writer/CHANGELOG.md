@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-07-09
+
+### Added
+- **Fabrication Trap — third failure mode: asserting unverified external facts.** Beyond (1) embellishing the writer's experience and (2) writing claims the user cannot defend, a sentence can point to a real external referent yet still be *wrong*: a paper's citation (journal/volume/pages/DOI), a person's current title, a law's name and date, an institution's official name, a statistic. The writer's memory — or a slide/transcript/draft source — can be off (a misremembered volume, an outdated title, a rounded-up statistic), and a recipient who knows the real figure stops trusting the whole letter. Fix: verify every external fact against an authoritative source (the journal's page, the institution's site, the government record) before it goes in; when memory or the draft source disagrees with the authoritative source, **the source wins**. Adds a third question to "The test". Real trigger: a meeting record drafted from an ASR transcript + presentation slides carried a spoken "gap ≈ 10 years" against the official 8.17→6.19, wrote "CRP" for the official "CRB", and cited a *Nature* paper whose volume/pages needed checking against the journal page — all caught only by web-verifying the external facts.
+
 ## [2.8.0] - 2026-05-20
 
 ### Added

@@ -80,9 +80,27 @@ technical level, ask the user: "Do you understand this connection well enough to
 in an interview?" If no, either simplify to a level they can defend ("I'm interested in learning
 about optimal design") or leave it out entirely.
 
-**The test**: for every sentence about the user's experience or expertise, ask:
+**3. Asserting external facts you haven't verified.**
+
+A letter or CV states facts whose truth lives *outside* the writer — a paper's citation (journal,
+volume, pages, DOI), a person's current title, a law's name and date, an institution's official name,
+a statistic. These *look* grounded (they point to real-world things), but the writer's memory — or a
+slide, transcript, or draft source you're working from — can be wrong: a misremembered volume number,
+an outdated title, a rounded-up statistic. An unverified external fact is its own kind of fabrication:
+the referent exists, but the sentence gets it wrong, and a recipient who happens to know the real
+figure stops trusting the whole letter.
+
+The fix: for any external fact — citation, title, date, official name, statistic — verify it against
+an authoritative source (the journal's own page, the institution's site, the government record) before
+it goes in. When the writer's memory or your draft source disagrees with the authoritative source,
+**the authoritative source wins**. (Real examples: a draft said "the gap narrowed to about ten years"
+when the official figure was 8.17 down to 6.19 — use the official one; a cited paper's volume and
+pages must match the journal's page, not a slide that reproduced them from memory.)
+
+**The test**: for every factual sentence, ask:
 - "Did the user tell me this, or did I infer it?" → If inferred, ask them to confirm.
 - "Could the user explain this sentence in their own words?" → If not, don't write it.
+- "Is this an external fact (citation, title, date, official name, statistic) I'm asserting from memory or a secondhand source?" → If so, verify it against an authoritative source first; the source wins over memory.
 
 ## Why AI Correspondence Fails
 
