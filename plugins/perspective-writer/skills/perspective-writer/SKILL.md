@@ -289,6 +289,17 @@ Common pressure traps:
   one short sentence is less pressure than a detailed paragraph. Let the recipient ask for details
   if they are interested.
 
+**Ordering as a status signal (multi-recipient / list-bearing correspondence):**
+
+When a message arranges people or options — the To/CC order, a name roster, a list of candidate
+time slots — the *order itself* is read as a status signal. Every listed person notices where they
+sit. Put external guests, invited experts, and senior figures **near the front, never last**: a lone
+outside guest trailing a block of in-house names reads as an afterthought or filler, even when the
+writer meant nothing by it. Before sending, re-read the recipient order and any roster the way each
+person would see their *own* placement, and reorder so no one is left feeling put at the back. This is
+courtesy expressed through arrangement rather than words — especially load-bearing in hierarchical /
+relational cultures (Taiwanese, Japanese, and most cross-institutional settings).
+
 ## Phase 5: Anti-Patterns Checklist
 
 Before presenting the draft, check for these AI writing tells and remove every instance:
