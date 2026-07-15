@@ -76,6 +76,9 @@ TaskCreate(subject="update_indices",
 
 TaskCreate(subject="report_and_audit",
            description="Step 7 + 8: 輸出歸檔報告(新歸檔/跳過/thread 索引/附件分流)。執行 Coverage Audit (8a 附件完整性 + 8b thread 完整性 → search by bare_subject 比對 archived/total)。")
+
+TaskCreate(subject="reconcile_index",
+           description="Step 8.5(強制最終 gate,mail#261): 掃 ${output_dir} 全部 *.md 的 frontmatter message_id → 每個都必須在 ${INDEX_FILE} keys 內;孤兒就地補寫 entry(從 frontmatter 重建)或列 unparseable 報錯;last_updated bump 為 max(entry date);輸出一行 reconcile 摘要(verified/repaired/unparseable)。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
 ```
 
 **完成每一步立即 `TaskUpdate → completed`。靜默完成 = 違規。**
@@ -492,6 +495,13 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 >
 > 若配置 `.claude/emails.md` 的 `accounts` 欄位明列 email 地址，可直接拿來用。否則需要人工比對帳號。
 > **此陷阱對 Step 5 讀取郵件內文同樣適用**，不要假設搜尋階段記的 `account_name` 可以直接沿用——若那是 EWS URL，到 `get_email` 會重現 -1728。
+
+> **⚠️ All Mail 超集陷阱（mail#261）— 寄出信判定不可用 `[Gmail]/全部郵件`**
+> Gmail 的「全部郵件」是超集：**同時包含草稿**。用「全部郵件 + sender 搜尋」撈寄出信會把同一封信的**草稿版與寄出版各算一次**，甚至把未寄出的草稿當寄出信歸檔（可重現徵兆：同一 thread 出現「相同時間戳」的 `全部郵件` + `草稿` 配對——只有無配對草稿的才是真寄出）。
+> 紀律：
+> 1. **寄出信一律搜 Sent mailbox**（Gmail 為 `[Gmail]/寄件備份`；per-account 實名可用 `get_special_mailboxes(account_id=...)` 取得，#249）
+> 2. **落實 `exclude_mailboxes` 的 Drafts/Trash**（草稿匣、垃圾桶不進 corpus）
+> 3. 結果一律以 **Message-ID 去重**（草稿與寄出版 Message-ID 不同，但同信多匣重複會被擋）
 
 **3b. Subject-keyword 搜尋**（v2.4.0+，若 `subject_keywords` 有設定）：
 
@@ -1147,6 +1157,28 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 ```
 
 若無 inline,簡化:`附件覆蓋: 15/15 (100%) ✓`(同 v2.14.0 ↓ 行為)。
+
+### Step 8.5: End-of-run Index Reconcile Gate（強制，mail#261）
+
+> **使用者原話**：「可能有些有歸檔但是 index 沒更新……最後一件事情是要更新 index」。
+> 寫 md 與 append index 非原子——中斷/跳步會留下「md 已寫、index 無 entry」的孤兒（實測 86/135），dedup 隨即失效。本 gate 是 run 的**最後一件事**，未通過前 run 不得宣告成功。
+
+執行（對 `${output_dir}` 全量掃描，不只本次新寫的 md — 首跑會一次性收斂歷史孤兒）：
+
+1. 對每個 `${output_dir}/*.md`：讀 frontmatter `message_id`。
+   - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
+   - `message_id` 已在 `${INDEX_FILE}` keys → `verified` +1。
+   - **不在** → 孤兒：從 frontmatter（`message_id` / `thread_key` / `date` / `sender` / `direction`）**就地補寫 index entry**（append-only），`repaired` +1。
+2. `last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。
+3. `${THREADS_FILE}` 的對應 thread entry 若缺同步補（同 Step 6 規則）。
+4. 輸出一行摘要並附在歸檔報告末尾：
+
+```
+Index Reconcile: 135 md 掃描 — 49 verified, 86 repaired, 0 unparseable ✓
+```
+
+5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。
+6. 全部完成後才 `TaskUpdate reconcile_index → completed`。**跳過本步 = run 失敗**。
 
 ## 注意事項
 
