@@ -1275,20 +1275,22 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 - `date` / `thread_key` = 讀該 `written_path` md 的 **frontmatter**（工具已寫入這兩個 frozen 欄位；乾淨、結構化——與 Phase 1 的 `date` 來源一致，且免依賴 preview 存活）
 - `subject` = **Step 4.5 preview** 的 `id→subject`（frontmatter **無** subject，只有 body `Subject:` 行——preview 是唯一乾淨來源；若 preview slice 未保留 → fallback 讀 body `Subject:` 行，非寫空 subject）
 
-→ 本 run 的 index entry 機械化、`subject` 儘量零 heuristic（僅 preview 遺失才退回 body-line）。Phase 0 補的 message_id 記入一個 set，Phase 1 掃到同 message_id 直接算 `verified`、不重複處理。（無 batch manifest 的 run——例如全走 Step 5.1 fallback——Phase 0 空跑，直接進 Phase 1。）
+→ 本 run 的 index entry 機械化、`subject` 儘量零 heuristic（僅 preview 遺失才退回 body-line）。Phase 0 補的 message_id 記入一個 set，Phase 1 掃到同 message_id 直接算 `verified`、不重複處理。
+
+> **「無 manifest」的兩種情形要區分（不可一律靜默降級）**：(a) 本 run **全走 Step 5.1 fallback**（< 5 封 / enriched / 無 batch）→ 本就沒有 manifest，Phase 0 空跑、直接進 Phase 1，**正常**。(b) 本 run **確實跑過 Step 5.0 batch**、卻取不到 manifest → 這違反 Step 5.0「manifest 必須留存」的契約（#107），**必須在摘要標 ⚠「batch ran but manifest lost — reconcile degraded to Phase 1 heuristic」**，不得當成 (a) 靜默吞掉。兩者 index 完整性都由 Phase 1 兜底（batch md 會被當歷史孤兒補齊），差別只在 (b) 的 subject 退回 body-line heuristic 且揭露契約違反。
 
 **Phase 1：full-scan fallback（歷史孤兒 + 非 manifest 來源）**
 
 1. 對每個 `${output_dir}/*.md`（**僅頂層 glob**，不深入子目錄、不追 Step 2.1 的 symlink 兄弟歸檔——那些只是 read-only 去重來源，絕不寫進本 index）：讀 frontmatter `message_id`。
    - message_id 已在 Phase 0 set 或 `${INDEX_FILE}` keys → `verified` +1（不重複補寫）。
    - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
-   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
+   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。**若 frontmatter 有 `message_id` 但缺 `date` 或 `thread_key`**（罕見——archive-mail 寫的 frontmatter 一律帶這兩欄；只可能是外部/損毀 md）：比照 subject-miss，缺的欄位填空字串並在摘要揭露該檔欄位不全，**不得靜默寫 null**。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
 2. Phase 0 + Phase 1 都補完後，`last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。比較與寫入**只取 `date` 的 `YYYY-MM-DD` 前 10 字**：entry 的 date 可能混雜 `2026-01-13 14:30` 與 ISO `T` 兩種格式，整串字典序比較會錯排。**寫回 `${INDEX_FILE}` 走 temp+rename 原子寫入**（見 Step 6 的原子寫入 note）——本 gate 一次補多筆，中斷不得留半寫 index。
-3. `${THREADS_FILE}` **不在本 gate 內逐孤兒補寫**（frontmatter 沒有 to/cc，無法重建 Step 5.7 要求的 `participants`；threads.json 的規則在 Step 5.7、不是 Step 6）。`repaired > 0` 時，改跑 `/archive-mail-rebuild-threads` 從 md 全量重建 threads.json。
+3. `${THREADS_FILE}` **不在本 gate 內逐孤兒補寫**（frontmatter 沒有 to/cc，無法重建 Step 5.7 要求的 `participants`；threads.json 的規則在 Step 5.7、不是 Step 6）。**Phase 0 新增任一 entry OR Phase 1 `repaired > 0`** 時，改跑 `/archive-mail-rebuild-threads` 從 md 全量重建 threads.json——Phase 0 的機械化補齊同樣是 index 新增，若只看 Phase 1 的 `repaired` 會漏掉「Phase 0 補了 entry 但 Step 5.7 那步被中斷」的 thread-view 過時（happy path 下 Step 5.7 已為 batch md 更新 threads.json，此僅防雙重中斷）。
 4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）。摘要區分 Phase 0（manifest 機械化）與 Phase 1（磁碟重建）：
 
 ```
-Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md 掃描 — 49 verified, 66 repaired（heuristic subject）, 8 unparseable ⚠（列出 8 檔）
+Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md 掃描 — 61 verified（含 Phase 0 補的 12）, 66 repaired（heuristic subject）, 8 unparseable ⚠（列出 8 檔）
 ```
 
 5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。**這不使 run 失敗**——會失敗的是跳過本 gate 或靜默吞掉清單。
