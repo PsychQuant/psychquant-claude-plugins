@@ -766,7 +766,7 @@ False-positive flagging 規則見 `rules/false-positive-detection.md`:
 
 **正解——對 Step 4 去重後的 corpus 依每封的 `mailbox` 做真分區**（無重疊、無雙寫）：
 - **批 B（sent）** = corpus 中 `matchesSpecial(id.mailbox, 該帳號 Sent 實名)` 為真的 ids（比對規則見 Step 3 的 `matchesSpecial`，**勿裸 `==`**）
-- **批 A（received）** = corpus **減去** 批 B
+- **批 A（received）** = corpus **減去** 批 B **再減去下一點的 uncertain-mailbox ids**（uncertain 不進任何 batch，避免同 id 既入批 A 又轉 5.1 而雙寫）
 - 每封的 `mailbox` 在 Step 4.5 preview / Step 3 結果已有，**不需額外 fetch**
 - 無法分類 mailbox 的 id（罕見）→ 留給 **Step 5.1 fallback** 逐封處理（per-email 路徑能從該信自己的 mailbox 正確導 direction）
 
@@ -799,7 +799,7 @@ batch_export_emails_markdown(
 **保留 manifest（供 Step 8.5 未來消費，plugins#110 的事——本次 Step 8.5 未改）**：兩批呼叫回傳的 manifest **必須留存到記憶體**（或 run-scoped 暫存）。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`。
 
 ⚠️ **manifest 欄位的誠實邊界**（downstream 必守）：
-- `status: "error"` item **無** `written_path`／`message_id` → 該 id 必須 (a) 在 Step 7 報告揭露、(b) 走 **Step 5.1 fallback** 補抓；不得當成已寫。
+- `status: "error"` item **恆無** `written_path`；`message_id` **視錯誤階段而定**（write-error / filename-escape-error 兩 branch 仍帶 `message_id`，fetch-error 則無）→ 該 id 一律 (a) 在 Step 7 報告揭露、(b) 走 **Step 5.1 fallback** 補抓（refetch 會自 live email 重取 message_id）；不得當成已寫。
 - `status: "skipped"`（dedup 命中）item 通常**無新** `written_path`。
 - manifest **不帶** `date`／`subject`／`thread_key`。故 Step 6 index / Step 8.5 reconcile 若要這些欄位：`date`／`subject` 取自 **Step 4.5 preview**（id→date/subject），`thread_key`／`sender` 取自**寫出的 md frontmatter**（工具已寫入）。manifest 只提供「哪個 id → 哪個 message_id → 哪個 written_path」的骨架。
 - **Step 8.5 本次未修改**（仍全量重掃 `${output_dir}` frontmatter）；「改消費 manifest 機械化 reconciliation」是 **plugins#110**（stack 在本 PR 上）的工作，非本次已具備的能力。
