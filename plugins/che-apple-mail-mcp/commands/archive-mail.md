@@ -796,13 +796,14 @@ batch_export_emails_markdown(
 
 **dedup**：Step 4 已對 `${INDEX_FILE}` 做 Message-ID dedup，傳入的 ids 已是新信。可選傳 `skip_message_ids_path`（指向一份 INDEX_FILE Message-ID 清單，一行一個）作為 belt-and-suspenders 防 index/corpus drift；工具會把命中者標 `status: "skipped"` 不重寫。
 
-**保留 manifest（供 Step 8.5 未來消費，plugins#110 的事——本次 Step 8.5 未改）**：兩批呼叫回傳的 manifest **必須留存到記憶體**（或 run-scoped 暫存）。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`。
+**保留 manifest（供 Step 8.5 Phase 0 消費，plugins#110）**：兩批呼叫回傳的 manifest **必須留存到記憶體**（或 run-scoped 暫存）供 Step 8.5 的 manifest-driven Phase 0 使用。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`（惟 `status:"written"` item **必帶** `message_id` + `written_path`——見下方誠實邊界）。
 
 ⚠️ **manifest 欄位的誠實邊界**（downstream 必守）：
 - `status: "error"` item **恆無** `written_path`；`message_id` **視錯誤階段而定**（write-error / filename-escape-error 兩 branch 仍帶 `message_id`，fetch-error 則無）→ 該 id 一律 (a) 在 Step 7 報告揭露、(b) 走 **Step 5.1 fallback** 補抓（refetch 會自 live email 重取 message_id）；不得當成已寫。
 - `status: "skipped"`（dedup 命中）item 通常**無新** `written_path`。
-- manifest **不帶** `date`／`subject`／`thread_key`。故 Step 6 index / Step 8.5 reconcile 若要這些欄位：`date`／`subject` 取自 **Step 4.5 preview**（id→date/subject），`thread_key`／`sender` 取自**寫出的 md frontmatter**（工具已寫入）。manifest 只提供「哪個 id → 哪個 message_id → 哪個 written_path」的骨架。
-- **Step 8.5 本次未修改**（仍全量重掃 `${output_dir}` frontmatter）；「改消費 manifest 機械化 reconciliation」是 **plugins#110**（stack 在本 PR 上）的工作，非本次已具備的能力。
+- manifest **不帶** `date`／`subject`／`thread_key`。故 Step 6 index / Step 8.5 Phase 0 若要這些欄位：`date`／`thread_key` 取自**寫出的 md frontmatter**（工具已寫入這兩個 frozen 欄位）；`subject` **不在** frontmatter（只在 body `Subject:` 行）→ 取自 **Step 4.5 preview** 的 `id→subject`（乾淨，非 body-line heuristic）。manifest 只提供「哪個 id → 哪個 message_id → 哪個 written_path」的骨架。
+  > **`id→subject` preview slice 必須保留到 Step 8.5 Phase 0**：此為 Step 5.0 已依賴的同一份記憶體狀態（`opts.filenames` 也用它，見上方），Phase 0 只是延長其存活期（4.5→8.5）。若 agent 未保留、Phase 0 取不到某 id 的乾淨 subject → **fallback 讀該 md 的 body `Subject:` 行**（即 Phase 1 的 heuristic），而非寫空 subject。
+- **Step 8.5 本次由 plugins#110 改為兩 phase**：Phase 0 消費本 run manifest 做機械化 reconciliation（乾淨、零 body-heuristic），Phase 1 仍全量重掃 `${output_dir}` frontmatter 收斂歷史孤兒——manifest 消費是**本次已落地**的能力。
 
 **批次失敗處理**：整批呼叫失敗（如 lock busy #236、FDA 不可用）→ log 後 **fallback 到 Step 5.1** per-email；部分 item `status:"error"` → 該 id 走 Step 5.1 補抓，其餘接受 batch 結果。
 
@@ -1164,7 +1165,7 @@ v2.6.0+ 在每個 email entry 多記一個 `thread_key`，方便反向查詢。
 
 > **`last_updated` 語意（mail#261）**：email_index.json 的頂層 `last_updated` = 所有 entry 的 **max(date)**（語料最新歸檔日，非執行日）——與 threads.json（Step 5.7）用**目前時間**不同，兩者刻意分工：前者答「語料多新」，後者答「索引多新」。
 
-> **原子寫入（plugins#110，durable fix）**：寫 `${INDEX_FILE}` **一律 temp+rename**——先寫 `${INDEX_FILE}.tmp`（完整 JSON），再 `os.replace(tmp, INDEX_FILE)`（同檔系統的 atomic rename）。中斷只會留下半寫的 `.tmp`（下次覆寫），**絕不**讓 `${INDEX_FILE}` 本身變成半寫/損壞的 JSON。這是 #261 diagnosis「先解有 gate、durable fix 待補」的根治：Step 8.5 reconcile gate 擋的是 cross-file 孤兒（md 有、index 無 entry），原子寫入擋的是 single-file partial-write 損壞——兩者互補。Step 6 與 Step 8.5 的 index 寫入都走此路徑。
+> **原子寫入（plugins#110，partial-write-safe）**：寫 `${INDEX_FILE}` **一律 temp+rename**——先寫 `${INDEX_FILE}.tmp`（完整 JSON），再 `os.replace(tmp, INDEX_FILE)`（同檔系統的 atomic rename）。中斷（agent abort / 寫到一半失敗）只會留下半寫的 `.tmp`（下次覆寫），**絕不**讓 `${INDEX_FILE}` 本身變成半寫/損壞的 JSON。這是 #261 diagnosis「先解有 gate、durable fix 待補」的根治，針對的威脅是 **interrupted/partial write**；**嚴格 power-fail durability** 另需 `fsync(檔案)+fsync(目錄)`（本 SOP 威脅模型不含斷電，故不強制，但要斷電安全時可加）。Step 8.5 reconcile gate 擋的是 cross-file 孤兒（md 有、index 無 entry），原子寫入擋的是 single-file partial-write 損壞——兩者互補。Step 6 與 Step 8.5 的 index 寫入都走此路徑。
 
 ### Step 7: 輸出報告
 
@@ -1270,11 +1271,11 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 
 若本 run 走了 Step 5.0 batch 路徑、manifest 仍在記憶體：對每個 `status:"written"` item，**三源合併**補齊 index entry（`message_id` 已在 `${INDEX_FILE}` keys 則跳過、算 `verified`）：
 - `file` = manifest item 的 `written_path` basename（**權威**，非猜檔名）
-- key `message_id` = item 的 `message_id`（**權威**，免重讀 frontmatter）
-- `date` / `subject` = **Step 4.5 preview**（id→date/subject，乾淨——**不用** Phase 1 的 `Subject:` 行 heuristic）
-- `thread_key` = 讀該 `written_path` md 的 frontmatter（乾淨讀）
+- key `message_id` = item 的 `message_id`（**權威**，免重讀 frontmatter；`status:"written"` item 必帶）
+- `date` / `thread_key` = 讀該 `written_path` md 的 **frontmatter**（工具已寫入這兩個 frozen 欄位；乾淨、結構化——與 Phase 1 的 `date` 來源一致，且免依賴 preview 存活）
+- `subject` = **Step 4.5 preview** 的 `id→subject`（frontmatter **無** subject，只有 body `Subject:` 行——preview 是唯一乾淨來源；若 preview slice 未保留 → fallback 讀 body `Subject:` 行，非寫空 subject）
 
-→ 本 run 的 index entry 機械化、`subject` 零 heuristic。Phase 0 補的 message_id 記入一個 set，Phase 1 掃到同 message_id 直接算 `verified`、不重複處理。（無 batch manifest 的 run——例如全走 Step 5.1 fallback——Phase 0 空跑，直接進 Phase 1。）
+→ 本 run 的 index entry 機械化、`subject` 儘量零 heuristic（僅 preview 遺失才退回 body-line）。Phase 0 補的 message_id 記入一個 set，Phase 1 掃到同 message_id 直接算 `verified`、不重複處理。（無 batch manifest 的 run——例如全走 Step 5.1 fallback——Phase 0 空跑，直接進 Phase 1。）
 
 **Phase 1：full-scan fallback（歷史孤兒 + 非 manifest 來源）**
 
