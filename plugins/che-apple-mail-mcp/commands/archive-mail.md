@@ -66,7 +66,7 @@ TaskCreate(subject="phase2_3_preview_and_confirm",
            description="Step 4.5: 若待歸檔 ≥ 5 封 OR 有 ⚠⚠ flag OR destructive op → Phase 2 preview (thread breakdown + flags) + Phase 3 operation confirmation (file count + attachment size)。等 user 確認(a)/排除(b)/改 filter(c)/取消(d)。User skip 條件見 confirmation-triggers.md。")
 
 TaskCreate(subject="fetch_and_write_markdown",
-           description="Step 5: 對每封新郵件 get_email(format='text', 用 display name) → YAML frontmatter (message_id/thread_key/in_reply_to/date/sender/direction) + body markdown，按檔名規則(YYYY-MM-DD_subject-hyphenated[-N].md, 截 50 graphemes) 寫到 ${output_dir}/。")
+           description="Step 5: 主路徑 Step 5.0 — 待歸檔 ≥ 5 封且非 enriched → batch_export_emails_markdown 依 direction 拆兩批(received / sent, 帶 opts.filenames 保留命名慣例, 不帶 include_attachments)伺服器端匯出, 留存 manifest 供 Step 8.5。Fallback Step 5.1 — 對每封 get_email(format='text', 用 display name) → 同 6-field frontmatter + body markdown, 檔名規則(YYYY-MM-DD_subject-hyphenated[-N].md, 截 50 graphemes) 寫到 ${output_dir}/。")
 
 TaskCreate(subject="download_and_classify_attachments",
            description="Step 5.5: list_attachments → 用 classify() 分 data/document → save_attachment 到 data_dir / documents_dir/{email_stem}/。Markdown 插 Attachments: 區塊。回覆信無 byte 附件但引用原信附件 → cross-reference。")
@@ -743,7 +743,51 @@ False-positive flagging 規則見 `rules/false-positive-detection.md`:
 
 ### Step 5: 生成 Markdown
 
-對每封新郵件，建立 Markdown 檔案。
+對每封新郵件，建立 Markdown 檔案。**主路徑走 server-side 批次匯出（Step 5.0）；per-email `get_email` 迴圈（Step 5.1）為 fallback。**
+
+#### Step 5.0: 批次匯出主路徑（plugins#107，che-apple-mail-mcp#232 SOP 側落地）
+
+**觸發條件（全部成立才走批次）**：
+- 待歸檔（Step 4 過濾後）**≥ 5 封**（對齊 Step 4.5 confirmation gate 門檻）
+- **未**設 `enrichment: summary+todos`（enriched template 的 AI 摘要/待辦無法伺服器端產 → 走 Step 5.1 fallback）
+
+否則走 Step 5.1 per-email fallback（< 5 封延遲可接受；enriched 需 client-side AI）。
+
+**為什麼**：`batch_export_emails_markdown`（binary v2.18.0+ canonical 名，舊名 `export_emails_markdown` 為 deprecated alias）一次呼叫在**伺服器端**匯出整批，取代「per-email `get_email(format='text')` + client-side 逐封轉錄」——大批量（實測 63 封）從數十次 IPC + 轉錄降為兩次呼叫。工具寫出的 **frozen 6-field frontmatter 與本 SOP simple template 逐欄相同**（`message_id`/`thread_key`（同 `stripReplyPrefixes` 去前綴規則）/`in_reply_to`/`date`（原始 offset）/`sender`（剝 display name）/`direction`），body header 為 `Subject/From/To/Cc(有才印)/Date`（simple template 的 superset）——**無 frontmatter 對齊縫隙**。
+
+**依 direction 拆兩批（關鍵）**：工具用**單一** `mailbox` 參數標整批 direction（像 Sent 匣 → `sent`，否則 `received`）。corpus 通常 mixed（收+寄），故拆兩次呼叫：
+
+```
+# 批 A：收到的信（recipe (1)/3b/3c 的 ids）——不帶 Sent mailbox → direction=received
+batch_export_emails_markdown(
+  ids: [<received ids>],
+  output_dir: "${output_dir}",
+  opts: { filenames: <見下 filename map> }
+)
+# 批 B：寄出的信（recipe (2) 的 scoped Sent ids，見 Step 3 #109）——帶該帳號 Sent 實名 → direction=sent
+batch_export_emails_markdown(
+  ids: [<sent ids>],
+  mailbox: "<該帳號 Sent 實名>",
+  output_dir: "${output_dir}",
+  opts: { filenames: <見下 filename map> }
+)
+```
+
+**`opts.filenames`（保留歷史命名慣例，必傳）**：工具**預設** filename 吃已 `stripReplyPrefixes` 的 threadKey **且合併連續 dash**（`Re: x` → `x`），會偏離本 SOP 的 50 檔命名慣例（保留 `Re--`、不合併）。故對每個 id 用 **Step 5.1 的 filename 規則**（見下方「檔名格式」——從 raw subject 算，保留 `Re:`→`Re--`、不合併連續 `-`、截 50 graphemes、`-N` 碰撞後綴）算出檔名，組成 `{ id: "YYYY-MM-DD_{subject}.md", … }` 傳入。所需 (id, date, subject) 在 Step 4.5 preview 已有，**不需 body fetch**。
+
+> **`-N` 碰撞後綴的 on-disk 交互**：SOP 的 `-N` 靠 Glob 既有 `YYYY-MM-DD_{subject}*.md`（見下）。算 filenames map 時，同一 (date,subject) 在**本批內**與**磁碟既存**都要納入計數（先 Glob 磁碟現有最大 `-N`，本批內多封再依序遞增），避免與既有檔撞名。
+
+**不帶 `opts.include_attachments`**：工具的附件分流只按副檔名（data ext → `output_dir/data/`、其餘 → `output_dir/attachments/<stem>/`），**缺** SOP Step 5.5 的 keyword classify、inline `cid:` 圖片、cross-reference。附件仍走 client-side **Step 5.5**（對 batch 已寫出的每封 md 照跑）。
+
+**dedup**：Step 4 已對 `${INDEX_FILE}` 做 Message-ID dedup，傳入的 ids 已是新信。可選傳 `skip_message_ids_path`（指向一份 INDEX_FILE Message-ID 清單，一行一個）作為 belt-and-suspenders 防 index/corpus drift；工具會把命中者標 `status: "skipped"` 不重寫。
+
+**保留 manifest 供 Step 8.5 消費（plugins#110）**：兩批呼叫回傳的 manifest（`{output_dir, written, errors, skipped, items:[{id, message_id, written_path, status, attachments, …}]}`）**必須留存到記憶體**（或寫入 run-scoped 暫存），Step 8.5 reconcile gate 會直接消費（機械化 reconciliation，免重掃 frontmatter）。任何 `status: "error"` 的 item **必須**在 Step 7 報告揭露、不得靜默。
+
+**批次失敗處理**：整批呼叫失敗（如 lock busy #236、FDA 不可用）→ log 後 **fallback 到 Step 5.1** per-email；部分 item `status:"error"` → 該 id 走 Step 5.1 補抓，其餘接受 batch 結果。
+
+#### Step 5.1: Per-email fallback（原 Step 5 邏輯）
+
+以下為 fallback 路徑（< 5 封 / enriched template / batch 失敗）。對每封新郵件，建立 Markdown 檔案。
 
 > **⚠️ 再次提醒（來自 Step 3）**：在 Step 5 呼叫 `mcp__plugin_che-apple-mail-mcp_mail__get_email` 讀取內文時，同樣要用 **display name（email 地址）**作為 `account_name`，不可用 `list_accounts` 回的 `ews://` URL 或 UUID——否則 AppleScript error -1728。
 
@@ -885,6 +929,8 @@ direction: received
 ### Step 5.5: 下載並分流附件
 
 對每封已歸檔的新郵件,**處理兩類**:explicit MIME attachments(由 `list_attachments` 回傳)+ inline `cid:` 圖片(由 HTML body 解析,v2.15.0+ 加,issue #45)。
+
+> **批次路徑（Step 5.0）的 stem 來源**：走 batch 匯出時，每封信的 `email_md_stem` 取自 manifest 的 `written_path`（basename 去 `.md`）或 Step 5.0 傳入的 `opts.filenames` map——與 Step 5.1 的檔名規則同源，附件分流邏輯不變（batch 不帶 `include_attachments`，附件一律由本 step 處理）。
 
 #### Step 5.5.0: Inline `cid:` images(v2.15.0+,resolves #45)
 
