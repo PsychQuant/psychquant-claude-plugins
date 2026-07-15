@@ -472,11 +472,13 @@ participant_aliases:                           # 成員別名（用於 audit 報
 使用 `mcp__plugin_che-apple-mail-mcp_mail__search_emails` 搜尋：
 
 1. **搜尋收到的郵件**（sender 包含 filter）
-2. **搜尋寄出的郵件**（在 Sent 信箱搜尋）
+2. **搜尋寄出的郵件**（scoped 到 Sent 信箱）
 
-需要先用 `mcp__plugin_che-apple-mail-mcp_mail__list_accounts` 取得帳號列表。
+需要先用 `mcp__plugin_che-apple-mail-mcp_mail__list_accounts` 取得帳號列表，並對每個帳號跑 `get_special_mailboxes(account_id=...)` 解析 **Sent / Drafts / Trash 實名**（#179；不要 hardcode 英文名——本地化帳號可能叫「寄件備份」「草稿」「垃圾桶」）。實名同時供下方 (1) 的後過濾與 (2) 的 scope 使用（plugins#109 機械化）。
 
-對每個帳號執行：
+對每個帳號執行兩類搜尋：
+
+**(1) 收到的郵件**（跨匣搜尋，sender 比對 filter）：
 ```
 mcp__plugin_che-apple-mail-mcp_mail__search_emails(
   account_name: "帳號名稱",
@@ -485,6 +487,20 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
   limit: 100
 )
 ```
+結果**必須**對每筆的 `mailbox` 欄位後過濾：**丟棄** Drafts / Trash 實名，以及 `exclude_mailboxes` 配置列出的匣——草稿、垃圾桶不進 corpus。
+
+**(2) 寄出的郵件**（scoped 搜尋，recipient 比對 filter）：
+```
+mcp__plugin_che-apple-mail-mcp_mail__search_emails(
+  account_name: "帳號名稱",
+  query: "${filter}",
+  field: "recipient",
+  mailbox: "<該帳號的 Sent 實名>",
+  limit: 100
+)
+```
+
+> **Tier 2 兜底（scoped 回 0 筆時）**：`mailbox` 參數在 SQLite 層以 percent-encoding 比對 mailbox URL，CJK / `[Gmail]` 括號路徑有編碼不匹配的已知風險。scoped 搜尋回 0 筆、但該帳號理應有寄出信 → 退回 **unscoped** 搜尋（同上但不帶 `mailbox`），再對結果 `mailbox` 欄位後過濾：**只保留** Sent 實名。兩層結果都以 Message-ID 去重收斂（見下方紀律 3）。
 
 > **⚠️ account_name 陷阱（fixes #15）— 全域適用，`search_emails` 與 `get_email` 皆然**
 > `list_accounts` 對 Exchange 帳號回傳的 `name` 是 `ews://AAMkA...` 形式的內部 URL；`uuid` 也不接受。後續呼叫 `get_email` / `search_emails` 時必須改用 **display name**（email 地址，例如 `user@example.com`），否則會觸發：
@@ -498,9 +514,9 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 
 > **⚠️ All Mail 超集陷阱（mail#261）— 寄出信判定不可用 `[Gmail]/全部郵件`**
 > Gmail 的「全部郵件」是超集：**同時包含草稿**。用「全部郵件 + sender 搜尋」撈寄出信會把同一封信的**草稿版與寄出版各算一次**，甚至把未寄出的草稿當寄出信歸檔（可重現徵兆：同一 thread 出現「相同時間戳」的 `全部郵件` + `草稿` 配對——只有無配對草稿的才是真寄出）。
-> 紀律：
-> 1. **寄出信一律搜 Sent mailbox**（Gmail 為 `[Gmail]/寄件備份`；per-account 實名可用 `get_special_mailboxes(account_id=...)` 取得，#179）
-> 2. **落實 `exclude_mailboxes` 的 Drafts/Trash**（草稿匣、垃圾桶不進 corpus）——這兩個匣的 per-account 實名同樣用 `get_special_mailboxes` 解析（本地化帳號可能叫「草稿」「垃圾桶」，不要 hardcode 英文名）。`search_emails` 的呼叫簽名沒有 mailbox scope 參數時，**對回傳結果的 `mailbox` 欄位做後過濾**（留 Sent 實名、丟 Drafts/Trash 實名）
+> 紀律（機械化 recipe 見上方 (1)/(2)，plugins#109）：
+> 1. **寄出信一律搜 Sent mailbox** — 由上方 recipe (2) 的 `mailbox: <Sent 實名>` scoped 呼叫落實；scoped 回 0 筆走 Tier 2 兜底（unscoped + `mailbox` 欄位後過濾只保留 Sent）
+> 2. **落實 Drafts/Trash 排除** — 由上方 recipe (1) 的結果後過濾落實（丟 Drafts / Trash 實名 + `exclude_mailboxes` 配置列出的匣）；實名一律來自 `get_special_mailboxes`，不 hardcode 英文名
 > 3. 結果一律以 **Message-ID 去重**（草稿與寄出版 Message-ID 不同，但同信多匣重複會被擋）
 
 **3b. Subject-keyword 搜尋**（v2.4.0+，若 `subject_keywords` 有設定）：
@@ -509,6 +525,8 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 ```
 search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
 ```
+
+結果同樣套 recipe (1) 的 Drafts / Trash 後過濾（subject 搜尋跨匣，草稿同樣會混進來，plugins#109）。
 
 將結果加入 corpus。
 
