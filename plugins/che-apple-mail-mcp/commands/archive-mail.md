@@ -539,7 +539,7 @@ search_emails(account_name: "...", query: keyword, field: "subject", limit: 100)
 **3c. Thread-subject 擴展**（v2.4.0+，自動）：
 
 對步驟 3 / 3b 找到的每封信：
-1. 提取 bare subject（去掉 `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` 前綴，用正則 `^(Re|RE|Fwd|FW|转发|轉寄):\s*`）
+1. 提取 bare subject（去掉 `Re:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` / `回覆:` / `回复:` 前綴，**不分大小寫**，用正則 `(?i)^(Re|Fwd|FW|转发|轉寄|回覆|回复):\s*`——對齊 batch 工具與 frontmatter thread_key 的 superset，plugins#107 Fix 3）
 2. 用 bare subject 搜尋：`search_emails(query: bare_subject, field: "subject", limit: 100)`
 3. 對結果套用上方 **mailbox 後過濾規則**的統一 drop-set（thread 擴展跨匣，是草稿重新混入的第二條路徑，plugins#109 verify），再加入 corpus
 
@@ -562,7 +562,7 @@ Refinement executes after fetch and before dedup,對應 spec `openspec/specs/arc
 ```python
 import re
 
-_RE_FWD_PREFIX = re.compile(r'^(Re|RE|Fwd|FW|转发|轉寄):\s*')
+_RE_FWD_PREFIX = re.compile(r'^(Re|Fwd|FW|转发|轉寄|回覆|回复):\s*', re.IGNORECASE)  # superset, plugins#107 Fix 3
 
 def _bare_email(addr_field):
     """Strip display name. '"Name" <foo@bar>' → 'foo@bar'; lowercase."""
@@ -571,7 +571,7 @@ def _bare_email(addr_field):
     return raw.strip().strip('"').lower()
 
 def _bare_subject(subject):
-    """Strip leading Re:/Fwd:/转发:/轉寄: prefixes; lowercase."""
+    """Strip leading Re:/Fwd:/FW:/转发:/轉寄:/回覆:/回复: prefixes (case-insensitive); lowercase."""
     s = subject or ""
     while True:
         m = _RE_FWD_PREFIX.match(s)
@@ -753,35 +753,56 @@ False-positive flagging 規則見 `rules/false-positive-detection.md`:
 
 否則走 Step 5.1 per-email fallback（< 5 封延遲可接受；enriched 需 client-side AI）。
 
-**為什麼**：`batch_export_emails_markdown`（binary v2.18.0+ canonical 名，舊名 `export_emails_markdown` 為 deprecated alias）一次呼叫在**伺服器端**匯出整批，取代「per-email `get_email(format='text')` + client-side 逐封轉錄」——大批量（實測 63 封）從數十次 IPC + 轉錄降為兩次呼叫。工具寫出的 **frozen 6-field frontmatter 與本 SOP simple template 逐欄相同**（`message_id`/`thread_key`（同 `stripReplyPrefixes` 去前綴規則）/`in_reply_to`/`date`（原始 offset）/`sender`（剝 display name）/`direction`），body header 為 `Subject/From/To/Cc(有才印)/Date`（simple template 的 superset）——**無 frontmatter 對齊縫隙**。
+**為什麼**：`batch_export_emails_markdown`（binary v2.18.0+ canonical 名，舊名 `export_emails_markdown` 為 deprecated alias）一次呼叫在**伺服器端**匯出整批，取代「per-email `get_email(format='text')` + client-side 逐封轉錄」——大批量（實測 63 封）從數十次 IPC + 轉錄降為兩次呼叫。
 
-**依 direction 拆兩批（關鍵）**：工具用**單一** `mailbox` 參數標整批 direction（像 Sent 匣 → `sent`，否則 `received`）。corpus 通常 mixed（收+寄），故拆兩次呼叫：
+工具寫出的 frozen frontmatter **6 個核心欄位的名稱與順序** 與本 SOP simple template 相同（`message_id`/`thread_key`/`in_reply_to`/`date`/`sender`/`direction`），body header 為 `Subject/From/To/Cc(有才印)/Date`（simple template 的 superset）。但**不是逐位元相同**，有三處工具側的 superset 行為，Step 5.1 fallback 已依 Fix 3 對齊（見下方 frontmatter 欄位說明），避免同一 thread 因寫入路徑不同而 frontmatter 漂移：
+- `thread_key`：工具的 `stripReplyPrefixes` 去除**超集**前綴（多 `回覆:`/`回复:`，且**全 case-insensitive**），比 SOP 舊 thread_key 規則廣。
+- `sender`：工具剝 display name **並轉小寫**（`bareEmail().lowercased()`）。
+- 工具在 6 核心欄位後**多附一個 `body_type: text|html` 第 7 欄位**（keyed consumer 無害，但非「無縫隙」）。
+
+**依 direction 拆兩批（關鍵——按每封信自己的 mailbox 分區，不是按 recipe 來源）**：工具用**單一** `mailbox` 參數標**整批** direction，且只當 label（`mailbox` 含 `sent`(不分大小寫) 或 `寄件` → 整批 `sent`，否則 `received`；ids 是 rowId，`mailbox` 從不當查詢 selector）。工具**不會逐信判斷** direction，所以每批的 id 必須是**純**同向。
+
+⚠️ **絕不可按 recipe 來源拆**：recipe (1) 是跨匣 sender 搜尋、3b/3c 是**跨匣 subject 搜尋**，統一 drop-set 只丟 Drafts/Trash（**Sent 是 keep**），所以使用者**自己的寄出信會經 3b/3c 進 corpus**。若把 3b/3c 全歸「received 批」，這些寄出信會被誤標 `direction: received`（subject_keywords / zero-arg 模式整個 corpus 來自 3b/3c 時，**每封寄出信都誤標**），且同一 id 可能同時有 recipe (2) 與 3c 來源 → 兩批雙寫、`message_count` 灌水。
+
+**正解——對 Step 4 去重後的 corpus 依每封的 `mailbox` 做真分區**（無重疊、無雙寫）：
+- **批 B（sent）** = corpus 中 `matchesSpecial(id.mailbox, 該帳號 Sent 實名)` 為真的 ids（比對規則見 Step 3 的 `matchesSpecial`，**勿裸 `==`**）
+- **批 A（received）** = corpus **減去** 批 B
+- 每封的 `mailbox` 在 Step 4.5 preview / Step 3 結果已有，**不需額外 fetch**
+- 無法分類 mailbox 的 id（罕見）→ 留給 **Step 5.1 fallback** 逐封處理（per-email 路徑能從該信自己的 mailbox 正確導 direction）
 
 ```
-# 批 A：收到的信（recipe (1)/3b/3c 的 ids）——不帶 Sent mailbox → direction=received
+# 批 A：received（corpus − 批 B）——不帶 mailbox → direction=received
 batch_export_emails_markdown(
-  ids: [<received ids>],
+  ids: [<批 A ids：mailbox 非 Sent>],
   output_dir: "${output_dir}",
   opts: { filenames: <見下 filename map> }
 )
-# 批 B：寄出的信（recipe (2) 的 scoped Sent ids，見 Step 3 #109）——帶該帳號 Sent 實名 → direction=sent
+# 批 B：sent（mailbox matchesSpecial(Sent)）——mailbox 傳「字面 "Sent"」而非本地化實名
 batch_export_emails_markdown(
-  ids: [<sent ids>],
-  mailbox: "<該帳號 Sent 實名>",
+  ids: [<批 B ids：mailbox 為 Sent>],
+  mailbox: "Sent",
   output_dir: "${output_dir}",
   opts: { filenames: <見下 filename map> }
 )
 ```
 
-**`opts.filenames`（保留歷史命名慣例，必傳）**：工具**預設** filename 吃已 `stripReplyPrefixes` 的 threadKey **且合併連續 dash**（`Re: x` → `x`），會偏離本 SOP 的 50 檔命名慣例（保留 `Re--`、不合併）。故對每個 id 用 **Step 5.1 的 filename 規則**（見下方「檔名格式」——從 raw subject 算，保留 `Re:`→`Re--`、不合併連續 `-`、截 50 graphemes、`-N` 碰撞後綴）算出檔名，組成 `{ id: "YYYY-MM-DD_{subject}.md", … }` 傳入。所需 (id, date, subject) 在 Step 4.5 preview 已有，**不需 body fetch**。
+> **`mailbox: "Sent"` 用字面、不用實名（locale-robust）**：工具的 direction label 是對 `mailbox` 字串做 `sent`/`寄件` **substring** 判斷。本地化 Sent 實名（日文 `送信済み`、韓文 `보낸편지함`、中文 `已寄郵件`）兩 token 皆不含 → 會靜默 fall through 成 `received`。因 `mailbox` 只當 label 不做查詢，傳保證命中的字面 `"Sent"` 最穩。批 A **不帶** `mailbox`（→ received）。
 
-> **`-N` 碰撞後綴的 on-disk 交互**：SOP 的 `-N` 靠 Glob 既有 `YYYY-MM-DD_{subject}*.md`（見下）。算 filenames map 時，同一 (date,subject) 在**本批內**與**磁碟既存**都要納入計數（先 Glob 磁碟現有最大 `-N`，本批內多封再依序遞增），避免與既有檔撞名。
+**`opts.filenames`（保留歷史命名慣例，必傳——但只是「請求」名，不是最終權威）**：工具**預設** filename 吃已 `stripReplyPrefixes` 的 threadKey **且合併連續 dash**（`Re: x` → `x`），會偏離本 SOP 的 50 檔命名慣例（保留 `Re--`、不合併）。故對每個 id 用 **Step 5.1 的 filename 規則**（見下方「檔名格式」——從 raw subject 算，保留 `Re:`→`Re--`、不合併連續 `-`、截 50 graphemes、`-N` 碰撞後綴）算出檔名，組成 `{ id: "YYYY-MM-DD_{subject}.md", … }` 傳入。所需 (id, date, subject) 在 Step 4.5 preview 已有，**不需 body fetch**。
+
+> **最終檔名以 manifest `written_path` 為準（關鍵）**：工具對**每個** filename branch（含 `opts.filenames` override）都會 seed 自 output_dir 既存 `.md`（不分大小寫）再套 `uniquify()`，故傳入的名字若與**磁碟既存**或**跨兩批（批 A 先寫、批 B 後寫）**撞名，工具會自行加 `-N` 後綴寫成另一個檔。因此 `opts.filenames[id]` 只是**請求**名——client 端算的 `-N`（下方 Glob）是 best-effort，工具的 cross-call、case-insensitive `uniquify` **贏**。**任何 downstream 用途（Step 5.5 的 stem、Step 6 index 的 `file`）一律讀回 manifest item 的 `written_path`（basename），絕不用 `opts.filenames` map**。client 端仍算 `-N`（同一 (date,subject) 先 Glob 磁碟現有最大 `-N`、本批內多封依序遞增）只是為了讓請求名盡量命中、減少工具再改名，非最終權威。
 
 **不帶 `opts.include_attachments`**：工具的附件分流只按副檔名（data ext → `output_dir/data/`、其餘 → `output_dir/attachments/<stem>/`），**缺** SOP Step 5.5 的 keyword classify、inline `cid:` 圖片、cross-reference。附件仍走 client-side **Step 5.5**（對 batch 已寫出的每封 md 照跑）。
 
 **dedup**：Step 4 已對 `${INDEX_FILE}` 做 Message-ID dedup，傳入的 ids 已是新信。可選傳 `skip_message_ids_path`（指向一份 INDEX_FILE Message-ID 清單，一行一個）作為 belt-and-suspenders 防 index/corpus drift；工具會把命中者標 `status: "skipped"` 不重寫。
 
-**保留 manifest 供 Step 8.5 消費（plugins#110）**：兩批呼叫回傳的 manifest（`{output_dir, written, errors, skipped, items:[{id, message_id, written_path, status, attachments, …}]}`）**必須留存到記憶體**（或寫入 run-scoped 暫存），Step 8.5 reconcile gate 會直接消費（機械化 reconciliation，免重掃 frontmatter）。任何 `status: "error"` 的 item **必須**在 Step 7 報告揭露、不得靜默。
+**保留 manifest（供 Step 8.5 未來消費，plugins#110 的事——本次 Step 8.5 未改）**：兩批呼叫回傳的 manifest **必須留存到記憶體**（或 run-scoped 暫存）。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`。
+
+⚠️ **manifest 欄位的誠實邊界**（downstream 必守）：
+- `status: "error"` item **無** `written_path`／`message_id` → 該 id 必須 (a) 在 Step 7 報告揭露、(b) 走 **Step 5.1 fallback** 補抓；不得當成已寫。
+- `status: "skipped"`（dedup 命中）item 通常**無新** `written_path`。
+- manifest **不帶** `date`／`subject`／`thread_key`。故 Step 6 index / Step 8.5 reconcile 若要這些欄位：`date`／`subject` 取自 **Step 4.5 preview**（id→date/subject），`thread_key`／`sender` 取自**寫出的 md frontmatter**（工具已寫入）。manifest 只提供「哪個 id → 哪個 message_id → 哪個 written_path」的骨架。
+- **Step 8.5 本次未修改**（仍全量重掃 `${output_dir}` frontmatter）；「改消費 manifest 機械化 reconciliation」是 **plugins#110**（stack 在本 PR 上）的工作，非本次已具備的能力。
 
 **批次失敗處理**：整批呼叫失敗（如 lock busy #236、FDA 不可用）→ log 後 **fallback 到 Step 5.1** per-email；部分 item `status:"error"` → 該 id 走 Step 5.1 補抓，其餘接受 batch 結果。
 
@@ -914,14 +935,15 @@ direction: received
 
 **Frontmatter 欄位說明**：
 - `message_id`: 該封信的 RFC 5322 Message-ID（用引號包住，避免 YAML 解析角括號）
-- `thread_key`: 依下列規則計算的 bare subject：
-  1. 去掉前綴 `Re:` / `RE:` / `Fwd:` / `FW:` / `转发:` / `轉寄:`（重複出現多次也全部去除）
+- `thread_key`: 依下列規則計算的 bare subject（**對齊 batch 工具的 `stripReplyPrefixes`——plugins#107 Fix 3**，兩路徑同規則才不會讓同一 thread 因寫入路徑不同而 frontmatter 漂移、碎裂 threads.json）：
+  1. 去掉前綴 `Re:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` / `回覆:` / `回复:`——**全部不分大小寫**（`re:` / `fw:` / `fwd:` 同樣去除），重複出現多次也全部去除
   2. 去除首尾空白
-  3. 保留原始大小寫和標點
+  3. 保留原始（去前綴後的）大小寫和標點
   4. 若結果為空，用 `no-subject`
+  > **歷史檔 caveat**：本規則之前的舊版不去 `回覆:`/`回复:` 且區分大小寫；在此之前歸檔的 md 其 thread_key 可能仍帶 `回覆:` 前綴，與新檔的 thread_key 分屬兩 thread。若某中文回覆 thread 出現此分裂，跑 `/archive-mail-rebuild-threads` 以新規則全量重算即可收斂。
 - `in_reply_to`: 若有，來自郵件的 `In-Reply-To` header；若 MCP 未暴露，從 body 的 quote intro 嘗試提取第一個 Message-ID，否則留空
-- `date`: ISO 8601 UTC 時間
-- `sender`: 寄件人 email 地址（display name 剝除）
+- `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）
+- `sender`: 寄件人 email 地址（display name 剝除，**並轉小寫**——對齊 batch 工具的 `bareEmail().lowercased()`，否則 threads.json 的 participant 去重會把 `A@x` 與 `a@x` 當兩人）
 - `direction`: `received` 或 `sent`
 
 這些 frontmatter 欄位是 **canonical truth**——`.threads.json` 僅為衍生索引。
@@ -930,7 +952,7 @@ direction: received
 
 對每封已歸檔的新郵件,**處理兩類**:explicit MIME attachments(由 `list_attachments` 回傳)+ inline `cid:` 圖片(由 HTML body 解析,v2.15.0+ 加,issue #45)。
 
-> **批次路徑（Step 5.0）的 stem 來源**：走 batch 匯出時，每封信的 `email_md_stem` 取自 manifest 的 `written_path`（basename 去 `.md`）或 Step 5.0 傳入的 `opts.filenames` map——與 Step 5.1 的檔名規則同源，附件分流邏輯不變（batch 不帶 `include_attachments`，附件一律由本 step 處理）。
+> **批次路徑（Step 5.0）的 stem 來源**：走 batch 匯出時，每封信的 `email_md_stem` **一律取自 manifest item 的 `written_path`（basename 去 `.md`）**，**不可**用 Step 5.0 傳入的 `opts.filenames` map——工具可能因撞名而把請求名加 `-N`（見 Step 5.0），只有 `written_path` 是實際寫出的檔名。`status:"error"` 的 item 無 `written_path`（該 id 已轉 Step 5.1 補抓），不在此處理。附件分流邏輯不變（batch 不帶 `include_attachments`，附件一律由本 step 對 batch 已寫出的每封 md 照跑）。
 
 #### Step 5.5.0: Inline `cid:` images(v2.15.0+,resolves #45)
 
@@ -1110,6 +1132,7 @@ User 看到註記知道 inline 圖存在但需手動 export from Mail.app。File
    ```
 3. 在 `messages` 陣列**尾端** append 新 message（保持時間序；若日期早於 last_message，可插入正確位置，但一般 append 即可）
 4. 更新 `participants` 集合（加入 sender + to + cc 的 email，去重）
+   > **來源（batch 與 per-email 皆同）**：`sender` 取自 md frontmatter；`to`／`cc` 取自 md **本文的 `To:`／`Cc:` header 行**（frontmatter 只帶 `sender`，不帶 to/cc）。batch 工具（Step 5.0）與 per-email（Step 5.1）都寫出相同的 `To:`／`Cc:` body header，故本步 file-driven、source-agnostic，兩路徑一致——不需針對 batch 另設 participant 來源。
 5. 更新 `first_message` = `min(first_message, new.date)`，`last_message` = `max(last_message, new.date)`
 6. `message_count += 1`
 7. 更新頂層 `last_updated` 為目前時間
