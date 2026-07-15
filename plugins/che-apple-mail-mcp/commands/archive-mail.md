@@ -1150,9 +1150,10 @@ Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 **8b. Thread 完整性檢查**：
 
 對歸檔中每個唯一的 bare subject：
-1. 用 bare subject 搜尋 `search_emails(field: "subject", query: bare_subject)`，取得 total count
-2. 比對已歸檔的 count
-3. 若 `archived < total` → 發出 warning：`⚠️ Thread "{subject}": {差額} potential missing siblings (archived {已歸檔}/{total})`
+1. 用 bare subject 搜尋 `search_emails(field: "subject", query: bare_subject)`，取得結果
+2. **對結果套用 Step 3 的 mailbox 後過濾規則的統一 drop-set**（丟 Drafts / Trash 實名 + `exclude_mailboxes`，比對規則見 Step 3；**勿用未過濾的原始 count**），再取 total count —— 分子（已歸檔 count）已依 Step 3 排除草稿/垃圾桶，分母若用未過濾 count，含草稿的 thread 會 `archived < total` **每次誤報 missing siblings**（plugins#112）
+3. 比對已歸檔的 count
+4. 若 `archived < total` → 發出 warning：`⚠️ Thread "{subject}": {差額} potential missing siblings (archived {已歸檔}/{total})`
 
 **8c. 稽核報告**：
 
