@@ -78,7 +78,7 @@ TaskCreate(subject="report_and_audit",
            description="Step 7 + 8: 輸出歸檔報告(新歸檔/跳過/thread 索引/附件分流)。執行 Coverage Audit (8a 附件完整性 + 8b thread 完整性 → search by bare_subject 比對 archived/total)。")
 
 TaskCreate(subject="reconcile_index",
-           description="Step 8.5(強制最終 gate,mail#261): 掃 ${output_dir} 頂層全部 *.md 的 frontmatter message_id → 每個都必須在 ${INDEX_FILE} keys 內;孤兒就地補寫 Step 6 canonical schema entry {file,date,subject,thread_key}(file=掃描檔名,subject 從本文 Subject: 行)或列 unparseable 報錯;last_updated bump 為 max(entry date 的 YYYY-MM-DD);repaired>0 → 跑 /archive-mail-rebuild-threads;輸出一行 reconcile 摘要(verified/repaired/unparseable)。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
+           description="Step 8.5(強制最終 gate,mail#261 + plugins#110): Phase 0 若本 run 有 batch manifest → 對每個 written item 三源合併(written_path/manifest message_id/4.5-preview date+subject/寫出 frontmatter thread_key)機械化補齊,零 heuristic;Phase 1 掃 ${output_dir} 頂層全部 *.md 的 frontmatter message_id → 每個都必須在 Phase-0 set 或 ${INDEX_FILE} keys 內,歷史孤兒就地補寫 canonical schema entry {file,date,subject,thread_key}(subject 從本文 Subject: 行 heuristic,僅 Phase 1)或列 unparseable;index 寫回走 temp+rename 原子寫入;last_updated bump 為 max(entry date YYYY-MM-DD);repaired>0 → 跑 /archive-mail-rebuild-threads;輸出 Phase0/Phase1 reconcile 摘要。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
 ```
 
 **完成每一步立即 `TaskUpdate → completed`。靜默完成 = 違規。**
@@ -1164,6 +1164,8 @@ v2.6.0+ 在每個 email entry 多記一個 `thread_key`，方便反向查詢。
 
 > **`last_updated` 語意（mail#261）**：email_index.json 的頂層 `last_updated` = 所有 entry 的 **max(date)**（語料最新歸檔日，非執行日）——與 threads.json（Step 5.7）用**目前時間**不同，兩者刻意分工：前者答「語料多新」，後者答「索引多新」。
 
+> **原子寫入（plugins#110，durable fix）**：寫 `${INDEX_FILE}` **一律 temp+rename**——先寫 `${INDEX_FILE}.tmp`（完整 JSON），再 `os.replace(tmp, INDEX_FILE)`（同檔系統的 atomic rename）。中斷只會留下半寫的 `.tmp`（下次覆寫），**絕不**讓 `${INDEX_FILE}` 本身變成半寫/損壞的 JSON。這是 #261 diagnosis「先解有 gate、durable fix 待補」的根治：Step 8.5 reconcile gate 擋的是 cross-file 孤兒（md 有、index 無 entry），原子寫入擋的是 single-file partial-write 損壞——兩者互補。Step 6 與 Step 8.5 的 index 寫入都走此路徑。
+
 ### Step 7: 輸出報告
 
 ```
@@ -1262,18 +1264,30 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 > **使用者原話**：「可能有些有歸檔但是 index 沒更新……最後一件事情是要更新 index」。
 > 寫 md 與 append index 非原子——中斷/跳步會留下「md 已寫、index 無 entry」的孤兒（實測 86/135），dedup 隨即失效。本 gate 是 run 的**最後一件事**，未通過前 run 不得宣告成功。
 
-執行（對 `${output_dir}` 全量掃描，不只本次新寫的 md — 首跑會收斂可自動修復的歷史孤兒；無 frontmatter 的舊檔會留在 unparseable 清單待人工處置）：
+執行分**兩 phase**：先 Phase 0 用**本 run 的 manifest**機械化補齊本次 batch 寫入（乾淨、零 heuristic），再 Phase 1 對 `${output_dir}` 全量掃描收斂**歷史孤兒**（前一 run 中斷、非 batch、外部放入的 md——這些的 manifest 已不在記憶體，只能從磁碟 frontmatter 重建）。
+
+**Phase 0：manifest-driven（plugins#110，僅本 run 的 Step 5.0 batch 寫入）**
+
+若本 run 走了 Step 5.0 batch 路徑、manifest 仍在記憶體：對每個 `status:"written"` item，**三源合併**補齊 index entry（`message_id` 已在 `${INDEX_FILE}` keys 則跳過、算 `verified`）：
+- `file` = manifest item 的 `written_path` basename（**權威**，非猜檔名）
+- key `message_id` = item 的 `message_id`（**權威**，免重讀 frontmatter）
+- `date` / `subject` = **Step 4.5 preview**（id→date/subject，乾淨——**不用** Phase 1 的 `Subject:` 行 heuristic）
+- `thread_key` = 讀該 `written_path` md 的 frontmatter（乾淨讀）
+
+→ 本 run 的 index entry 機械化、`subject` 零 heuristic。Phase 0 補的 message_id 記入一個 set，Phase 1 掃到同 message_id 直接算 `verified`、不重複處理。（無 batch manifest 的 run——例如全走 Step 5.1 fallback——Phase 0 空跑，直接進 Phase 1。）
+
+**Phase 1：full-scan fallback（歷史孤兒 + 非 manifest 來源）**
 
 1. 對每個 `${output_dir}/*.md`（**僅頂層 glob**，不深入子目錄、不追 Step 2.1 的 symlink 兄弟歸檔——那些只是 read-only 去重來源，絕不寫進本 index）：讀 frontmatter `message_id`。
+   - message_id 已在 Phase 0 set 或 `${INDEX_FILE}` keys → `verified` +1（不重複補寫）。
    - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
-   - `message_id` 已在 `${INDEX_FILE}` keys → `verified` +1。
-   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
-2. `last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。比較與寫入**只取 `date` 的 `YYYY-MM-DD` 前 10 字**：entry 的 date 可能混雜 `2026-01-13 14:30` 與 ISO `T` 兩種格式，整串字典序比較會錯排。
+   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
+2. Phase 0 + Phase 1 都補完後，`last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。比較與寫入**只取 `date` 的 `YYYY-MM-DD` 前 10 字**：entry 的 date 可能混雜 `2026-01-13 14:30` 與 ISO `T` 兩種格式，整串字典序比較會錯排。**寫回 `${INDEX_FILE}` 走 temp+rename 原子寫入**（見 Step 6 的原子寫入 note）——本 gate 一次補多筆，中斷不得留半寫 index。
 3. `${THREADS_FILE}` **不在本 gate 內逐孤兒補寫**（frontmatter 沒有 to/cc，無法重建 Step 5.7 要求的 `participants`；threads.json 的規則在 Step 5.7、不是 Step 6）。`repaired > 0` 時，改跑 `/archive-mail-rebuild-threads` 從 md 全量重建 threads.json。
-4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）：
+4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）。摘要區分 Phase 0（manifest 機械化）與 Phase 1（磁碟重建）：
 
 ```
-Index Reconcile: 135 md 掃描 — 49 verified, 78 repaired, 8 unparseable ⚠（列出 8 檔）
+Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md 掃描 — 49 verified, 66 repaired（heuristic subject）, 8 unparseable ⚠（列出 8 檔）
 ```
 
 5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。**這不使 run 失敗**——會失敗的是跳過本 gate 或靜默吞掉清單。
