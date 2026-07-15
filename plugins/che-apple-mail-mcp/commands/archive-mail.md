@@ -489,7 +489,7 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 ```
 結果**必須**對每筆的 `mailbox` 欄位套用下方**mailbox 後過濾規則**的統一 drop-set——草稿、垃圾桶不進 corpus。
 
-> **mailbox 後過濾比對規則（plugins#109 verify，全 Step 3 適用）**：`search_emails` 結果的 `mailbox` 是**完整解碼路徑**（Gmail 巢狀匣如 `[Gmail]/草稿`、`[Gmail]/寄件備份`），而 `get_special_mailboxes` 回的實名是**葉名**（`草稿` / `寄件備份`）——**不可用裸字串 `==` 比對**（會靜默 no-op：草稿漏進 corpus、keep-only-Sent 丟光寄出信）。`matchesSpecial(result.mailbox, 實名)` 為真 iff **完整路徑相等**，或 **`result.mailbox` 以 `/實名` 結尾（末段相等）**。末段相等**單獨用不安全**：使用者自建資料夾（如 `專案/草稿`）會與 Drafts 葉名衝突——結果集中出現同末段的非特殊匣時，改用完整路徑判別或**停下確認**，勿靜默丟棄/保留。每帳號記錄實際觀察到的 `mailbox` 值供 audit。**統一 drop-set** = Drafts ∪ Trash ∪ `exclude_mailboxes` 配置列出的匣；本規則適用 recipe (1)、3b、3c 與 Tier 2 的 keep-only-Sent 判定。
+> **mailbox 後過濾比對規則（plugins#109 verify，全 Step 3 適用）**：`search_emails` 結果的 `mailbox` 是**完整解碼路徑**（Gmail 巢狀匣如 `[Gmail]/草稿`、`[Gmail]/寄件備份`），而 `get_special_mailboxes` 回的實名是**葉名**（`草稿` / `寄件備份`）——**不可用裸字串 `==` 比對**（會靜默 no-op：草稿漏進 corpus、keep-only-Sent 丟光寄出信）。`matchesSpecial(result.mailbox, 實名)` 為真 iff **完整路徑相等**，或 **`result.mailbox` 以 `/實名` 結尾（末段相等）**。末段相等**單獨用不安全**：使用者自建資料夾（如 `專案/草稿`）會與 Drafts 葉名衝突——結果集中出現同末段的非特殊匣時，改用完整路徑判別或**停下確認**，勿靜默丟棄/保留。每帳號記錄實際觀察到的 `mailbox` 值供 audit。**統一 drop-set** = Drafts ∪ Trash ∪ `exclude_mailboxes` 配置列出的匣；本規則適用 recipe (1)、3b、3c、Tier 2 的 keep-only-Sent 判定，以及 Step 8b 稽核分母（thread 完整性檢查的 total 計數同樣要對每筆 `mailbox` 套 drop-set，勿裸 `==`）。
 
 **(2) 寄出的郵件**（scoped 搜尋，recipient 比對 filter）：
 ```
@@ -1150,10 +1150,12 @@ Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 **8b. Thread 完整性檢查**：
 
 對歸檔中每個唯一的 bare subject：
-1. 用 bare subject 搜尋 `search_emails(field: "subject", query: bare_subject)`，取得結果
-2. **對結果套用 Step 3 的 mailbox 後過濾規則的統一 drop-set**（丟 Drafts / Trash 實名 + `exclude_mailboxes`，比對規則見 Step 3；**勿用未過濾的原始 count**），再取 total count —— 分子（已歸檔 count）已依 Step 3 排除草稿/垃圾桶，分母若用未過濾 count，含草稿的 thread 會 `archived < total` **每次誤報 missing siblings**（plugins#112）
-3. 比對已歸檔的 count
-4. 若 `archived < total` → 發出 warning：`⚠️ Thread "{subject}": {差額} potential missing siblings (archived {已歸檔}/{total})`
+1. 用 bare subject 搜尋，同時取回每筆 `mailbox`（套 drop-set 用）並在伺服器端做邏輯去重（對齊分子的 Message-ID 去重基礎）：
+   `search_emails(field: "subject", query: bare_subject, projection: "summary", dedup: "logical", limit: N)`
+   —— **必須 `projection: "summary"`**（唯一同時回 `mailbox` 又支援 `dedup` 的 projection：`count` 無 row 無法套 drop-set、`full` 不支援 `dedup`，plugins#208）；**`dedup: "logical"`** 在伺服器端塌陷同一封信的多匣副本（Gmail INBOX + 全部郵件 等）——否則含 dual-stored 的信會被重複計數，即使**零草稿**也 `archived < total` 每次誤報（plugins#112 的真正根因，不只是草稿）。`N` 取遠大於該 subject 預期兄弟數（**預設 limit 僅 50，通常不足**）。`dedup: logical` 依 (subject, sender, date_received) 分組，是分子 Message-ID 基礎的近似（保守、夠用，勿宣稱逐 Message-ID 對等）。
+2. **對結果每筆的 `mailbox` 套用 Step 3 的統一 drop-set**（丟 Drafts / Trash 實名 + `exclude_mailboxes`，比對規則見 Step 3 的 `matchesSpecial`，**勿裸 `==`**），數過濾後的存活筆數為 total —— 分子（已歸檔 count）已經 Step 3 Message-ID 去重且排除草稿/垃圾桶；分母同時經 `dedup: logical` 去重（步驟 1）＋ drop-set 排除（本步），兩邊才同基礎。
+3. **檢查步驟 1 回傳的 `truncated`**：若 `truncated: true`（配對數超過 `limit`），過濾後的頁面只是**被截斷的一頁**，**不得**當成完整分母 —— 據此比對會把「其實缺兄弟」誤判成 complete（false-negative，比誤報更糟，因為它**靜默隱藏真正的缺口**）。改提高 `limit` 重取直到 `truncated: false`；若仍無法取全，發出 `⚠️ Thread "{subject}": 稽核分母被截斷（配對數 > limit），無法證明完整`，並**略過**此 thread 的 archived/total 比對（不得回報 complete）。
+4. `truncated: false` 時比對已歸檔的 count：若 `archived < total` → 發出 warning：`⚠️ Thread "{subject}": {差額} potential missing siblings (archived {已歸檔}/{total})`
 
 **8c. 稽核報告**：
 
