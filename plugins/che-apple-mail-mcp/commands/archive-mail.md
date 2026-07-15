@@ -78,7 +78,7 @@ TaskCreate(subject="report_and_audit",
            description="Step 7 + 8: 輸出歸檔報告(新歸檔/跳過/thread 索引/附件分流)。執行 Coverage Audit (8a 附件完整性 + 8b thread 完整性 → search by bare_subject 比對 archived/total)。")
 
 TaskCreate(subject="reconcile_index",
-           description="Step 8.5(強制最終 gate,mail#261): 掃 ${output_dir} 全部 *.md 的 frontmatter message_id → 每個都必須在 ${INDEX_FILE} keys 內;孤兒就地補寫 entry(從 frontmatter 重建)或列 unparseable 報錯;last_updated bump 為 max(entry date);輸出一行 reconcile 摘要(verified/repaired/unparseable)。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
+           description="Step 8.5(強制最終 gate,mail#261): 掃 ${output_dir} 頂層全部 *.md 的 frontmatter message_id → 每個都必須在 ${INDEX_FILE} keys 內;孤兒就地補寫 Step 6 canonical schema entry {file,date,subject,thread_key}(file=掃描檔名,subject 從本文 Subject: 行)或列 unparseable 報錯;last_updated bump 為 max(entry date 的 YYYY-MM-DD);repaired>0 → 跑 /archive-mail-rebuild-threads;輸出一行 reconcile 摘要(verified/repaired/unparseable)。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
 ```
 
 **完成每一步立即 `TaskUpdate → completed`。靜默完成 = 違規。**
@@ -499,8 +499,8 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 > **⚠️ All Mail 超集陷阱（mail#261）— 寄出信判定不可用 `[Gmail]/全部郵件`**
 > Gmail 的「全部郵件」是超集：**同時包含草稿**。用「全部郵件 + sender 搜尋」撈寄出信會把同一封信的**草稿版與寄出版各算一次**，甚至把未寄出的草稿當寄出信歸檔（可重現徵兆：同一 thread 出現「相同時間戳」的 `全部郵件` + `草稿` 配對——只有無配對草稿的才是真寄出）。
 > 紀律：
-> 1. **寄出信一律搜 Sent mailbox**（Gmail 為 `[Gmail]/寄件備份`；per-account 實名可用 `get_special_mailboxes(account_id=...)` 取得，#249）
-> 2. **落實 `exclude_mailboxes` 的 Drafts/Trash**（草稿匣、垃圾桶不進 corpus）
+> 1. **寄出信一律搜 Sent mailbox**（Gmail 為 `[Gmail]/寄件備份`；per-account 實名可用 `get_special_mailboxes(account_id=...)` 取得，#179）
+> 2. **落實 `exclude_mailboxes` 的 Drafts/Trash**（草稿匣、垃圾桶不進 corpus）——這兩個匣的 per-account 實名同樣用 `get_special_mailboxes` 解析（本地化帳號可能叫「草稿」「垃圾桶」，不要 hardcode 英文名）。`search_emails` 的呼叫簽名沒有 mailbox scope 參數時，**對回傳結果的 `mailbox` 欄位做後過濾**（留 Sent 實名、丟 Drafts/Trash 實名）
 > 3. 結果一律以 **Message-ID 去重**（草稿與寄出版 Message-ID 不同，但同信多匣重複會被擋）
 
 **3b. Subject-keyword 搜尋**（v2.4.0+，若 `subject_keywords` 有設定）：
@@ -1069,6 +1069,8 @@ User 看到註記知道 inline 圖存在但需手動 export from Mail.app。File
 
 v2.6.0+ 在每個 email entry 多記一個 `thread_key`，方便反向查詢。
 
+> **`last_updated` 語意（mail#261）**：email_index.json 的頂層 `last_updated` = 所有 entry 的 **max(date)**（語料最新歸檔日，非執行日）——與 threads.json（Step 5.7）用**目前時間**不同，兩者刻意分工：前者答「語料多新」，後者答「索引多新」。
+
 ### Step 7: 輸出報告
 
 ```
@@ -1163,21 +1165,21 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 > **使用者原話**：「可能有些有歸檔但是 index 沒更新……最後一件事情是要更新 index」。
 > 寫 md 與 append index 非原子——中斷/跳步會留下「md 已寫、index 無 entry」的孤兒（實測 86/135），dedup 隨即失效。本 gate 是 run 的**最後一件事**，未通過前 run 不得宣告成功。
 
-執行（對 `${output_dir}` 全量掃描，不只本次新寫的 md — 首跑會一次性收斂歷史孤兒）：
+執行（對 `${output_dir}` 全量掃描，不只本次新寫的 md — 首跑會收斂可自動修復的歷史孤兒；無 frontmatter 的舊檔會留在 unparseable 清單待人工處置）：
 
-1. 對每個 `${output_dir}/*.md`：讀 frontmatter `message_id`。
+1. 對每個 `${output_dir}/*.md`（**僅頂層 glob**，不深入子目錄、不追 Step 2.1 的 symlink 兄弟歸檔——那些只是 read-only 去重來源，絕不寫進本 index）：讀 frontmatter `message_id`。
    - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
    - `message_id` 已在 `${INDEX_FILE}` keys → `verified` +1。
-   - **不在** → 孤兒：從 frontmatter（`message_id` / `thread_key` / `date` / `sender` / `direction`）**就地補寫 index entry**（append-only），`repaired` +1。
-2. `last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。
-3. `${THREADS_FILE}` 的對應 thread entry 若缺同步補（同 Step 6 規則）。
-4. 輸出一行摘要並附在歸檔報告末尾：
+   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
+2. `last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。比較與寫入**只取 `date` 的 `YYYY-MM-DD` 前 10 字**：entry 的 date 可能混雜 `2026-01-13 14:30` 與 ISO `T` 兩種格式，整串字典序比較會錯排。
+3. `${THREADS_FILE}` **不在本 gate 內逐孤兒補寫**（frontmatter 沒有 to/cc，無法重建 Step 5.7 要求的 `participants`；threads.json 的規則在 Step 5.7、不是 Step 6）。`repaired > 0` 時，改跑 `/archive-mail-rebuild-threads` 從 md 全量重建 threads.json。
+4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）：
 
 ```
-Index Reconcile: 135 md 掃描 — 49 verified, 86 repaired, 0 unparseable ✓
+Index Reconcile: 135 md 掃描 — 49 verified, 78 repaired, 8 unparseable ⚠（列出 8 檔）
 ```
 
-5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。
+5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。**這不使 run 失敗**——會失敗的是跳過本 gate 或靜默吞掉清單。
 6. 全部完成後才 `TaskUpdate reconcile_index → completed`。**跳過本步 = run 失敗**。
 
 ## 注意事項
