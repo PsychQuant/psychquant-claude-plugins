@@ -323,6 +323,7 @@ Before presenting the draft, check for these AI writing tells and remove every i
 | Decorative `::before` / `::after` rules on every heading | AI adds trailing horizontal lines after `I SCOPE · 關於本工作坊`-style labels to "make it look editorial" | Remove. Small-caps labels with proper letter-spacing carry enough visual weight alone |
 | Arrow symbols (`→` / `$\rightarrow$`) in prose to show direction, change, or causality | Fine in slides or notes, but in formal prose the reader has to "sound it out", and the arrow is ambiguous (sequence? causality? numeric change? lead-lag direction?). A clear AI tell in academic/report writing. | Spell it out in words: "期貨領先現貨之方向", "由 0.81 上升至 0.89", "X 導致 Y". Keep arrows only inside math mode, equations, or actual diagrams. |
 | "新增" / "新加" / "另新增" framing in a one-piece document | In a finished document every part is integral. "第四章新增之…" / "本研究新增了…" exposes multi-pass assembly and reads as patched-together — the reader is not supposed to see the seams. | Drop the "新增" frame: "第四章新增之 X" → "第四章之 X" / "本研究之 X". State what the section *is*, not when it was bolted on. |
+| **外歸因推卸**（解釋遲交／失誤時把主因推給流程或別人：「因為 GBA 代碼還沒好」「因為某流程慢」「因為經費還沒確認」）| 即使屬實，外歸因讀起來像卸責、推給制度或他人，語用上顯得不負責——在道歉／說明遲交的信裡最傷信任。「找一個更有說服力的外部理由」不會讓它不像推，只會更像。 | 內歸因、承擔：主因寫成自己的責任（「我剛到職、首次辦理、對送件時程不熟、未能及早啟動」）；外部因素只當次要、輕帶過、不當擋箭牌；結尾收在自己身上（「這主要是我規劃上的不足，往後會提早準備」）。誠實 acknowledge 但不過度自貶。要不像「推」，是把責任接回自己，不是換一個外部理由。 |
 
 ## Phase 5b: Output Format
 
