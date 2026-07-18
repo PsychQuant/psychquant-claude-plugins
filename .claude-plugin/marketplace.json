@@ -210,16 +210,6 @@
       "category": "productivity"
     },
     {
-      "name": "perspective-writer",
-      "version": "2.9.2",
-      "description": "Write letters, emails, autobiographies, and formal documents by simulating the writer's authentic voice. Uses Tarski's T-Schema to ensure every sentence has a concrete referent, and a 6-phase process (understand writer, understand recipient, simulate, write, anti-pattern check, iterate) to produce writing that sounds like a real person, not AI.",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": "./plugins/perspective-writer",
-      "category": "productivity"
-    },
-    {
       "name": "che-creative-suite",
       "version": "0.1.0",
       "description": "Creative Suite — 協調 che-svg-mcp（向量）與 che-pixel-mcp（點陣）的圖形處理工作流，含 creative-router skill 與 creative-agent",
