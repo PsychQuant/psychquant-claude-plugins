@@ -78,7 +78,7 @@ TaskCreate(subject="report_and_audit",
            description="Step 7 + 8: 輸出歸檔報告(新歸檔/跳過/thread 索引/附件分流)。執行 Coverage Audit (8a 附件完整性 + 8b thread 完整性 → search by bare_subject 比對 archived/total)。")
 
 TaskCreate(subject="reconcile_index",
-           description="Step 8.5(強制最終 gate,mail#261 + plugins#110): Phase 0 若本 run 有 batch manifest → 對每個 written item 三源合併(written_path/manifest message_id/4.5-preview date+subject/寫出 frontmatter thread_key)機械化補齊,零 heuristic;Phase 1 掃 ${output_dir} 頂層全部 *.md 的 frontmatter message_id → 每個都必須在 Phase-0 set 或 ${INDEX_FILE} keys 內,歷史孤兒就地補寫 canonical schema entry {file,date,subject,thread_key}(subject 從本文 Subject: 行 heuristic,僅 Phase 1)或列 unparseable;index 寫回走 temp+rename 原子寫入;last_updated bump 為 max(entry date YYYY-MM-DD);repaired>0 → 跑 /archive-mail-rebuild-threads;輸出 Phase0/Phase1 reconcile 摘要。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
+           description="Step 8.5(強制最終 gate,mail#261 + plugins#110): Phase 0 若本 run 有 batch manifest → 對每個 written item 三源合併(written_path/manifest message_id/4.5-preview date+subject/寫出 frontmatter thread_key)機械化補齊,零 heuristic;Phase 1 掃 ${output_dir} 頂層全部 *.md 的 frontmatter message_id → 每個都必須在 Phase-0 set 或 ${INDEX_FILE} keys 內,歷史孤兒就地補寫 canonical schema entry {file,date,subject,thread_key}(subject 從本文 Subject: 行 heuristic,僅 Phase 1)或列 unparseable;index 寫回走 temp+rename 原子寫入;last_updated bump 為 max(entry date,經 robust to_ymd 正規化——ISO 快篩+RFC822 parse,mail#275);repaired>0 → 跑 /archive-mail-rebuild-threads;輸出 Phase0/Phase1 reconcile 摘要。此 task 未 verified 前,整個 run 不得標示成功 — 靜默完成 = 違規。")
 ```
 
 **完成每一步立即 `TaskUpdate → completed`。靜默完成 = 違規。**
@@ -943,7 +943,7 @@ direction: received
   4. 若結果為空，用 `no-subject`
   > **歷史檔 caveat**：本規則之前的舊版不去 `回覆:`/`回复:` 且區分大小寫；在此之前歸檔的 md 其 thread_key 可能仍帶 `回覆:` 前綴，與新檔的 thread_key 分屬兩 thread。若某中文回覆 thread 出現此分裂，跑 `/archive-mail-rebuild-threads` 以新規則全量重算即可收斂。
 - `in_reply_to`: 若有，來自郵件的 `In-Reply-To` header；若 MCP 未暴露，從 body 的 quote intro 嘗試提取第一個 Message-ID，否則留空
-- `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）
+- `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）。**enforcement（mail#275）**：Date header 為 **RFC822 原樣**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，常見於 webmail 系統寄件）時**必須先轉 ISO 再寫入** frontmatter——`email.utils.parsedate_to_datetime(raw).isoformat()`——直接抄原樣會經 Step 6/8.5 流入 index，汙染 max(date) 計算（mail#275 實證案例即此路徑）
 - `sender`: 寄件人 email 地址（display name 剝除，**並轉小寫**——對齊 batch 工具的 `bareEmail().lowercased()`，否則 threads.json 的 participant 去重會把 `A@x` 與 `a@x` 當兩人）
 - `direction`: `received` 或 `sent`
 
@@ -1163,7 +1163,7 @@ User 看到註記知道 inline 圖存在但需手動 export from Mail.app。File
 
 v2.6.0+ 在每個 email entry 多記一個 `thread_key`，方便反向查詢。
 
-> **`last_updated` 語意（mail#261）**：email_index.json 的頂層 `last_updated` = 所有 entry 的 **max(date)**（語料最新歸檔日，非執行日）——與 threads.json（Step 5.7）用**目前時間**不同，兩者刻意分工：前者答「語料多新」，後者答「索引多新」。
+> **`last_updated` 語意（mail#261）**：email_index.json 的頂層 `last_updated` = 所有 entry 的 **max(date)**（語料最新歸檔日，非執行日）——與 threads.json（Step 5.7）用**目前時間**不同，兩者刻意分工：前者答「語料多新」，後者答「索引多新」。**計算一律經 Step 8.5 的 robust `to_ymd()` 正規化（mail#275）**——entry date 可能混入 RFC822，直接 `[:10]` 字典序比較會選出無效值；本 step 與 Step 8.5 兩處計算必須同一規則。
 
 > **原子寫入（plugins#110，partial-write-safe）**：寫 `${INDEX_FILE}` **一律 temp+rename**——先寫 `${INDEX_FILE}.tmp`（完整 JSON），再 `os.replace(tmp, INDEX_FILE)`（同檔系統的 atomic rename）。中斷（agent abort / 寫到一半失敗）只會留下半寫的 `.tmp`（下次覆寫），**絕不**讓 `${INDEX_FILE}` 本身變成半寫/損壞的 JSON。這是 #261 diagnosis「先解有 gate、durable fix 待補」的根治，針對的威脅是 **interrupted/partial write**；**嚴格 power-fail durability** 另需 `fsync(檔案)+fsync(目錄)`（本 SOP 威脅模型不含斷電，故不強制，但要斷電安全時可加）。Step 8.5 reconcile gate 擋的是 cross-file 孤兒（md 有、index 無 entry），原子寫入擋的是 single-file partial-write 損壞——兩者互補。Step 6 與 Step 8.5 的 index 寫入都走此路徑。
 
@@ -1284,8 +1284,24 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 1. 對每個 `${output_dir}/*.md`（**僅頂層 glob**，不深入子目錄、不追 Step 2.1 的 symlink 兄弟歸檔——那些只是 read-only 去重來源，絕不寫進本 index）：讀 frontmatter `message_id`。
    - message_id 已在 Phase 0 set 或 `${INDEX_FILE}` keys → `verified` +1（不重複補寫）。
    - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
-   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。**若 frontmatter 有 `message_id` 但缺 `date` 或 `thread_key`**（罕見——archive-mail 寫的 frontmatter 一律帶這兩欄；只可能是外部/損毀 md）：比照 subject-miss 的「揭露而非靜默」紀律（惟 date/thread_key **無** subject 那種 body-line fallback，缺就是缺），缺的欄位填空字串並在摘要揭露該檔欄位不全，**不得靜默寫 null**。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
-2. Phase 0 + Phase 1 都補完後，`last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。比較與寫入**只取 `date` 的 `YYYY-MM-DD` 前 10 字**：entry 的 date 可能混雜 `2026-01-13 14:30` 與 ISO `T` 兩種格式，整串字典序比較會錯排。**寫回 `${INDEX_FILE}` 走 temp+rename 原子寫入**（見 Step 6 的原子寫入 note）——本 gate 一次補多筆，中斷不得留半寫 index。
+   - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter——**`date` 若非 ISO 開頭**（如 RFC822 原樣，見 Step 5.1 enforcement）**先以 `email.utils.parsedate_to_datetime(raw).isoformat()` 正規化再寫入 entry**（parse 失敗比照揭露紀律列於摘要、寫原樣不阻斷；mail#275——孤兒補寫是歷史 RFC822 汙染收斂進 ISO 的機會點）；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。**若 frontmatter 有 `message_id` 但缺 `date` 或 `thread_key`**（罕見——archive-mail 寫的 frontmatter 一律帶這兩欄；只可能是外部/損毀 md）：比照 subject-miss 的「揭露而非靜默」紀律（惟 date/thread_key **無** subject 那種 body-line fallback，缺就是缺），缺的欄位填空字串並在摘要揭露該檔欄位不全，**不得靜默寫 null**。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
+2. Phase 0 + Phase 1 都補完後，`last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。**比較與寫入必須先做 robust 日期正規化（mail#275）——絕不可直接 `date[:10]` 字典序比較**：entry 的 date 實務上混雜三種格式——`2026-01-13 14:30`、ISO `T`、以及 **RFC822**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，見 Step 5.1 的正規化漏洞）。RFC822 開頭是星期縮寫，`[:10]` 切片後（`Thu, 25 Ju`）首字母字典序恆大於數字，任何一筆 RFC822 entry 都會贏過全部 ISO entry，`last_updated` 被寫成 `Wed, 01 Ju` 類無效值（mail#275 實證）。正規化參考實作（`^\d{4}-\d{2}-\d{2}` 快篩 ISO 取前 10 字；其餘走 `email.utils.parsedate_to_datetime`；parse 失敗回 None、**排除於 max 之外並在 reconcile 摘要揭露**，不靜默）：
+
+   ```python
+   import re
+   from email.utils import parsedate_to_datetime
+   def to_ymd(s):
+       s = (s or "").strip()
+       if re.match(r'^\d{4}-\d{2}-\d{2}', s):
+           return s[:10]
+       try:
+           return parsedate_to_datetime(s).date().isoformat()
+       except Exception:
+           return None
+   mx = max((y for y in (to_ymd(v.get("date","")) for v in emails.values()) if y), default="")
+   ```
+
+   **寫回 `${INDEX_FILE}` 走 temp+rename 原子寫入**（見 Step 6 的原子寫入 note）——本 gate 一次補多筆，中斷不得留半寫 index。
 3. `${THREADS_FILE}` **不在本 gate 內逐孤兒補寫**（frontmatter 沒有 to/cc，無法重建 Step 5.7 要求的 `participants`；threads.json 的規則在 Step 5.7、不是 Step 6）。**Phase 0 新增任一 entry OR Phase 1 `repaired > 0`** 時，改跑 `/archive-mail-rebuild-threads` 從 md 全量重建 threads.json——Phase 0 的機械化補齊同樣是 index 新增，若只看 Phase 1 的 `repaired` 會漏掉「Phase 0 補了 entry 但 Step 5.7 那步被中斷」的 thread-view 過時（happy path 下 Step 5.7 已為 batch md 更新 threads.json，此僅防雙重中斷）。
 4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）。摘要區分 Phase 0（manifest 機械化）與 Phase 1（磁碟重建）：
 
