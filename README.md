@@ -16,6 +16,18 @@
 >
 > 設定（`.claude/issue-driven-dev.local.json`、`.claude/.idd/`）在 project repo 裡，不用搬。
 
+> ## 🎨 創作類 plugin has moved
+>
+> **`che-pixel-mcp` / `che-svg-mcp` / `che-creative-suite` 從本 marketplace 搬到 [`PsychQuant/macreate`](https://github.com/PsychQuant/macreate)（原生 macOS 創作/媒體 marketplace，macdoc 的創作側雙生子；自 2026-07-19）。**
+>
+> 既有 install 需重新指 source，例如：
+>
+> ```bash
+> claude plugin uninstall che-pixel-mcp@psychquant-claude-plugins
+> claude plugin marketplace add PsychQuant/macreate
+> claude plugin install che-pixel-mcp@macreate   # 或 che-svg-mcp / che-creative-suite
+> ```
+
 ## 安裝
 
 ```bash
