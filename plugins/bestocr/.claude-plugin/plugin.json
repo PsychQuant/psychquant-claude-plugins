@@ -1,0 +1,18 @@
+{
+  "name": "bestocr",
+  "version": "0.1.0",
+  "description": "Text-recognition routing for documents — probe first, then pick the best path: born-digital PDFs get text-layer extraction (never OCR'd; re-recognizing rendered math is strictly worse), scanned PDFs get OCR. First skill: latex-article-record — journal PDF → faithful, compile-verified LaTeX article record (metadata + every theorem and numbered equation with original numbering + flagged editorial notes). Companion to bestasr (audio) and batch-ocr (raster OCR pipeline).",
+  "author": {
+    "name": "Che Cheng"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ocr",
+    "text-recognition",
+    "pdf",
+    "latex",
+    "transcription",
+    "article-record",
+    "math"
+  ]
+}

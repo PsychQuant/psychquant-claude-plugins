@@ -348,6 +348,16 @@
       },
       "source": "./plugins/math-tools",
       "category": "development"
+    },
+    {
+      "name": "bestocr",
+      "version": "0.1.0",
+      "description": "Text-recognition routing for documents — probe first (born-digital → text-layer extraction, scanned → OCR). Ships latex-article-record: journal PDF → faithful, compile-verified LaTeX article record with original equation numbering and flagged editorial notes. Companion to bestasr (audio) and batch-ocr (raster pipeline).",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/bestocr",
+      "category": "development"
     }
   ]
 }

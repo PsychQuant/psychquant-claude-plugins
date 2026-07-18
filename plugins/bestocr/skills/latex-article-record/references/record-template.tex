@@ -1,0 +1,84 @@
+% =============================================================================
+% ARTICLE RECORD — faithful LaTeX transcription of a published journal article
+% -----------------------------------------------------------------------------
+% bibkey:    <AuthorYear e.g. FalmagneLundberg2000>
+% authors:   <Full Name; Full Name>
+% title:     <exact title>
+% journal:   <journal name>
+% volume:    <vol>
+% year:      <year>
+% pages:     <ppp--ppp>
+% doi:       <doi or empty>
+% issn:      <issn or empty>
+% msc:       <subject classification codes, if any>
+% keywords:  <k1; k2; k3>
+% source_pdf: <year_author_title.pdf>
+%
+% PROVENANCE
+%   Transcribed from the <born-digital text layer | scanned pages via OCR> of the
+%   source PDF (N pp.). Method: <read pages as images -> transcribe LaTeX -> pdflatex
+%   compile (0 errors) -> visual diff of rendered output vs source pages>. Numbered
+%   equations carry the article's OWN numbers via \tag{}. Connecting proof prose is
+%   condensed; every numbered display equation is transcribed. Original
+%   inconsistencies are FLAGGED in the Editorial notes section, never silently fixed.
+% =============================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{array}
+% \DeclareMathOperator{\Dom}{Dom}   % declare any operators the paper uses
+\newenvironment{stmt}{\itshape}{\par}   % for theorem/definition statements
+\begin{document}
+
+\begin{center}
+{\large\bfseries <TITLE>}\\[4pt]
+<Authors>\\[2pt]
+{\itshape <Journal>} \textbf{<vol>} (<year>) <pages>
+\end{center}
+
+\noindent\textbf{Summary (verbatim).} <abstract, quoted verbatim>
+
+\bigskip\hrule\bigskip
+
+\section*{Core definitions / equations (Introduction)}
+
+\begin{equation}
+% <equation> \tag{1}
+\end{equation}
+
+\section*{1.\ <section title>}
+
+\paragraph{1.1.\ Theorem.}
+\begin{stmt}
+<theorem statement, verbatim in content>
+\end{stmt}
+\begin{equation}
+% <equation> \tag{6}
+\end{equation}
+
+\paragraph{Proof (condensed).}
+<key numbered equations of the proof, prose bridges summarised>
+\hfill$\square$
+
+\section*{2.\ <main result section>}
+
+\paragraph{2.1.\ Definition.}
+\begin{stmt}<...>\end{stmt}
+
+\paragraph{2.N.\ Theorem (main result).}
+\begin{stmt}<...>\end{stmt}
+
+\section*{References (verbatim)}
+\begin{enumerate}
+\item[{[1]}] <reference, verbatim>
+\end{enumerate}
+
+\bigskip\hrule\bigskip
+
+\section*{Editorial / transcription notes (not part of the original paper)}
+\begin{enumerate}
+\item \textbf{<flagged issue>.} <e.g. original theorem-number typo; ambiguous glyph;
+what was condensed; anything a reader should know. Include your confidence.>
+\end{enumerate}
+
+\end{document}
