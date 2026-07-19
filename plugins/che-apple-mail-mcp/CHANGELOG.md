@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **archive-mail `last_updated` 計算對 RFC822 entry date 失效**（[mail#275](https://github.com/PsychQuant/che-apple-mail-mcp/issues/275)）。Step 6 / Step 8.5 的 max(date) 原以 `date[:10]` 字典序比較，只涵蓋 ISO 兩變體 — RFC822（`Thu, 25 Jun …`）切片後星期縮寫字典序恆大於數字，任一 RFC822 entry 都會贏過全部 ISO entry，`last_updated` 被寫成 `Wed, 01 Ju` 類無效值（並汙染 `dedup_strategy: last_archived` 的增量搜尋 date_from）。兩處計算改為 robust `to_ymd()`（ISO 快篩 + `email.utils.parsedate_to_datetime`，parse 失敗排除於 max 並在 reconcile 摘要揭露）；上游 enforcement：Step 5.1 明文 RFC822 Date header 必先轉 ISO 再寫 frontmatter，Step 8.5 Phase 1 孤兒補寫時將非 ISO date 正規化（歷史汙染的收斂點）。
+
 ## [2.20.0] - 2026-05-18
 
 ### Added
