@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`distributed_archives` config field — first-class capture-then-distribute** ([mail#285](https://github.com/PsychQuant/che-apple-mail-mcp/issues/285)). Generalizes Step 2.1's sibling-archive dedup (previously only symlinks physically under `output_dir`, #49) to an opt-in YAML list of arbitrary distribution-target archive dirs. Use case: a broad capture-layer `filter` config pulls all relevant mail into a staging dir; the user then moves each message belonging to a sub-project into that sub-project's own archive. Before, the next capture run re-pulled the already-distributed mail (it still matches the filter, and moving it dropped it from the capture `output_dir` + index → dedup saw "new"). Now Step 2.1 folds the `message_id` frontmatter of every dir listed in `distributed_archives:` into the same `EXTENDED_DEDUP_IDS` set, so distribution sticks with **no manual tombstone**. Read-only (find + head + awk, never mv/rm/>), bounded (`-maxdepth 2`), and — unlike the silent symlink scan — a **missing distributed dir WARNS** to stderr (a wrong path would silently miss dedup and re-pull, the exact pain being fixed). 100% backward compatible: unset `distributed_archives:` is a no-op, identical to v2.37.0. Closes #285.
+
 ### Fixed
 - **archive-mail `last_updated` 計算對 RFC822 entry date 失效**（[mail#275](https://github.com/PsychQuant/che-apple-mail-mcp/issues/275)）。Step 6 / Step 8.5 的 max(date) 原以 `date[:10]` 字典序比較，只涵蓋 ISO 兩變體 — RFC822（`Thu, 25 Jun …`）切片後星期縮寫字典序恆大於數字，任一 RFC822 entry 都會贏過全部 ISO entry，`last_updated` 被寫成 `Wed, 01 Ju` 類無效值（並汙染 `dedup_strategy: last_archived` 的增量搜尋 date_from）。兩處計算改為 robust `to_ymd()`（ISO 快篩 + `email.utils.parsedate_to_datetime`，parse 失敗排除於 max 並在 reconcile 摘要揭露）；上游 enforcement：Step 5.1 明文 RFC822 Date header 必先轉 ISO 再寫 frontmatter，Step 8.5 Phase 1 孤兒補寫時將非 ISO date 正規化（歷史汙染的收斂點）。
 

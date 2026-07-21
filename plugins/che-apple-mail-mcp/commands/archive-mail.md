@@ -35,6 +35,7 @@ allowed-tools: mcp__plugin_che-apple-mail-mcp_mail__*, Bash(mkdir:*), Read, Writ
 | `recipient_excludes` | Layer 2 post-fetch: drop thread 若任一 message recipient 含 substring(v2.20.0+, #84)|
 | `subject_includes` | Layer 2 post-fetch: keep thread 若任一 message bare subject 含 substring(v2.20.0+, #76)|
 | `subject_excludes` | Layer 2 post-fetch: drop thread 若任一 message bare subject 含 substring(v2.20.0+, #76)|
+| `distributed_archives` | YAML 清單:分派去向的 archive 目錄(不限 symlink、不限在 `output_dir` 底下)。Step 2.1 把這些目錄的 `message_id` 併入 capture 層 dedup set,支援 capture-then-distribute 工作流(v2.38.0+, #285)|
 
 兩層 corpus model:`filters` / `subject_keywords` / `exclude_mailboxes` 是 Layer 1 search-time(定義 corpus);6 個 `*_includes` / `*_excludes` 是 Layer 2 post-fetch refinement(thread-coherent narrowing,excludes-precedence on same axis,case-insensitive substring)。完整契約見 spec `openspec/specs/archive-mail-corpus-refinement/spec.md`。
 
@@ -110,6 +111,7 @@ RECIPIENT_INCLUDES=""
 RECIPIENT_EXCLUDES=""
 SUBJECT_INCLUDES=""
 SUBJECT_EXCLUDES=""
+DISTRIBUTED_ARCHIVES=""
 if [ -f "${CONFIG_FILE}" ]; then
     # Parse YAML config (top-level scalars + sequences only)
     # 兼容 pure YAML(`.yaml` v2.16.0+)與 frontmatter-wrapped(`.md` legacy);awk pattern 對兩者皆 work
@@ -127,6 +129,13 @@ if [ -f "${CONFIG_FILE}" ]; then
     RECIPIENT_EXCLUDES=$(awk '/^recipient_excludes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
     SUBJECT_INCLUDES=$(awk '/^subject_includes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
     SUBJECT_EXCLUDES=$(awk '/^subject_excludes:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
+
+    # v2.38.0+ (#285): distributed_archives — capture-then-distribute dedup.
+    # Same block-style sequence awk as exclude_mailboxes. A list of distribution-
+    # target archive dirs (NOT symlinks, NOT necessarily under output_dir) whose
+    # message_id frontmatter Step 2.1 folds into the dedup set, so a capture-layer
+    # run never re-pulls mail already distributed to a sub-project.
+    DISTRIBUTED_ARCHIVES=$(awk '/^distributed_archives:/{flag=1;next} /^[a-z_]+:/{flag=0} flag && /^  - /{sub(/^  - /,"");print}' "${CONFIG_FILE}")
 
     # Validation: malformed refinement value aborts with explicit error (spec ADDED Requirement).
     # Sequence-form: `<field>:` on its own line, with `  - item` lines following → awk parser handles cleanly.
@@ -381,9 +390,14 @@ mkdir -p "${output_dir}"   # archive markdown 目的地(不變)
 
 兩個索引**獨立維護**,thread 索引純粹為了快速查詢 thread 關係,不影響單封信的儲存。若 `threads.json` 損壞,可用 `/archive-mail-rebuild-threads` 從 md frontmatter 重建。
 
-#### Step 2.1: Sibling-archive dedup extension(v2.17.0+,#49)
+#### Step 2.1: Sibling-archive dedup extension(v2.17.0+,#49;v2.38.0+ #285 泛化)
 
-當 `${output_dir}` 下有 symlinked subdirectory(典型情境:transitioned-project pattern,例如 chchen_lab 把 `email/application/` symlink 到 `applications/completed/.../emails/`),掃描其下 markdown 的 YAML frontmatter,把 `message_id:` 值併入 in-memory dedup set。**讀取 only,從不寫入 symlink target**。
+把「使用者已在別處歸檔過」的信件 `message_id` 併入 in-memory dedup set,**讀取 only**,涵蓋兩種來源:
+
+1. **Symlinked siblings**(v2.17.0+,#49)— `${output_dir}` 下的 symlinked subdirectory(典型:transitioned-project pattern,例如 chchen_lab 把 `email/application/` symlink 到 `applications/completed/.../emails/`)。
+2. **Distributed archives**(v2.38.0+,#285)— config `distributed_archives:` 列的分派去向目錄(**不限 symlink、不限在 `output_dir` 底下**),支援 **capture-then-distribute** 工作流:一個廣義 filter 的 capture config 把信抓進 staging,使用者再把屬於某子專案的信搬進各子專案的 archive;下次 capture 更新時,已分派信件的 `message_id` 已在 dedup set → **不重抓、不需手動 tombstone**。
+
+兩種來源都掃 markdown 的 YAML frontmatter `message_id:`,併入同一個 `EXTENDED_DEDUP_IDS`;**從不寫入 target**。
 
 ```bash
 # Only run when dedup_strategy uses index (skip if last_archived only)
@@ -413,6 +427,35 @@ if [ "$DEDUP_STRATEGY" = "index" ] || [ "$DEDUP_STRATEGY" = "both" ]; then
         fi
     done < <(find -P "${output_dir}" -maxdepth 1 -type l 2>/dev/null)
 
+    # v2.38.0+ (#285): distributed_archives — capture-then-distribute. Fold the
+    # message_id frontmatter of arbitrary distribution-target dirs (from config
+    # `distributed_archives:`; NOT symlinks, NOT necessarily under output_dir)
+    # into the SAME EXTENDED_DEDUP_IDS set, so a capture-layer config never
+    # re-pulls mail the user already distributed to a sub-project — no manual
+    # tombstone needed. Read-only (find + head + awk only, never mv/rm/>).
+    # A missing dir WARNS (never silent): a wrong path would silently miss dedup
+    # → re-pull, the exact pain #285 fixes.
+    while IFS= read -r dist_dir; do
+        [ -z "$dist_dir" ] && continue
+        if [ ! -d "$dist_dir" ]; then
+            echo "⚠️  distributed_archives: '$dist_dir' not found — skipping (resolved relative to the workspace root; fix the path or dedup will miss and re-pull)" >&2
+            continue
+        fi
+        ENTRIES_THIS_DIR=0
+        while IFS= read -r mdfile; do
+            [ -z "$mdfile" ] && continue
+            mid=$(head -30 "$mdfile" 2>/dev/null | awk '/^message_id:[ \t]*/{sub(/^message_id:[ \t]*"?/,"");sub(/"?$/,"");print;exit}')
+            if [ -n "$mid" ]; then
+                EXTENDED_DEDUP_IDS+=("$mid")
+                ENTRIES_THIS_DIR=$((ENTRIES_THIS_DIR + 1))
+            fi
+        done < <(find -P "$dist_dir/" -maxdepth 2 -name "*.md" -type f 2>/dev/null)
+        if [ "$ENTRIES_THIS_DIR" -gt 0 ]; then
+            EXTENDED_COUNT=$((EXTENDED_COUNT + ENTRIES_THIS_DIR))
+            EXTENDED_SOURCES+=("$dist_dir ($ENTRIES_THIS_DIR entries, distributed)")
+        fi
+    done <<< "$DISTRIBUTED_ARCHIVES"
+
     if [ "$EXTENDED_COUNT" -gt 0 ]; then
         echo "🔗 Extended dedup with $EXTENDED_COUNT entries from sibling archives:"
         for src in "${EXTENDED_SOURCES[@]}"; do
@@ -431,8 +474,9 @@ fi
 
 **Properties / invariants**:
 
-- **Read-only**:never `mv` / `rm` / `>` against symlink target;`find` + `head` + `awk` only。
-- **Bounded**:`find -P -maxdepth 2`(symlink dir 本身 + 一層 immediate children),避免 deep archive 拖慢 startup。
+- **Read-only**:never `mv` / `rm` / `>` against symlink target 或 distributed archive;`find` + `head` + `awk` only。
+- **Bounded**:`find -P -maxdepth 2`(dir 本身 + 一層 immediate children),對 symlink siblings 與 distributed archives 皆同,避免 deep archive 拖慢 startup。
+- **`distributed_archives` missing-dir WARNS(never silent,#285)**:symlink siblings 掃不到就靜默(它們本就 opt-in symlink);但 distributed archive 是使用者手寫的 config 路徑,打錯或 dangling 會讓 dedup **silently miss → 重抓**(正是 #285 要修的痛點),所以路徑不存在必 emit `⚠️` 到 stderr,不 silent skip。路徑相對於 workspace root 解析。opt-in:config 沒設 `distributed_archives:` 時完全 no-op,行為與 v2.37.0 100% 相同(backward compatible)。
 - **archive-mail v2.6+ format compatibility**:設計 target 是 archive-mail 自產的 frontmatter(`message_id: "<...>"` 雙引號格式)。Manual archive 若 frontmatter 用單引號 / 內含 inline comment / CRLF / trailing whitespace,parser 不 silent skip,而是把**malformed key**(例如 `'<abc>'` 包含單引號、含 inline comment 文字、含 `\r`)加入 in-memory dedup set;Step 4 比較 archive-mail 寫的 canonical Message-ID(`<abc>` 無外引號)時對不上,造成 **dedup miss**(historic 已 archive 的信被 re-archive)。**ENTRIES_THIS_DIR 仍會 increment**(parser 認為「成功 extract」),但 key 是 garbage,有 silent miss 風險。Future hardening(yq parser / robust awk handling 單引號 / inline comment / CRLF / trailing whitespace)deferred until N≥3 user reports of manual-archive missed dedup — see follow-up #54 / #50 for tracking。
 - **Compose with `dedup_strategy`**:僅在 `index` / `both` strategy 跑;`last_archived` strategy 完全 skip(那種 strategy 的 user 顯然不依賴 Message-ID dedup)。Compose 邏輯:`EXTENDED_DEDUP_IDS` 透過 set union 併入 existing Message-ID set,不取代 strategy-specific date predicate。
 
