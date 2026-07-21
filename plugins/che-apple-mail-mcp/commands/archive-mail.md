@@ -805,6 +805,13 @@ batch_export_emails_markdown(
   > **`id→subject` preview slice 必須保留到 Step 8.5 Phase 0**：此為 Step 5.0 已依賴的同一份記憶體狀態（`opts.filenames` 也用它，見上方），Phase 0 只是延長其存活期（4.5→8.5）。若 agent 未保留、Phase 0 取不到某 id 的乾淨 subject → **fallback 讀該 md 的 body `Subject:` 行**（即 Phase 1 的 heuristic），而非寫空 subject。
 - **Step 8.5 本次由 plugins#110 改為兩 phase**：Phase 0 消費本 run manifest 做機械化 reconciliation（乾淨、零 body-heuristic），Phase 1 仍全量重掃 `${output_dir}` frontmatter 收斂歷史孤兒——manifest 消費是**本次已落地**的能力。
 
+- **partial-`.emlx` 訊號（binary v2.23.0+，mail#283 — mail#274 的 bulk 路徑閉環）**：body 尚未從伺服器下載的信（Mail 存成 `<rowid>.partial.emlx`）過去會被**靜默寫成 header-only md**。v2.23.0+ 的 manifest 帶負向訊號：item `body_downloaded: false`（僅 false 或缺席，絕不 true）+ 頂層 `body_not_downloaded` 計數（O(1) 檢查）。**SOP 消費規則**：
+  1. Step 5.0 兩批呼叫**一律帶 `opts.skip_partial: true`** —— header-only 信不落盤（status `"header_only"`，不佔 corpus、不產生 `-N` 疊檔），檔名 slot 仍保留（re-export 落回原名）。
+  2. export 後檢查 `body_not_downloaded > 0` → 對每個 `status:"header_only"` item 的 id 跑單封 `get_email`（其 mail#274 fallback 兼作下載促發），然後**只對這些 id 重跑一次 `batch_export_emails_markdown`**（仍帶 `skip_partial:true`；再被 skip = body 仍未下載，Step 7 報告揭露、不重試迴圈）。
+  3. `"header_only"` 與 dedup 的 `"skipped"` 是**不同 status**，Step 8.5 Phase 0 對兩者都不計為 written。
+  4. **版本邊界**：binary < v2.23.0 無此訊號（manifest 缺 `body_not_downloaded` 鍵）→ 行為同舊（可能靜默 header-only），SOP 偵測到鍵缺席時在 Step 7 報告標註「partial 偵測不可用（binary 過舊）」。
+  > ⚠️ 預設模式（不帶 `skip_partial`）的 re-fetch 迴圈**不安全**：header-only md 已實際落盤，re-export 會撞 collision guard 產生 stale + `-N` 重複檔——必須先刪 flagged item 的 `written_path` 才能重匯。帶 `skip_partial:true` 從源頭避開此 trap（工具 schema 描述同此警告）。
+
 **批次失敗處理**：整批呼叫失敗（如 lock busy #236、FDA 不可用）→ log 後 **fallback 到 Step 5.1** per-email；部分 item `status:"error"` → 該 id 走 Step 5.1 補抓，其餘接受 batch 結果。
 
 #### Step 5.1: Per-email fallback（原 Step 5 邏輯）
