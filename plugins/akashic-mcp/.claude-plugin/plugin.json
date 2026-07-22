@@ -1,0 +1,8 @@
+{
+  "name": "akashic-mcp",
+  "version": "0.1.0",
+  "description": "Akashic-Library MCP server — file-based canonical literature store: search, relations, graph, derived-layer writes, person resolution, Zotero one-way pull",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["mcp", "swift", "akashic", "literature", "bibliography", "zotero", "graph"]
+}

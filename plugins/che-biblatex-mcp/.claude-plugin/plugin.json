@@ -1,0 +1,8 @@
+{
+  "name": "che-biblatex-mcp",
+  "version": "0.4.0",
+  "description": "BibLaTeX MCP server — parse, validate (APA 7), auto-fix, section classify, and diff against Zotero",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["mcp", "swift", "biblatex", "bibtex", "zotero", "apa", "citations"]
+}

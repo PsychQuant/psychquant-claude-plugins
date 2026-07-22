@@ -1,0 +1,7 @@
+{
+  "biblatex": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/che-biblatex-mcp-wrapper.sh",
+    "description": "BibLaTeX .bib 檔管理（parse/APA 驗證/auto-fix/Zotero diff）"
+  }
+}

@@ -318,6 +318,26 @@
       },
       "source": "./plugins/bestocr",
       "category": "development"
+    },
+    {
+      "name": "akashic-mcp",
+      "version": "0.1.0",
+      "description": "Akashic-Library MCP server — file-based canonical literature store: search, relations, graph, derived-layer writes, person resolution, Zotero one-way pull",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/akashic-mcp",
+      "category": "productivity"
+    },
+    {
+      "name": "che-biblatex-mcp",
+      "version": "0.4.0",
+      "description": "BibLaTeX MCP server — parse, validate (APA 7), auto-fix, section classify, and diff against Zotero",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/che-biblatex-mcp",
+      "category": "productivity"
     }
   ]
 }
