@@ -1,7 +1,7 @@
 {
   "name": "math-tools",
-  "version": "0.1.0",
-  "description": "v0.1.0: Scaffolding for academic math article editing — covers 4 scopes: (1) propositions extraction + R1-R8 mechanical validation (validate-propositions.py with normalize_for_match resilient substring containment, R1 prop-subset / R2 cite-resolve / R3 DAG / R6 sentence-clause-index / R7 UUID v7 / R8 unique-ids); (2) proofread workflow — JSONL-driven L1-L5 + location-drift 6-layer per-prop checklist (.proofread/<file>.md atomic granularity, 286-prop full-manuscript walk demonstrated); (3) manuscript audit R1-R4 with PR-side CI gate (audit-symbols / audit-citations / audit-code-manuscript per manuscript-consistency-audit.md SOP); (4) cross-doc sync rules — manuscript-jsonl-sync (prop-level main.tex <-> jsonl), manuscript-consistency-audit (audit-time SOP), code-and-manuscript-sync (repo-level cluster PR scope). Dogfood origin: PsychQuantHsu/psychophysical_representations #107 proofread workflow experiment (3 pilots, 5 findings shipped). v0.1.0 ships skeleton SKILL.md bodies + 3 frozen baseline rules; skill execution bodies + scripts remain in source repo until per-skill iteration extracts them. Use /plugin-tools:plugin-update math-tools after each skill body refinement.",
+  "version": "0.2.0",
+  "description": "v0.2.0: Toolkit for academic math article editing — covers 5 scopes: (1) propositions extraction + R1-R8 mechanical validation (validate-propositions.py with normalize_for_match resilient substring containment, R1 prop-subset / R2 cite-resolve / R3 DAG / R6 sentence-clause-index / R7 UUID v7 / R8 unique-ids); (2) proofread workflow — JSONL-driven L1-L5 + location-drift 6-layer per-prop checklist (.proofread/<file>.md atomic granularity, 286-prop full-manuscript walk demonstrated); (3) manuscript audit R1-R4 with PR-side CI gate (audit-symbols / audit-citations / audit-code-manuscript per manuscript-consistency-audit.md SOP); (4) cross-doc sync rules — manuscript-jsonl-sync (prop-level main.tex <-> jsonl), manuscript-consistency-audit (audit-time SOP), code-and-manuscript-sync (repo-level cluster PR scope); (5) clarity-audit — free-form readability audit that finds where a human reader stalls (unanchored term / missing bridge, definition-away-from-use, claim-without-reason, notation collision, non-standard terminology) and rewrites the passage self-contained; the readability axis, complementary to proofread's per-proposition correctness axis (a passage can pass proofread and still be unreadable). Dogfood origin: PsychQuantHsu/psychophysical_representations #107 proofread workflow experiment (3 pilots, 5 findings shipped); clarity-audit distilled from the NSTC postdoc brief_proposal §3 clarity-refinement pass. v0.1.0 shipped skeleton SKILL.md bodies + 3 frozen baseline rules (execution bodies + scripts still in source repo); v0.2.0 adds clarity-audit with a complete execution body. Use /plugin-tools:plugin-update math-tools after each skill body refinement.",
   "author": {
     "name": "Che Cheng"
   },
@@ -11,6 +11,8 @@
     "latex",
     "propositions",
     "proofread",
-    "audit"
+    "audit",
+    "clarity",
+    "readability"
   ]
 }
