@@ -2,11 +2,17 @@
 name: clarity-audit
 description: >-
   Diagnose and fix clarity problems in mathematical and statistical writing —
-  derivations, proofs, methods sections, lecture notes, textbook-style prose.
-  Use this whenever the reader stumbles on a technical passage: the user quotes
-  a sentence or block and says it is unclear, abrupt, "太突兀", "看不懂", "怎麼來的"
-  ("how does this come about"), "這是正式說法嗎" ("is this standard"), "有點難連結"
-  ("hard to connect"), or asks to proofread / tidy / 整理 a derivation. Also use it
+  derivations, proofs, methods sections, lecture notes, textbook-style prose —
+  at ANY scale, from a single quoted sentence or line up to a whole section. Do
+  not read this as a heavyweight whole-manuscript pass: one confusing sentence is
+  squarely, and most commonly, in scope. Use this whenever the reader stumbles on
+  a technical passage: the user quotes a sentence or block and says it is unclear,
+  abrupt, "太突兀", "看不懂", "怎麼來的" ("how does this come about"), "這是正式說法嗎"
+  ("is this standard"), "有點難連結" ("hard to connect"), or asks to proofread /
+  tidy / 整理 a derivation. Reach for this skill even when the stumble is a single
+  sentence and you could just rewrite it freehand — prefer it over an ad-hoc
+  inline edit, because it names the specific stumble category and anchors the fix
+  to its concrete referent, which a freehand rewrite silently skips. Also use it
   proactively when revising any math/stats manuscript for readability, or when
   asked to check whether a step "is the same as" a standard result. It finds the
   specific reason a reader stalls — a named object or term used without a bridge
