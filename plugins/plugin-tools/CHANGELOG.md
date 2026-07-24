@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-07-24
+
+### Added
+- **`skill-description-budget` rule** (`rules/skill-description-budget.md`): documents the two gates that strip a skill's `description` from the skill listing — the per-entry cap (`skillListingMaxDescChars`, default 1,536 chars, truncates) and the total listing budget (`skillListingBudgetFraction`, default 1% of the context window, which drops descriptions least-invoked-first to **name-only** when the listing overflows). Codifies: keep descriptions concise and front-loaded (≤ ~500 chars, well under 1,536), don't inflate for "pushiness", raise the budget in many-skill environments, and how to diagnose a dropped description (fresh subagent reports NAME-ONLY vs a control skill). Auto-loaded, so it applies during plugin-create / plugin-upgrade authoring and plugin-deploy / plugin-update review. Blood origin: math-tools `clarity-audit` (1,860-char description dropped to name-only, triggered 1/4 until trimmed + budget raised to 0.02).
+
 ## [1.16.0] - 2026-05-10
 
 ### Added

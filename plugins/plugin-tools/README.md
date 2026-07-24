@@ -51,6 +51,7 @@ Claude Code Plugin 完整生命週期工具。
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.18.0 | 2026-07-24 | **skill-description-budget rule** — skill listing 的 per-entry 1,536-char cap（`skillListingMaxDescChars`）+ 總 budget（`skillListingBudgetFraction`，預設 1%）機制;裝太多 skill 或 description 太長時「最少 invoke」的 skill 描述被砍成 name-only、觸發退化成純靠名字。規範:description 精簡前置（≤ ~500 字元）、別為 pushy 灌長、many-skills 提高 budget、fresh-subagent 診斷法。 |
 | v1.15.0 | 2026-04-26 | README Freshness Gate v2 — 從 3 信號擴展到 **6 信號 + 2 suppressions**。新增：(4) component inventory drift（skills/agents/commands 沒進 README）、(5) tool count drift（README 寫 "20 tools" 但 plugin.json description 說 28）、(6) Version History multi-version gap（漏中間版本，不只 latest）。新增 suppressions：A) README 沒版本標記時不誤判 mtime drift；B) Wrapper-only / marketplace.json sync commits 不算 substantive 改動。從跨 28 plugin 大規模 audit 萃取的盲點。 |
 | v1.14.1 | 2026-04-22 | tool-readme-sync rule 擴充到 GitHub repo About metadata |
 | v1.14.0 | 2026-04-22 | tool-readme-sync rule（codify tool list ↔ README sync 跨 mcp-tools/cli-tools/plugin-tools）|
