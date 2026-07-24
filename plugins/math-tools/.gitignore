@@ -3,3 +3,9 @@
 references/*.pdf
 references/*.epub
 references/*.mobi
+
+# Python bytecode generated when the bundled scripts/ run
+__pycache__/
+*.pyc
+# macOS
+.DS_Store

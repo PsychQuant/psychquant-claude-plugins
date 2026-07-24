@@ -1,22 +1,17 @@
 ---
 name: proofread
 description: |
-  JSONL-driven 6-layer proofread workflow for math manuscript. Each prop in main.jsonl becomes
-  a [ ] checklist item in manuscript/.proofread/<file>.md; walk through L1-L5 + location-drift
-  per prop; mark [x] (CLEAN) / [~] (finding) / [-] (out of scope).
+  JSONL-driven 6-layer proofread walk for a math manuscript. Each prop in main.jsonl becomes a
+  checklist item in manuscript/.proofread/<file>.md; walk L1-L5 + location-drift per prop and
+  mark [x] CLEAN / [~] finding / [-] out-of-scope. The layers: L1 text-claim match (asserts
+  truly atomic + faithful paraphrase), L2 claim_type fit, L3 cite completeness (all external
+  refs declared), L4 cite validity (each cited prop logically implies this prop's asserts),
+  L5 evidence_class fit, plus location drift (declared line range matches main.tex).
 
-  L1 = text-claim match (asserts truly atomic + faithful paraphrase)
-  L2 = claim_type fit (axiom non-derivable / definition has equality / commentary not derived / etc.)
-  L3 = cite completeness (all external refs declared)
-  L4 = cite validity (each cited prop logically implies this prop's asserts)
-  L5 = evidence_class fit (derived needs cites / axiomatic truly axiom / etc.)
-  +location drift (claimed line range matches main.tex actual)
-
-  Use when: pre-submission final polish, post large rewrite, Hsu-approval-pending area,
-  validating prop-extraction quality. NOT for daily micro-edit (use sync rule + validator).
-
-  v0.1.0 SCAFFOLDING — execution body TODO. Methodology frozen in
-  PsychQuantHsu/psychophysical_representations/manuscript/.proofread/main_jsonl_l4_walk.md.
+  Use when: pre-submission final polish, after a large rewrite, an approval-pending area, or
+  validating prop-extraction quality. This is the **semantic correctness** axis — distinct from
+  `/math-tools:propositions` (mechanical R1-R13 gate) and `/math-tools:manuscript-audit`
+  (cross-artifact drift). NOT for daily micro-edits — use the sync rule + validator there.
 allowed-tools:
   - Read
   - Write
@@ -29,110 +24,116 @@ allowed-tools:
 
 # Proofread — 6-Layer Walk
 
-## Status (v0.1.0)
+Where `/math-tools:propositions` asks "is the JSONL mechanically well-formed", this skill asks
+the semantic question a machine cannot: **is each claim true, faithfully stated, and actually
+implied by what it cites.** It is a guided per-proposition walk, not a script — the value is
+the human/LLM judgment at each layer.
 
-**Scaffolding only.** Methodology demonstrated + frozen at:
+## The 6 layers
 
-- `PsychQuantHsu/psychophysical_representations/manuscript/.proofread/main_jsonl.md` (637-line checklist source)
-- `manuscript/.proofread/main_jsonl_l4_walk.md` (Pilot 3 full L4 walk ledger, 286-prop coverage)
+| Layer | Check | Difficulty |
+|-------|-------|------------|
+| L1 | Does `prop.text` truly claim the listed `asserts`? (atomic + faithful paraphrase) | mostly mechanical (the R1 substring match backs it) |
+| L2 | Does `claim_type` match the text's semantics? (axiom non-derivable / definition has equality / commentary not derived / restatement truly re-states / case_split truly partitions) | semi-mechanical heuristic |
+| L3 | Is everything cited in `prop.text` declared in the `cites` field? | **LLM-required** — load-bearing reference detection is semantic |
+| L4 | Does each cited prop's asserts *logically imply* this prop's asserts? | **LLM-required** — derivation-chain verification |
+| L5 | Is `evidence_class` consistent with `claim_type`? (derived needs cites; axiomatic truly an axiom; verified has an external proof) | schema-aware heuristic + judgment |
+| location | Does `location.line` match the actual main.tex line range? | mechanical — the R13 check in the validator |
 
-3 pilots completed (#107):
+L1, L2, and location are backed by the bundled `/math-tools:propositions` validator (R1-R13);
+run it first so this walk can focus on L3/L4/L5, which no script can decide.
 
-| Pilot | Scope | Findings | Status |
-|-------|-------|----------|--------|
-| 1 | `_stage2/theorem1.jsonl` (23 props) | 13 location-drift | escalated → #106 closed |
-| 2 | `main.jsonl` thm:eta-s (46 props) | 2 L3 + 2 COMPRESS + 1 mild L3 | all fixed in commit 9e85198 |
-| 3 | Full `main.jsonl` (286 props, hybrid 115 deep + 20 sample + 151 heuristic) | 0 additional | ledger frozen |
+## ROI: where findings actually hide
 
-## The 6 Layers
+From the dogfood pilots (below), finding density is very uneven, so coverage should be uneven too:
 
-| Layer | Check | Detection difficulty |
-|-------|-------|----------------------|
-| L1 | prop.text真的 claim 出 asserts 列項? (atomic + faithful paraphrase) | Mostly mechanical via R1 substring match |
-| L2 | claim_type matches text semantic? (axiom non-derivable / definition has equality / commentary not derived / restatement truly re-states / case_split truly partitions) | Semi-mechanical — heuristic on bullet pattern |
-| L3 | All external refs in prop.text declared in cites field? | **LLM-required** — load-bearing reference detection is semantic |
-| L4 | Does each cited prop logically imply this prop's asserts? (mathematical correctness given cites) | **LLM-required** — derivation chain verification |
-| L5 | evidence_class consistent with claim_type? (derived needs cites; axiomatic truly axiom; verified has external proof) | Schema-aware heuristic + LLM judgment |
-| location | location.line range matches actual main.tex line range | Mechanical via `scripts/refresh-prop-locations.py` |
+- Proof bodies / derivation chains: **~2.6%** finding rate (3 / 115 deep-walked props) — deep-walk these.
+- Theorems 2-4 + Synthesis: **0%** (0 / 20 sampled) — sample.
+- Commentary / Discussion: **0%** mechanical anomalies (0 / 151 heuristic) — heuristic scan only.
 
-## ROI Cliff (from Pilot 3 data)
+→ **Hybrid coverage**: deep-walk proof bodies, sample mid-density sections, heuristic-scan commentary. A uniform full walk spends most of its time at 0% yield.
 
-- Proof body / derivation chain: **~2.6% finding rate** (3/115 deep walk)
-- Theorems 2-4 + Synthesis: **0%** (0/20 sampled)
-- Commentary / Discussion: **0% mechanical anomalies** (0/151 heuristic)
+## Procedure
 
-→ **Hybrid coverage strategy**: deep walk proof body + sample mid-density sections + heuristic scan commentary.
-
-## Execution Steps (v0.2.0 target — TODO)
-
-### Step 0: Bootstrap Stage Task List
+### Step 0: Prerequisite — pass the mechanical gate first
 
 ```
-TaskCreate generate_checklist_md / decide_coverage_strategy /
-            per_prop_walk (L1-L5+location) / classify_finding /
-            update_ledger / decide_escalation (audit-finding issue / inline note / camera-ready candidate) /
-            commit_with_jsonl_sync
+/math-tools:propositions   # R1-R13 must be green (or WARN-only) before walking
 ```
 
-### Step 1: Generate `.proofread/<file>.md` checklist from JSONL
+A walk on a JSONL that fails R1/R7/R8 wastes effort — fix mechanical drift first.
 
-For each prop, emit:
+### Step 1: Generate the `.proofread/<file>.md` checklist from the JSONL
+
+For each prop in `manuscript/propositions/main.jsonl`, emit one line, grouped by
+`containing_block`:
+
 ```markdown
-- [ ] **P{seq}** `{uuid_short}` [{claim_type}] @L{start}-L{end} — "{first 80 chars of text}..." (asserts: {N}, cites: {N})
+- [ ] **P{seq}** `{uuid_short}` [{claim_type}] @L{start}-L{end} — "{first 80 chars of text}…" (asserts: {N}, cites: {N})
 ```
 
-Group by `containing_block` field. Add hyperlink to git blame for audit trail.
+Add a git-blame hyperlink per line for the audit trail.
 
-### Step 2: Coverage decision (AskUserQuestion 4-option)
+### Step 2: Decide coverage (AskUserQuestion, 4 options)
 
 | Strategy | Use case | Time |
 |----------|----------|------|
-| By section (e.g. Theorem 1 ~40 props) | Section-cohesive review | 20-30 min |
-| By claim_type | Foundational props first | variable |
-| By priority area (recent-change cluster) | Post-PR follow-up | 25-40 min |
-| Full manuscript (~2-3h) | Pre-submission gate | 2-3h |
+| By section (e.g. Theorem 1, ~40 props) | section-cohesive review | 20-30 min |
+| By claim_type | foundational props first | variable |
+| By priority area (recent-change cluster) | post-PR follow-up | 25-40 min |
+| Full manuscript | pre-submission gate | 2-3 h |
 
-### Step 3: Per-prop L4 walk
+Default toward the hybrid ROI strategy above rather than a flat full walk.
 
-For each prop, present:
-- prop.text (raw)
-- prop.asserts (atomic list)
-- prop.cites (UUID list — resolve each via main.jsonl lookup)
-- prop.claim_type / evidence_class
+### Step 3: Per-prop walk
 
-Ask coordinator to verify:
-- L1: do asserts faithfully decompose text?
-- L2: does claim_type fit?
-- L3: is anything cited in text but not in cites field?
-- L4: does each cited prop's asserts logically imply this prop's asserts?
-- L5: is evidence_class consistent?
-- location: spot-check main.tex line N — does prop.text start there?
+For each prop, present `prop.text` (raw), `prop.asserts` (atomic list), `prop.cites` (resolve
+each UUID via a main.jsonl lookup), and `claim_type` / `evidence_class`. Verify:
 
-Mark `[x]` (CLEAN all 6), `[~]` (finding noted, detail in § Findings), `[-]` (out of scope).
+- L1 — do the asserts faithfully decompose the text?
+- L2 — does claim_type fit?
+- L3 — is anything cited *in the text* but missing from the `cites` field?
+- L4 — does each cited prop's asserts logically imply this prop's asserts?
+- L5 — is evidence_class consistent?
+- location — spot-check main.tex line N: does prop.text start there?
+
+Mark `[x]` (CLEAN on all six), `[~]` (finding — detail in the § Findings ledger), or `[-]`
+(out of scope).
 
 ### Step 4: Findings ledger
 
-Hybrid mode: inline § Findings table in `.proofread/*.md` for severity < L3-blocking; escalate severity ≥ L3 cite-completeness OR ≥ 10 props affected to separate `audit-finding` GitHub issue (per `code-and-manuscript-sync.md` cluster discipline).
+Keep an inline § Findings table in `.proofread/<file>.md` for anything below L3-blocking
+severity. Escalate to a separate `audit-finding` GitHub issue when severity ≥ L3
+cite-completeness OR ≥ 10 props are affected (per the `code-and-manuscript-sync.md` cluster
+discipline).
 
-### Step 5: Fix-shipping (if findings)
+### Step 5: Ship fixes
 
-Per `manuscript-jsonl-sync.md` scenario routing:
-- L1/L3 cite-completeness → scenario 6 (jsonl-only edit, add UUID)
-- L2 misclassification → fix prop.claim_type + re-validate R6
-- L4 COMPRESS (camera-ready candidate) → scenario 1 (wording expand in main.tex) + scenario 2 (prop.text sync)
-- L5 mismatch → fix evidence_class + verify schema
+Route each finding through `manuscript-jsonl-sync.md`:
 
-Coordinator commits with cross-link to .proofread ledger entry.
+- L1 / L3 cite-completeness → jsonl-only edit (add the missing UUID)
+- L2 misclassification → fix `prop.claim_type`, then re-validate
+- L4 "COMPRESS" (a camera-ready candidate: the prose is terser than the claim) → expand wording in main.tex, then sync `prop.text`
+- L5 mismatch → fix `evidence_class`, verify against the schema
 
-## When NOT to Use
+Commit with a cross-link to the `.proofread` ledger entry.
 
-- Daily micro-edit → use R1-R8 validator + sync rule (cheaper)
-- Pre-extraction phase (jsonl doesn't exist yet) → run `propositions` skill first
-- Commentary-only sections → heuristic scan is enough; deep walk ROI low
+## When NOT to use
+
+- Daily micro-edit → the R1-R13 validator + sync rule is cheaper
+- Pre-extraction phase (no JSONL yet) → run `/math-tools:propositions` (Operation C) first
+- Commentary-only sections → a heuristic scan suffices; deep-walk ROI is ~0%
+
+## Provenance
+
+Methodology validated on `psychophysical_representations` #107 — 3 pilots: (1) a 23-prop
+theorem file surfaced 13 location-drift findings (escalated + closed); (2) a 46-prop theorem
+surfaced 2 cite-completeness + 2 compress findings (all fixed); (3) a full 286-prop walk
+(hybrid: 115 deep + 20 sample + 151 heuristic) surfaced 0 additional — the ledger that froze
+the ROI numbers above.
 
 ## Cross-link
 
-- Source dogfood: PsychQuantHsu/psychophysical_representations #107 (3 pilots done)
-- Rule: [`../../rules/manuscript-jsonl-sync.md`](../../rules/manuscript-jsonl-sync.md) — sync discipline after L3/L4 fix
-- Sister skill: `/math-tools:propositions` for mechanical R1-R8 gate
-- Sister skill: `/math-tools:manuscript-audit` for cross-doc R1-R4 drift
+- `/math-tools:propositions` — the mechanical R1-R13 gate this walk assumes has passed
+- `/math-tools:manuscript-audit` — cross-doc R1-R4 drift
+- Rule [`../../rules/manuscript-jsonl-sync.md`](../../rules/manuscript-jsonl-sync.md) — sync discipline for L1/L3/L4 fixes
