@@ -1,17 +1,7 @@
 ---
 name: proofread
-description: |
-  JSONL-driven 6-layer proofread walk for a math manuscript. Each prop in main.jsonl becomes a
-  checklist item in manuscript/.proofread/<file>.md; walk L1-L5 + location-drift per prop and
-  mark [x] CLEAN / [~] finding / [-] out-of-scope. The layers: L1 text-claim match (asserts
-  truly atomic + faithful paraphrase), L2 claim_type fit, L3 cite completeness (all external
-  refs declared), L4 cite validity (each cited prop logically implies this prop's asserts),
-  L5 evidence_class fit, plus location drift (declared line range matches main.tex).
-
-  Use when: pre-submission final polish, after a large rewrite, an approval-pending area, or
-  validating prop-extraction quality. This is the **semantic correctness** axis — distinct from
-  `/math-tools:propositions` (mechanical R1-R13 gate) and `/math-tools:manuscript-audit`
-  (cross-artifact drift). NOT for daily micro-edits — use the sync rule + validator there.
+description: >-
+  JSONL-driven 6-layer per-proposition walk (L1-L5 + location): faithful decomposition, claim_type fit, cite completeness, cite validity, evidence_class consistency. Use for pre-submission polish, after a large rewrite, or to validate prop-extraction quality. The semantic-correctness axis (does each cited prop actually imply this one) — distinct from /math-tools:propositions (mechanical R1-R13 gate) and /math-tools:manuscript-audit (cross-artifact drift). Not for daily micro-edits (use the validator + sync rule).
 allowed-tools:
   - Read
   - Write

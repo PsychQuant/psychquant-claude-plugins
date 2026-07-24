@@ -1,30 +1,7 @@
 ---
 name: clarity-audit
 description: >-
-  Diagnose and fix clarity problems in mathematical and statistical writing —
-  derivations, proofs, methods sections, lecture notes, textbook-style prose —
-  at ANY scale, from a single quoted sentence or line up to a whole section. Do
-  not read this as a heavyweight whole-manuscript pass: one confusing sentence is
-  squarely, and most commonly, in scope. Use this whenever the reader stumbles on
-  a technical passage: the user quotes a sentence or block and says it is unclear,
-  abrupt, "太突兀", "看不懂", "怎麼來的" ("how does this come about"), "這是正式說法嗎"
-  ("is this standard"), "有點難連結" ("hard to connect"), or asks to proofread /
-  tidy / 整理 a derivation. Reach for this skill even when the stumble is a single
-  sentence and you could just rewrite it freehand — prefer it over an ad-hoc
-  inline edit, because it names the specific stumble category and anchors the fix
-  to its concrete referent, which a freehand rewrite silently skips. Also use it
-  proactively when revising any math/stats manuscript for readability, or when
-  asked to check whether a step "is the same as" a standard result. It finds the
-  specific reason a reader stalls — a named object or term used without a bridge
-  to its concrete meaning, a symbol defined away from its first use, a claim
-  asserted without its reasoning, colliding notation, or non-standard
-  terminology — then explains the mathematics and rewrites the passage so it is
-  self-contained, one point at a time. Do not treat this as generic copy-editing;
-  it is about the logical connective tissue of a derivation, not grammar. Within
-  math-tools this is the readability axis, distinct from the `proofread` skill
-  (per-proposition correctness/consistency checked against a JSONL side-file): a
-  passage can pass proofread and still be unreadable. Reach for clarity-audit when
-  a human reader stalls on prose, not when a claim is wrong or a citation drifted.
+  Fix clarity problems in math/stats writing at ANY scale — one confusing sentence up to a whole section, not just whole-manuscript passes. Trigger when the reader stalls on a technical passage: unclear / abrupt / "太突兀" / "看不懂" / "怎麼來的" / "這是正式說法嗎" / "難連結", or "proofread / 整理 this derivation", or "is this the same as <standard result>". Names the specific stall (unanchored term, definition-away-from-use, claim-without-reason, notation clash, non-standard terminology) and rewrites the passage self-contained. This is the readability axis — distinct from proofread (per-proposition correctness). Reach for it even for a single sentence, over an ad-hoc inline rewrite.
 ---
 
 # Math Writing Clarity Audit

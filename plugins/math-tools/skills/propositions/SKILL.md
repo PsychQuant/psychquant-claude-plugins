@@ -1,17 +1,7 @@
 ---
 name: propositions
-description: |
-  Extract atomic propositions from a math manuscript .tex file into a JSONL structural
-  representation, and run the R1-R13 mechanical validator (validate-propositions.py) that
-  checks the prop ↔ tex bijection: text-subset match, cite DAG, UUID v7 uniqueness,
-  claim_type / evidence_class enums, and location line-range anchoring. Also fixes
-  location-field drift after main.tex line shifts (refresh-prop-locations.py).
-
-  Use when: starting a propositions side-file for a new manuscript, re-extracting after a
-  large rewrite, running the mechanical gate before an audit or submission, or when the
-  validator's R13 location-drift WARN spikes after editing main.tex. NOT for the L4 semantic
-  walk (that is `/math-tools:proofread`) or cross-artifact drift (that is
-  `/math-tools:manuscript-audit`).
+description: >-
+  Run the R1-R13 mechanical validator on a propositions JSONL side-file (prop↔tex subset match, cite DAG, UUID v7 uniqueness, claim_type/evidence_class enums, location anchoring); fix location-field drift (refresh-prop-locations.py, dry-run gated); or extract a new JSONL. Use when starting/re-extracting a propositions file, running the mechanical gate before an audit or submission, or when the R13 location-drift WARN spikes after editing main.tex. The mechanical axis — NOT the L4 semantic walk (/math-tools:proofread) or cross-doc drift (/math-tools:manuscript-audit).
 allowed-tools:
   - Read
   - Write

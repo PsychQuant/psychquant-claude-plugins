@@ -1,18 +1,7 @@
 ---
 name: manuscript-audit
-description: |
-  Audit-time cross-doc drift detection for a math manuscript. Runs the bundled orchestrator
-  run-audit.sh over four passes: R1 (working-file path leak in \texttt{}), R2 (citation-key
-  drift / bib orphan / cite-label leak), R3 (code-symbol drift between analysis/ and
-  manuscript/docs/), and R4 (proposition-jsonl iso-bijection, auto-skipped when there is no
-  propositions/main.jsonl). It checks the **cross-artifact consistency** among
-  manuscript/main.tex + propositions/*.jsonl + analysis/*.py + references/*.tex + refs.bib —
-  a different axis from `/math-tools:propositions` (R1-R13 gate on the JSONL alone) and
-  `/math-tools:proofread` (per-prop L4 semantic walk).
-
-  Use when: after a large rewrite, before submission, or entering a new stage (initial
-  submission / major revision / camera-ready). NOT per-PR — that is a pre-commit hook + CI
-  gate in the manuscript repo, per the `code-and-manuscript-sync.md` rule.
+description: >-
+  Cross-document drift audit for a math manuscript via run-audit.sh: R1 working-file path leaks (a working filepath accidentally typeset in main.tex), R2 citation/bib drift and orphans, R3 code-vs-manuscript symbol drift, R4 proposition-iso bijection. Checks consistency across main.tex + propositions/*.jsonl + analysis/*.py + refs.bib. Use after a large rewrite, before submission, or entering a new stage (submission / major revision / camera-ready) — NOT per-PR (that's a hook + CI). The cross-artifact axis — distinct from /math-tools:propositions (in-file JSONL gate) and /math-tools:proofread (per-prop semantic walk).
 allowed-tools:
   - Read
   - Write
