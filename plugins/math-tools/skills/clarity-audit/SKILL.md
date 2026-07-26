@@ -107,6 +107,15 @@ parameter, with the relation never stated. The tell: the reader conflates them.
 **Fix:** state the relation explicitly ("iterate `k = 0,…,K−1` to get the K-step
 estimate `θ_K`"). If it stays confusing, rename one symbol.
 
+A quieter variant is an **accent that has gone stale**. Accents carry meaning —
+tilde for a √n-consistent preliminary, hat for the refined estimator — so when
+the framing changes they need re-auditing. If a reframing promotes the
+preliminary from scaffolding to a full member of the family, its tilde now tells
+the reader something false. And if one accent is carrying two distinctions at
+once (preliminary-versus-refined *and* numerical-output-versus-exact-minimizer),
+one of them has to give: keep the accent for the distinction that still earns it,
+and let a subscript or superscript carry the other.
+
 ### 5. Non-standard terminology
 
 A home-grown phrase where a term of art exists. It reads as understandable but
@@ -125,6 +134,52 @@ A new sentence silently assumes the reader carried a result forward. The tell:
 **Fix:** one signpost sentence naming the carried thing ("This increment `δ` is
 the search direction. Stepping along it gives …").
 
+### 7. Unexpanded abbreviation or unexplained operator
+
+An initialism or operator is used before — or without ever — being expanded:
+`PF(0.50)`, `GMM`, `vech`. Unlike category 1 this one is mechanical: list every
+capitalised initialism and every custom operator in the document and ask where
+each is introduced.
+
+The tell you cannot rely on is your own familiarity. `vech` is invisible to
+anyone who works with covariance structures and opaque to everyone else, and it
+is often load-bearing: `q = p(p+1)/2` is *the number of entries `vech` returns*,
+so a reader who does not know the operator cannot see where `q` came from.
+
+**Fix:** expand at first use, then delete any later duplicate definition. Put the
+words before the short form, not after — "the conventional single-start
+principal-factor ADF, written PF(0.50)–ADF", not "PF(0.50)–ADF … started from a
+principal-factor solution".
+
+### 8. Prose that misdescribes the implementation
+
+The passage documents what the code does, and documents it wrongly. Example: text
+saying a comparator starts from "initial communalities at 0.50" when the
+implementation sets initial *uniquenesses* to 0.50 times the observed variances.
+The two coincide at 0.50 and diverge everywhere else, so the error is invisible
+until someone opens the code.
+
+This is the one class you cannot diagnose from the prose. When a passage
+documents an implementation — a design grid, an algorithm's constants, a
+comparator's definition, a random-number scheme — **read the code**; do not
+reason about what the description probably meant.
+
+**Fix:** say what the code does, in the code's own terms.
+
+### 9. Attribution the cited work itself contradicts
+
+"X's algorithm", "the criterion derived by X" — an eponym or credit the cited
+source does not support. This is a precision failure, not only a discourtesy, and
+it is at its worst when the misattributed person is the reader.
+
+**Fix:** read what the cited paper says about its own contribution. Authors are
+usually explicit ("a novel estimator was developed in the early 2000s by …", "we
+show that …"), and their own bibliography is the authoritative source for the
+metadata of the earlier work — better than reconstructing it from memory, which
+is how invented titles and affiliations get in. Credit each layer separately: who
+introduced the object, who proved the property, who supplied the form actually
+being used.
+
 ## Procedure
 
 Work one stumble at a time — do not batch a dozen edits into one pass. Each
@@ -140,9 +195,19 @@ fix is small and independently verifiable, and the user is reviewing.
    checked.
 3. **Rewrite to anchor.** Supply the missing bridge / move the definition / give
    the why / use the standard term. Keep the author's voice.
-4. **Verify.** If it's LaTeX, compile (build → bib → build → build) and confirm
-   0 undefined refs, 0 errors, and that the intended text rendered (spot-check
-   with a PDF-to-text pass). A rewrite that doesn't compile is not done.
+4. **Verify — and remember that a clean compile is not proof.** If it's LaTeX,
+   compile (build → bib → build → build) and confirm 0 undefined refs, 0 errors,
+   and that the intended text rendered (spot-check with a PDF-to-text pass).
+   That checks what you *added*. It does not check what silently *disappeared*.
+   Anything touching the preamble — a package, a font, an encoding — can delete
+   content while reporting success: loading `fontspec` into a document whose math
+   relies on legacy encodings makes bold Greek capitals resolve against a Unicode
+   text font, which drops them. The log says only `Missing character: ^^C`, the
+   build exits 0, and 28 symbols are gone from the PDF. So when you touch the
+   preamble, **diff the rendered output**: extract the text of the new and old
+   PDFs and compare counts for the glyphs the document depends on. A rewrite that
+   doesn't compile is not done; a preamble change that wasn't diffed isn't
+   verified.
 5. **Confirm the connection actually lands.** Re-read the rewritten passage as a
    cold reader: is the named thing now reachable? If not, the bridge is still
    missing.
