@@ -1,0 +1,8 @@
+{
+  "name": "ai-docs-guide",
+  "version": "1.5.0",
+  "description": "[DEPRECATED 2026-07-29 — superseded by livedocs (livedocs-marketplace); use livedocs:look-up instead] Auto-triggered Skills for querying Claude Code, OpenAI, Codex CLI, Gemini API, and Gemini CLI official documentation.",
+  "author": { "name": "Che Cheng" },
+  "license": "MIT",
+  "keywords": ["claude-code", "openai", "codex", "codex-cli", "gemini", "google", "docs", "documentation", "api", "mcp", "settings"]
+}

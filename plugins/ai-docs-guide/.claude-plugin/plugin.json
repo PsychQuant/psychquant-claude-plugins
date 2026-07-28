@@ -1,8 +1,0 @@
-{
-  "name": "ai-docs-guide",
-  "version": "1.4.0",
-  "description": "Auto-triggered Skills for querying Claude Code, OpenAI, Codex CLI, Gemini API, and Gemini CLI official documentation. Source-code-first strategy for CLI tools. /ai-docs-guide for cross-platform comparison.",
-  "author": { "name": "Che Cheng" },
-  "license": "MIT",
-  "keywords": ["claude-code", "openai", "codex", "codex-cli", "gemini", "google", "docs", "documentation", "api", "mcp", "settings"]
-}
