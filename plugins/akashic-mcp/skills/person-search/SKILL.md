@@ -22,7 +22,12 @@ akashic_person(name: "cheng")
 - `person_key` 候選＝已解析的人物實體（people/）
 - `literal` 候選＝尚未解析的裸字串作者——若確認是同一人，建議走 `akashic_resolve_people` 正式解析（絕不批次自動套用）
 
-### 2. 聚合（person key → 全貌）
+### 2. 消歧（literal 候選 → person 實體）
+
+候選裡出現該解析而未解析的 literal 作者時，用 `akashic_resolve_people`（逐候選 accept/skip，
+絕不自動合併）把 literal 轉成 person key——人物檢索的品質取決於 people 實體的整理程度。
+
+### 3. 聚合（person key → 全貌）
 
 ```
 akashic_person(key: "cheng-che")
@@ -34,20 +39,16 @@ akashic_person(key: "cheng-che")
 
 限定 library 視角（#13 membership views）：`akashic_person(key: "cheng-che", library: "sinica")`。
 
-### 3. 追關係
+### 4. 追關係
 
 拿到 citekey 之後接既有工具：
 - `akashic_relations(citekey:, kind: "cites"/"cited-by"/"same-author"/...)` 追引用鏈
 - `akashic_graph(focus:, depth:)` 畫鄰域圖（person 節點會出現）
 - `akashic_get_entry(citekey:)` 看完整 entry（含 `akashic.libraries` membership）
 
-## 消歧維護（指向 resolve-people）
-
-候選裡出現該解析而未解析的 literal 作者時，用 `akashic_resolve_people`（逐候選 accept/skip，
-絕不自動合併）把 literal 轉成 person key——人物檢索的品質取決於 people 實體的整理程度。
-
 ## 紀律
 
-- 模糊名的選定永遠交給使用者（candidates 不自動挑第一個）
+- 模糊名的選定永遠交給使用者（candidates 不自動挑第一個；上限 50、超出標 truncated）
+- key 與 name 互斥（同給會被拒）
 - 查無此人（notFound）≠ 資料庫壞——可能是 literal 未解析；退一步用 `name:` 模糊查
 - library 過濾只在 key 直查生效；未指定＝全集（阿卡夏＝記錄一切）
