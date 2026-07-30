@@ -15,7 +15,7 @@ macOS Apple Mail MCP server with native AppleScript integration.
 
 ### `/archive-mail` — 歸檔郵件到 Markdown
 
-把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。v2.7.0+ 預設套用 4-phase NSQL confirmation protocol（filter 模糊先 disambiguate、bulk 結果先 preview + flag false positives、destructive op 必 confirm），v2.9.0+ 強制 `TaskCreate` 10 個 stage tasks 確保每 phase 不被靜默 skip。
+把指定聯絡人的 Apple Mail 郵件批次歸檔為 Markdown 檔案，自動去重。v2.7.0+ 預設套用 4-phase Foresay confirmation protocol（filter 模糊先 disambiguate、bulk 結果先 preview + flag false positives、destructive op 必 confirm），v2.9.0+ 強制 `TaskCreate` 10 個 stage tasks 確保每 phase 不被靜默 skip。
 
 ```bash
 # Zero-arg mode (v2.12.0+, v2.16.0+ reads .yaml) — reads .claude/.mail/config.yaml
@@ -139,7 +139,7 @@ archive-mail v2.17.0+ 會:
 
 3 個 skills 由 `/archive-mail` 內部觸發，也可被其他工作流引用：
 
-- **`confirmation-protocol`** — NSQL-style 4-phase workflow（disambiguation → search preview → operation confirmation → execute or iterate）。v2.9.0+ Bootstrap 強制 `TaskCreate` 4 個 phase tasks，靜默 skip = 違規
+- **`confirmation-protocol`** — Foresay-style 4-phase workflow（disambiguation → search preview → operation confirmation → execute or iterate）。v2.9.0+ Bootstrap 強制 `TaskCreate` 4 個 phase tasks，靜默 skip = 違規
 - **`email-search-disambiguation`** — 處理模糊 filter（中文人名「陳老師」、相對時間「最近」、通用 scope「全部」），列候選讓 user 選定
 - **`bulk-operation-preview`** — ≥ 5 封 emails 的 preview format，含 false-positive flagging（✓/⚠/⚠⚠/❓）
 

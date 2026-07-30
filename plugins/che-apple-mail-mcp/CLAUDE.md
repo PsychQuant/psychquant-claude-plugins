@@ -1,6 +1,6 @@
 # che-apple-mail-mcp
 
-Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol + IDD-derived task enforcement。
+Apple Mail MCP server for macOS,加上 Foresay-derived confirmation protocol + IDD-derived task enforcement。
 
 ## 鐵律:Step 0 Bootstrap Stage Task List(v2.9.0+)
 
@@ -31,7 +31,7 @@ Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol + IDD-
 - `/archive-mail-migrate`(v2.8.0+)— 一次性把舊 archive 的 indices + config 搬到 `.claude/.mail/` namespace
 
 ### Skills(v2.7.0+ 新增)
-- `confirmation-protocol` — NSQL-style confirmation workflow,在執行前 show preview 讓 user confirm/correct
+- `confirmation-protocol` — Foresay-style confirmation workflow,在執行前 show preview 讓 user confirm/correct
 - `email-search-disambiguation` — 處理模糊 filter(中文人名、相對時間、通用 scope)
 - `bulk-operation-preview` — ≥ 5 封 emails 的 preview format,含 false-positive flagging
 
@@ -41,9 +41,9 @@ Apple Mail MCP server for macOS,加上 NSQL-derived confirmation protocol + IDD-
 
 ## 設計哲學
 
-### NSQL Confirmation Protocol
+### Foresay Confirmation Protocol
 
-借鑑 [`/Users/che/Developer/nsql`](file:///Users/che/Developer/nsql) 的核心 insight:
+借鑑 [Foresay](https://github.com/kiki830621/foresay) 的核心 insight:
 
 > AI 不直接執行,先 show 結構化的「我理解你要的是這樣」讓 user confirm/correct/reject,achieve consensus 後才執行。
 
@@ -319,6 +319,6 @@ mcp__plugin_che-apple-mail-mcp_mail__archive_email     ← 不存在,archive 走
 
 ## 相關
 
-- `/Users/che/Developer/nsql/protocol.yaml` — 原始 NSQL Confirmation Protocol spec
-- `/Users/che/Developer/nsql/docs/concept.md` — NSQL whitepaper
+- `core/protocol.yaml` — Foresay Confirmation Protocol spec（https://github.com/kiki830621/foresay）
+- `docs/concept.md` — Foresay whitepaper（同上 repo）
 - `commands/archive-mail.md` — Archive workflow(含 confirmation phases)

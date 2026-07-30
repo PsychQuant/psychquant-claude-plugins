@@ -1,6 +1,6 @@
 ---
 name: confirmation-protocol
-description: NSQL-derived confirmation workflow for email operations. Use this skill BEFORE executing archive-mail with vague filters, compose_email (sending mail), delete_email/move_email in bulk, or any operation that touches 5+ emails. Show user a structured preview of "what I understood" before taking action, achieving consensus through dialogue. Skip when the input is unambiguous (specific Message-ID, single mark_read, etc.).
+description: Foresay-derived confirmation workflow for email operations. Use this skill BEFORE executing archive-mail with vague filters, compose_email (sending mail), delete_email/move_email in bulk, or any operation that touches 5+ emails. Show user a structured preview of "what I understood" before taking action, achieving consensus through dialogue. Skip when the input is unambiguous (specific Message-ID, single mark_read, etc.).
 ---
 
 # Confirmation Protocol — Email Operations
@@ -9,7 +9,7 @@ description: NSQL-derived confirmation workflow for email operations. Use this s
 
 **AI 不直接執行,先 show 結構化的「我理解你要的是這樣」讓 user confirm/correct/reject,achieve consensus 後才執行**。
 
-借鑑自 nsql 的 Confirmation Protocol(`/Users/che/Developer/nsql`)。原始 nsql 設計給 SQL/data query;這裡 adapt 到 Apple Mail 操作。
+借鑑自 [Foresay](https://github.com/kiki830621/foresay) 的 Confirmation Protocol（該專案 2026-07 前名為 NSQL）。它最初設計給 SQL/data query;這裡 adapt 到 Apple Mail 操作。
 
 ## Bootstrap(v2.9.0+ 鐵律,強制)
 
@@ -157,4 +157,4 @@ affecting 247 emails
 - `rules/false-positive-detection.md` — 偵測 search 結果中的 false positives
 - `skills/email-search-disambiguation/SKILL.md` — 模糊 filter 怎麼 disambiguate
 - `skills/bulk-operation-preview/SKILL.md` — 大量操作的 preview format
-- `/Users/che/Developer/nsql/protocol.yaml` — 原始 NSQL Confirmation Protocol spec
+- `core/protocol.yaml` — Foresay Confirmation Protocol spec（https://github.com/kiki830621/foresay）
