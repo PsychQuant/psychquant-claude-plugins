@@ -39,8 +39,8 @@
 ## Development
 
 - Plugin structure: see [official plugin-dev](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/plugin-dev)
-- Update after changes: `/plugin-tools:plugin-update docflow`
-- Health check: `/plugin-tools:plugin-health`
+- Update after changes: `/devtools:plugin-update docflow`
+- Health check: `/devtools:plugin-health`
 - Local iterate: `claude --plugin-dir /Users/che/Developer/psychquant-claude-plugins/plugins/docflow`
 
 ## 設計起源

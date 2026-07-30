@@ -50,8 +50,8 @@ MCP namespace: `mcp__che-apple-notes-mcp__<tool>`.
 
 | 改動類型 | 處理 |
 |----------|------|
-| 改 plugin shell（commands、skill、hooks、wrapper） | `/plugin-tools:plugin-update che-apple-notes-mcp` |
-| 改 binary source（tool 新增、bug fix） | 先 `/mcp-tools:mcp-deploy` 到 binary repo → 發 GitHub Release → 再跑 `plugin-update` |
+| 改 plugin shell（commands、skill、hooks、wrapper） | `/devtools:plugin-update che-apple-notes-mcp` |
+| 改 binary source（tool 新增、bug fix） | 先 `/devtools:mcp-deploy` 到 binary repo → 發 GitHub Release → 再跑 `plugin-update` |
 | 同時改兩邊 | `plugin-update`（v1.11+ 會 detect 依賴不同步並 prompt 連動 mcp-deploy） |
 
 ## Permissions
@@ -67,10 +67,10 @@ Plugin 跑在使用者層級，需要兩個 TCC 權限：
 
 ## Development
 
-- Update after plugin-shell changes: `/plugin-tools:plugin-update che-apple-notes-mcp`
-- Full release (binary + plugin): `/plugin-tools:plugin-deploy che-apple-notes-mcp`
-- Binary source edits: go to `che-mcps/che-apple-notes-mcp/` then `/mcp-tools:mcp-deploy`
-- Health check: `/plugin-tools:plugin-health`
+- Update after plugin-shell changes: `/devtools:plugin-update che-apple-notes-mcp`
+- Full release (binary + plugin): `/devtools:plugin-deploy che-apple-notes-mcp`
+- Binary source edits: go to `che-mcps/che-apple-notes-mcp/` then `/devtools:mcp-deploy`
+- Health check: `/devtools:plugin-health`
 
 ## v0.1.0 Known Limits（寫進 README，使用者會看到）
 

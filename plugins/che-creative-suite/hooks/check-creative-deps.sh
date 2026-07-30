@@ -15,7 +15,7 @@ check_binary() {
         fi
     done
 
-    echo "MISSING $DISPLAY_NAME — install: /mcp-tools:mcp-deploy in the $DISPLAY_NAME project directory"
+    echo "MISSING $DISPLAY_NAME — install: /devtools:mcp-deploy in the $DISPLAY_NAME project directory"
     return 1
 }
 

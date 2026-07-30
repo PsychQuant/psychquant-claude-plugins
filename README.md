@@ -35,7 +35,6 @@
 /plugin marketplace add PsychQuant/psychquant-claude-plugins
 
 # 安裝 Plugin
-/plugin install mcp-tools@PsychQuant/psychquant-claude-plugins
 /plugin install che-things-mcp@PsychQuant/psychquant-claude-plugins
 /plugin install che-ical-mcp@PsychQuant/psychquant-claude-plugins
 ```
@@ -60,7 +59,6 @@ claude plugin install che-word-mcp@macdoc                        # 或 macdoc@ma
 | **che-ical-mcp** | macOS 行事曆 & 提醒事項 | 20 |
 | **che-apple-mail-mcp** | Apple Mail 郵件管理 + 歸檔 | 60+ |
 | **che-duckdb-mcp** | DuckDB 資料庫操作 | 14 |
-| **mcp-tools** | MCP Server 開發工具集 | - |
 | **r-shiny-debugger** | R Shiny App 功能測試 | - |
 | **ai-docs-guide** | Claude Code + OpenAI 文檔查詢助手 | - |
 | **postgresql-guide** | PostgreSQL 文檔查詢助手 | - |
@@ -147,17 +145,23 @@ Apple Mail 郵件管理，透過 AppleScript 原生整合。
 
 ## Skill Plugins
 
-### mcp-tools
+### plugin / MCP / CLI 開發工具 → 已遷出
 
-MCP Server 開發必備工具，提供完整的除錯與測試流程。
+`plugin-tools`、`mcp-tools`、`cli-tools`、`doc-tools` 於 2026-07-30 遷至獨立
+marketplace **[che-plugin-devtools](https://github.com/PsychQuant/che-plugin-devtools)**，
+並整併為兩個 plugin：
 
 ```bash
-/mcp-tools:diagnose che-ical-mcp   # 連線診斷
-/mcp-tools:debug che-ical-mcp      # 功能除錯
-/mcp-tools:test che-ical-mcp       # 完整測試
-/mcp-tools:new-mcp-app             # 建立新 MCP 專案
-/mcp-tools:mcp-deploy              # 部署 MCP Server
+/plugin marketplace add PsychQuant/che-plugin-devtools
+/plugin install devtools@che-plugin-devtools       # plugin + MCP + CLI 發布管道（24 skills）
+/plugin install doc-guardian@che-plugin-devtools   # 文件紀律守門（4 skills + 3 hooks）
 ```
+
+呼叫方式：`/devtools:mcp-deploy`、`/devtools:plugin-update`、`/doc-guardian:changelog-validate`。
+skill 名不變，只有 plugin 前綴改變。
+
+遷出理由與完整設計見
+[遷移設計文件](docs/superpowers/specs/2026-07-30-che-plugin-devtools-migration-design.md)。
 
 | Command | 用途 |
 |---------|------|

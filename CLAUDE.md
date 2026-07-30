@@ -32,9 +32,7 @@ psychquant-claude-plugins/
 │   ├── che-xcode-mcp/           # Xcode / App Store Connect
 │   ├── claude-switch/           # Claude Code 多帳號管理
 │   ├── codex-batch/             # Codex CLI 批次生成
-│   ├── mcp-tools/               # MCP Server 開發工具集
 │   ├── perspective-writer/      # 模擬真人語氣的寫作工具
-│   ├── plugin-tools/            # Plugin 管理工具（update + health）
 │   ├── postgresql-guide/        # PostgreSQL 文檔查詢
 │   └── r-shiny-debugger/        # R Shiny Debug 工具
 └── README.md
@@ -215,7 +213,7 @@ plugins/new-plugin/
 
 ### 更新流程
 
-修改 plugin 後的完整同步流程（或直接用 `/plugin-tools:plugin-update`）：
+修改 plugin 後的完整同步流程（或直接用 `/devtools:plugin-update`）：
 
 ```bash
 # 1. bump 版本（plugin.json + marketplace.json）

@@ -35,8 +35,8 @@ If you install this plugin in another math-article repo today, **most skill comm
 ## Development
 
 - Plugin structure: see [psychquant-claude-plugins doc-tools](../doc-tools/) for layout reference
-- Update after changes: `/plugin-tools:plugin-update math-tools`
-- Health check: `/plugin-tools:plugin-health`
+- Update after changes: `/devtools:plugin-update math-tools`
+- Health check: `/devtools:plugin-health`
 - First dogfood: this session's `#107` workflow itself (psychophysic_representations was the testbed)
 
 ## Roadmap (v0.2.0+ targets)
