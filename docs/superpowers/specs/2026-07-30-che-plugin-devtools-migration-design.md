@@ -82,6 +82,26 @@ doc-tools@psychquant-claude-plugins   = True
 
 `doc-tools` v0.2.0 宣稱移除了 user-level 的 `~/.claude/hooks/changelog-update.sh` 以避免 double-fire，但 **`doc-guardian` plugin 自己的 `hooks.json` 仍註冊同一支 `changelog-update.sh` 的 Stop hook 且啟用中**。目前每次 Stop，`changelog-update.sh` 與 `doc-update-guard.sh` 兩支都在跑同一個檢查。
 
+### 2.6 現存 live bug：config 覆寫靜默失效
+
+`doc-tools/scripts/doc-update-config.sh` 的 `_merge_config()` 用 `local -n`（nameref）回寫呼叫者陣列。**nameref 是 bash 4.3+ 功能，macOS 的 `/bin/bash` 是 3.2.57**，實測直接報 `local: -n: invalid option`。
+
+腳本有 `set -u` 但無 `set -e`，報錯後繼續執行，後果分成兩半：
+
+| 設定項 | 狀態 | 原因 |
+|---|---|---|
+| `enabled` / `min_changed_files` / `skip_paths` | 正常 | 直接寫 `CFG_*` 全域變數，不走 nameref |
+| `code_extensions` / `doc_files` | **靜默失效** | 只建了無人讀取的區域陣列 |
+
+外加每次 hook 觸發往 stderr 噴一行錯誤。這是最難察覺的失效模式：config 語法正確、hook 正常運作、無錯誤提示，但其中兩個欄位就是不生效。
+
+實測對照（同一份 `{"code_extensions": ["lean","agda"]}`）：
+
+| | stderr | 產生的 regex |
+|---|---|---|
+| doc-tools 0.2.0 | `local: -n: invalid option` ×2 | `\.(R\|sh\|sql\|py\|…)$` ← 預設值，config 被忽略 |
+| 修正後 | 無 | `\.(lean\|agda)$` ← 正確 |
+
 ---
 
 ## 3. 設計決策
@@ -226,3 +246,48 @@ plugins/devtools/rules/
 | 3 | git history 是否補做 | §4，非阻塞 |
 | 4 | `devtools` 內部 24 skills 的 description budget | 合併後 skill 數量集中，需檢查是否觸發 `skill-description-budget.md` 的上限紀律 |
 | 5 | `create-plugin` → `plugin-create` 引用錯誤 | 既有 bug，與遷移無關：`plugin-create/SKILL.md` 第 31、32、266 行把自己的呼叫寫成 `/plugin-tools:create-plugin`，但實際 skill 目錄是 `plugin-create`（名字順序顛倒，該指令不存在）。遷移時順手修，改為 `/devtools:plugin-create` |
+
+---
+
+## 8. 執行結果（2026-07-30 完成）
+
+新 repo：**[PsychQuant/che-plugin-devtools](https://github.com/PsychQuant/che-plugin-devtools)**（public，與來源 repo 一致）
+
+| 項目 | 結果 |
+|---|---|
+| `devtools` 1.0.0 | 24 skills / 5 rules / 2 scripts |
+| `doc-guardian` 2.0.0 | 4 skills / 5 scripts / 3 hooks |
+| `psychquant-claude-plugins` | 32 → **28** plugins（commit `b582aa0`）|
+| `che-local-plugins` | 8 → **7** plugins（commit `8c67566`）|
+| `test-resolve-marketplace.sh` | **11/11** |
+| `test-doc-update-config.sh` | **20/20** |
+| `claude plugin validate` ×2 | 通過 |
+| 三方同步 `validate-changelog.py` ×2 | **exit=0**（dogfooding）|
+| 三份 rules md5 | 來源 → repo → GitHub → cache **全程逐位元相同** |
+
+### 與設計的差異
+
+1. **§4 遷移機制照計畫採直接 copy**，未保留 git history。
+2. **§3.6 的硬編碼實際是 6 處不是 5 處**：另有 `plugin-update/SKILL.md:70` 的 registry 表格（改為指向 script）。其中 `tool-readme-sync-plugin.md:116` 一處**刻意保留**——它落在受 md5 保護的三份 rules 內，破壞位元不變會失去本次遷移唯一的客觀正確性證據。已併入 issue #1。
+3. **registry 實作為 `scripts/resolve-marketplace.sh`**（含 11 個單元測試）而非 SKILL.md 內的表格，使「新增 marketplace 只改一處」可由測試強制。
+4. **`claude-md-reminder` 有一處刻意的行為差異**：舊版三組 pattern 分別計數再相加，同時符合兩組的檔案會被計兩次；新版合併為單一 regex，一個檔案只算一次。已記入該 plugin CHANGELOG。
+
+### 執行中額外發現並修掉的既有缺陷
+
+- `che-local-plugins` 的 Dropbox 路徑（`che_workspace/projects/che-claude-config/`）早已不存在，實體在 `~/Developer/che-claude-config`。出現在 `plugin-debug/SKILL.md` 與 `plugin-update/SKILL.md`。
+- `README.md` 的 mcp-tools 段落列的 skill 名是舊的（`/mcp-tools:diagnose`、`new-mcp-app`，實際為 `mcp-diagnose`、`mcp-new-app`）。
+- 遷移時一度漏搬 `doc-guardian/.codex-plugin/plugin.json`——而該 plugin 的 `doc-guardian` skill 存在理由正是「Codex 收不到 hook」，漏掉等於搬走功能卻留下入口。已補（commit `b02564c`）。
+
+### 後續 issue（已建立）
+
+| # | 標題 |
+|---|---|
+| [#1](https://github.com/PsychQuant/che-plugin-devtools/issues/1) | rules: 統一三份 drift 的 tool-readme-sync（含一處遺留硬編碼路徑）|
+| [#2](https://github.com/PsychQuant/che-plugin-devtools/issues/2) | mcp-*: 11 處引用不存在的 MCP 專案目錄，需先定組織原則 |
+| [#3](https://github.com/PsychQuant/che-plugin-devtools/issues/3) | validate-changelog.py: --marketplace 傳目錄時 traceback 而非友善報錯 |
+
+### 刻意未動
+
+- `che-claude-config/settings.json` 的 `doc-guardian@che-local-plugins` 項——該檔案當時有使用者未提交的修改，不宜混入。`~/.claude/settings.json` 已由 `claude plugin uninstall` 正確移除該項。
+- `psychquant-claude-plugins/openspec/changes/archive/` 下的歷史引用——受 archive-first 保護，且屬歷史記錄。
+- `che-claude-config/docs/superpowers/` 下 2026-07-12 的 spec 與 plan——反映當時狀態的歷史文件。
