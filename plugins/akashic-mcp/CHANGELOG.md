@@ -1,9 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-07-30
 
 ### Added
-- `person-search` skill（#14）：找人→消歧→聚合→追關係 workflow；需 akashic-mcp binary ≥ v0.2.0（`akashic_person` tool）。上架隨下次 binary release（PsychQuant/Akashic-Library PR #16/#14 merge 後 release-signed → plugin bump → marketplace sync）。
+- Binary v0.2.0（14→17 tools）：`akashic_libraries`（#13 membership views）、`akashic_person`（#14 人物聚合）、`akashic_files`（#18 多實體庫切換）；`akashic_search` 支援 `library` 過濾；index schema 版本機制；config schema v2（多檔案 registry，向後相容）。
+- `person-search` skill（#14）：找人→消歧→聚合→追關係 workflow；需 akashic-mcp binary ≥ v0.2.0（`akashic_person` tool）。隨 akashic-mcp-v0.2.0 binary release 上架。
 
 ## 0.1.0 (2026-07-22)
 
