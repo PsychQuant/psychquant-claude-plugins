@@ -986,7 +986,7 @@ direction: received
 ```
 
 **Frontmatter 欄位說明**：
-- `message_id`: 該封信的 RFC 5322 Message-ID（用引號包住，避免 YAML 解析角括號）
+- `message_id`: 該封信的 RFC 5322 Message-ID（用引號包住，避免 YAML 解析角括號）。**缺值規則（mail#319，與 `in_reply_to` 同級的明文 fallback）**：工具回傳空 message_id 時，**先**用 `get_email_headers` 對同一 id 重取一次（headers 路徑與 body 路徑不同 code path，常能拿到值）；仍空 → frontmatter 寫 `message_id: ""` 並加一行 `message_id_missing: true`，讓 Step 8.5 走 `unparseable` 分支自然浮現。**明文禁止發明任何佔位符**（`synthetic:<timestamp>` 或其他）——synthetic key 的 timestamp 是執行當下時間，同一封信每次重跑產生**不同** key，對 dedup 永遠是「新信」→ 每輪重複寫入且所有 gate 全綠（mail#319 實測 84 檔 synthetic、單輪 12 封靜默重複）。既有 synthetic 檔的一次性修復見 `/archive-mail-repair-synthetic-ids`
 - `thread_key`: 依下列規則計算的 bare subject（**對齊 batch 工具的 `stripReplyPrefixes`——plugins#107 Fix 3**，兩路徑同規則才不會讓同一 thread 因寫入路徑不同而 frontmatter 漂移、碎裂 threads.json）：
   1. 去掉前綴 `Re:` / `Fwd:` / `FW:` / `转发:` / `轉寄:` / `回覆:` / `回复:`——**全部不分大小寫**（`re:` / `fw:` / `fwd:` 同樣去除），重複出現多次也全部去除
   2. 去除首尾空白
@@ -994,7 +994,7 @@ direction: received
   4. 若結果為空，用 `no-subject`
   > **歷史檔 caveat**：本規則之前的舊版不去 `回覆:`/`回复:` 且區分大小寫；在此之前歸檔的 md 其 thread_key 可能仍帶 `回覆:` 前綴，與新檔的 thread_key 分屬兩 thread。若某中文回覆 thread 出現此分裂，跑 `/archive-mail-rebuild-threads` 以新規則全量重算即可收斂。
 - `in_reply_to`: 若有，來自郵件的 `In-Reply-To` header；若 MCP 未暴露，從 body 的 quote intro 嘗試提取第一個 Message-ID，否則留空
-- `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）。**enforcement（mail#275）**：Date header 為 **RFC822 原樣**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，常見於 webmail 系統寄件）時**必須先轉 ISO 再寫入** frontmatter——`email.utils.parsedate_to_datetime(raw).isoformat()`——直接抄原樣會經 Step 6/8.5 流入 index，汙染 max(date) 計算（mail#275 實證案例即此路徑）
+- `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）。**enforcement（mail#275）**：Date header 為 **RFC822 原樣**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，常見於 webmail 系統寄件）時**必須先轉 ISO 再寫入** frontmatter——`email.utils.parsedate_to_datetime(raw).isoformat()`——直接抄原樣會經 Step 6/8.5 流入 index，汙染 max(date) 計算（mail#275 實證案例即此路徑）。**offset 缺失即錯誤（mail#319）**：任何寫入的 `date` 一律**必須帶時區 offset**（`+08:00` / `Z`）——來源給 naive local time 時不得當 UTC 寫入（mail#319 同批 synthetic 檔實測 +08:00 被當 UTC，差 8 小時，汙染 `last_updated = max(date)` 且跨午夜檔名日期差一天）；無法確定 offset 時比照 unparseable 揭露，不靜默猜
 - `sender`: 寄件人 email 地址（display name 剝除，**並轉小寫**——對齊 batch 工具的 `bareEmail().lowercased()`，否則 threads.json 的 participant 去重會把 `A@x` 與 `a@x` 當兩人）
 - `direction`: `received` 或 `sent`
 
@@ -1259,16 +1259,18 @@ Thread 索引行（v2.6.0+）：永遠顯示，即使沒新 thread。
 
 對所有新歸檔的郵件,**分兩部分檢查**(v2.15.0+, #45):
 
-**8a.1 Explicit attachments**:呼叫 `list_attachments` 取得 explicit MIME attachment 數量,比對磁碟上對應目錄的實際檔案數。
+**8a.1 Explicit attachments**:呼叫 `list_attachments` 取得 explicit MIME attachment 數量,比對磁碟上對應目錄的實際檔案數,**並對每個磁碟檔案 stat 大小（mail#314——count 相符但檔案 0 bytes 的靜默失敗曾 11 週未被偵測）**。
 
-- 一致 → pass
-- 不一致 → 發出 warning：`⚠️ {email_stem}: {差異} explicit attachment missing (expected {報告數}, found {磁碟數})`
+- 數量一致且全部 > 0 bytes → pass
+- 數量不一致 → 發出 warning：`⚠️ {email_stem}: {差異} explicit attachment missing (expected {報告數}, found {磁碟數})`
+- **任一檔案 0 bytes → 發出 warning：`⚠️ {email_stem}/{filename}: 0-byte attachment (download appears to have failed silently)`**——與數量 warning 並存,不互相取代。0-byte 檔的重新下載:對該 id 重跑 `save_attachment`(server 端 mail#314 修復後,0-byte 寫入會直接回錯誤而非假成功,並在成功時回報 `(N bytes)`)
 
 **8a.2 Inline cid: images** (v2.15.0+):從 HTML body 解析 inline cid: 引用數量,比對 `{stem}/inline/` 目錄實際檔案數。
 
 - 一致 → pass
 - 不一致(已 cross-reference 註記取代下載)→ 發出 warning:`⚠️ {email_stem}: {N} inline images cross-referenced (binary download unsupported); see Mail.app for visual content`
 - 完全 miss(連 cross-reference 都沒)→ `⚠️ {email_stem}: {N} inline images parsed from body but not handled (skill bug, file follow-up)`
+- **已下載的 inline 檔案同樣 stat 大小,0 bytes → `⚠️ {email_stem}/inline/{filename}: 0-byte inline image` (mail#314)**
 
 **8b. Thread 完整性檢查**：
 
@@ -1293,6 +1295,7 @@ Thread 覆蓋: 3 threads, 2 complete, 1 with gaps
 
 Issues:
   ⚠️ 2026-04-08_Re--Taxometric: 1 attachment missing
+  ⚠️ 2026-03-12_Re--Draft/manuscript.docx: 0-byte attachment (silent download failure)
   ⚠️ 2026-05-07_Re--Solution: 1 inline image cross-referenced (binary unsupported)
   ⚠️ Thread "indicator selection": 2 potential missing siblings
 
@@ -1334,7 +1337,8 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 
 1. 對每個 `${output_dir}/*.md`（**僅頂層 glob**，不深入子目錄、不追 Step 2.1 的 symlink 兄弟歸檔——那些只是 read-only 去重來源，絕不寫進本 index）：讀 frontmatter `message_id`。
    - message_id 已在 Phase 0 set 或 `${INDEX_FILE}` keys → `verified` +1（不重複補寫）。
-   - 無 frontmatter / 無 `message_id` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
+   - **`message_id` 匹配 `^synthetic:`（mail#319）→ 記入獨立的 `synthetic_placeholder` 清單**（列檔名報告，不 `verified` 不 `repaired` 不補寫 index）——synthetic key 是過去 session 發明的假 unique key，對 dedup 結構性不可見（每次執行產生不同 timestamp），把它當合法 key 收進 index 只會固化重複。修復走 `/archive-mail-repair-synthetic-ids`。
+   - 無 frontmatter / 無 `message_id` / `message_id_missing: true` → 記入 `unparseable` 清單（列檔名報告，不修改該檔）。
    - **不在** → 孤兒：**就地補寫 index entry**（append-only），`repaired` +1。補寫的 entry **必須符合 Step 6 的 canonical schema** `{file, date, subject, thread_key}`：`file` = 掃描到的 md 檔名（basename，**必填**）；`date` / `thread_key` 取自 frontmatter——**`date` 若非 ISO 開頭**（如 RFC822 原樣，見 Step 5.1 enforcement）**先以 `email.utils.parsedate_to_datetime(raw).isoformat()` 正規化再寫入 entry**（parse 失敗比照揭露紀律列於摘要、寫原樣不阻斷；mail#275——孤兒補寫是歷史 RFC822 汙染收斂進 ISO 的機會點）；`subject` 從 md 本文的 `Subject:` 行抽取（抽不到 → 填空字串並在摘要揭露）——**此 heuristic 僅 Phase 1 用**（Phase 0 有 preview 的乾淨 subject）。**若 frontmatter 有 `message_id` 但缺 `date` 或 `thread_key`**（罕見——archive-mail 寫的 frontmatter 一律帶這兩欄；只可能是外部/損毀 md）：比照 subject-miss 的「揭露而非靜默」紀律（惟 date/thread_key **無** subject 那種 body-line fallback，缺就是缺），缺的欄位填空字串並在摘要揭露該檔欄位不全，**不得靜默寫 null**。frontmatter 的 `sender` / `direction` **不寫入** entry（非 email_index 欄位）。摘要須揭露 repaired 列為重建而來。
 2. Phase 0 + Phase 1 都補完後，`last_updated` 更新為 index 內所有 entry 的 **max(date)**（不是今天——反映語料實況）。**比較與寫入必須先做 robust 日期正規化（mail#275）——絕不可直接 `date[:10]` 字典序比較**：entry 的 date 實務上混雜三種格式——`2026-01-13 14:30`、ISO `T`、以及 **RFC822**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，見 Step 5.1 的正規化漏洞）。RFC822 開頭是星期縮寫，`[:10]` 切片後（`Thu, 25 Ju`）首字母字典序恆大於數字，任何一筆 RFC822 entry 都會贏過全部 ISO entry，`last_updated` 被寫成 `Wed, 01 Ju` 類無效值（mail#275 實證）。正規化參考實作（`^\d{4}-\d{2}-\d{2}` 快篩 ISO 取前 10 字；其餘走 `email.utils.parsedate_to_datetime`；parse 失敗回 None、**排除於 max 之外並在 reconcile 摘要揭露**，不靜默）：
 
@@ -1357,7 +1361,7 @@ Thread 覆蓋: 3 threads, 3 complete ✓
 4. 輸出一行摘要並附在歸檔報告末尾（首跑常見 unparseable > 0——歷史檔常無 frontmatter，這是預期輸出、不是失敗）。摘要區分 Phase 0（manifest 機械化）與 Phase 1（磁碟重建）：
 
 ```
-Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md 掃描 — 61 verified（含 Phase 0 補的 12）, 66 repaired（heuristic subject）, 8 unparseable ⚠（列出 8 檔）
+Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md 掃描 — 61 verified（含 Phase 0 補的 12）, 66 repaired（heuristic subject）, 8 unparseable ⚠（列出 8 檔）, 3 synthetic_placeholder ⚠（mail#319，列出檔名；跑 /archive-mail-repair-synthetic-ids）
 ```
 
 5. `unparseable > 0` → 摘要標 ⚠ 並列出檔名，**不得靜默**；由 user 決定補 frontmatter 或排除。**這不使 run 失敗**——會失敗的是跳過本 gate 或靜默吞掉清單。
@@ -1367,6 +1371,7 @@ Index Reconcile: Phase 0 manifest 12 written（乾淨補齊）; Phase 1 135 md �
 
 - 使用 apple-mail MCP，需確保 MCP server 已連接
 - Message-ID 用於去重，確保不會重複歸檔
+- **既有歸檔的一次性 0-byte 掃描（mail#314 remediation）**：`find <documents_dir> <data_dir> -type f -size 0` — 首次升級到本版後跑一次,列出的檔案逐一重新 `save_attachment`
 - 寄出的郵件不產生「重點摘要」和「待辦事項」
 - **附件自動下載**（v2.3.0+）：每封歸檔信件的附件會自動下載到分類目錄。研究資料檔（csv / sav / xlsx 等）放到 `data/raw/`；文件附件（pdf / docx 等）放到 `correspondence/attachments/{email_stem}/`。可透過 `.claude/emails.md` 的 `attachment_routing` 區塊自訂規則。
 - **搜尋擴展 + 覆蓋率稽核**（v2.4.0+）：除了 sender 搜尋，可設定 `subject_keywords` 補抓 internal threads。每次歸檔後自動跑 Coverage Audit 檢查附件完整性和 thread 覆蓋率。

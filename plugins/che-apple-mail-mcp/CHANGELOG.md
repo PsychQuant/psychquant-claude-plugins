@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **archive-mail: synthetic `message_id` placeholders are now forbidden, detected, and repairable** (mail#319). The frontmatter spec's `message_id` was the only frozen field with no missing-value rule, and a past session improvised `synthetic:<timestamp>` placeholders — whose run-time timestamps made every re-run see the same email as new (84 placeholder files, 12 silent duplicates in one run, every gate green). Now: missing Message-ID → refetch via `get_email_headers`, else `message_id: ""` + `message_id_missing: true` (surfaces via Step 8.5's unparseable branch); placeholders explicitly forbidden; Step 8.5 Phase 1 gains a `synthetic_placeholder` classification (own report line, never folded into verified/repaired); all dates must carry a timezone offset (naive-local-as-UTC was 8h off in the same cohort). New one-off `/archive-mail-repair-synthetic-ids` command re-keys existing placeholder files conservatively (exact-match ladder, never merges on ambiguity, quarantines duplicates instead of deleting).
+- **archive-mail: Step 8a attachment audit is content-aware** (mail#314). The audit compared file COUNTS only, so 0-byte attachments passed as 100% complete for ~11 weeks. 8a.1/8a.2 now stat every file and flag `0-byte attachment (download appears to have failed silently)` alongside the existing count warnings; the 8c report lists them; a one-off `find … -size 0` remediation sweep is documented. Pairs with the server-side fix (mail PR #330): `save_attachment` now stat-verifies its own successes and reports `(N bytes)`.
+
 ## [2.43.0] - 2026-08-01
 
 ### Added
