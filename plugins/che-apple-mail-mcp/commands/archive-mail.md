@@ -67,7 +67,7 @@ TaskCreate(subject="phase2_3_preview_and_confirm",
            description="Step 4.5: 若待歸檔 ≥ 5 封 OR 有 ⚠⚠ flag OR destructive op → Phase 2 preview (thread breakdown + flags) + Phase 3 operation confirmation (file count + attachment size)。等 user 確認(a)/排除(b)/改 filter(c)/取消(d)。User skip 條件見 confirmation-triggers.md。")
 
 TaskCreate(subject="fetch_and_write_markdown",
-           description="Step 5: 主路徑 Step 5.0 — 待歸檔 ≥ 5 封且非 enriched → batch_export_emails_markdown 依 direction 拆兩批(received / sent, 帶 opts.filenames 保留命名慣例, 不帶 include_attachments)伺服器端匯出, 留存 manifest 供 Step 8.5。Fallback Step 5.1 — 對每封 get_email(format='text', 用 display name) → 同 6-field frontmatter + body markdown, 檔名規則(YYYY-MM-DD_subject-hyphenated[-N].md, 截 50 graphemes) 寫到 ${output_dir}/。")
+           description="Step 5: 主路徑 Step 5.0 — 待歸檔 ≥ 5 封且非 enriched → batch_export_emails_markdown 整個 corpus 一批伺服器端匯出(direction 由工具 per-email sender-identity 判定, binary v2.26.0+ mail#316; 帶 opts.filenames 保留命名慣例, 不帶 include_attachments), 留存 manifest 供 Step 8.5。Fallback Step 5.1 — 對每封 get_email(format='text', 用 display name) → 同 6-field frontmatter + body markdown, 檔名規則(YYYY-MM-DD_subject-hyphenated[-N].md, 截 50 graphemes) 寫到 ${output_dir}/。")
 
 TaskCreate(subject="download_and_classify_attachments",
            description="Step 5.5: list_attachments → 用 classify() 分 data/document → save_attachment 到 data_dir / documents_dir/{email_stem}/。Markdown 插 Attachments: 區塊。回覆信無 byte 附件但引用原信附件 → cross-reference。")
@@ -564,6 +564,7 @@ mcp__plugin_che-apple-mail-mcp_mail__search_emails(
 
 > **⚠️ All Mail 超集陷阱（mail#261）— 寄出信判定不可用 `[Gmail]/全部郵件`**
 > Gmail 的「全部郵件」是超集：**同時包含草稿**。用「全部郵件 + sender 搜尋」撈寄出信會把同一封信的**草稿版與寄出版各算一次**，甚至把未寄出的草稿當寄出信歸檔（可重現徵兆：同一 thread 出現「相同時間戳」的 `全部郵件` + `草稿` 配對——只有無配對草稿的才是真寄出）。
+> **direction 亦然（mail#316）**：全部郵件是雙向超集，「信在哪個 mailbox」不可作為 `direction` 依據——寄出信照樣存在全部郵件。direction 的唯一正確依據是 sender identity（binary v2.26.0+ 的 batch 工具已 server-side per-email 判定；Step 5.1 fallback 的 client-side 規則見 frontmatter 欄位說明）。
 > 紀律（機械化 recipe 見上方 (1)/(2)，plugins#109）：
 > 1. **寄出信一律搜 Sent mailbox** — 由上方 recipe (2) 的 `mailbox: <Sent 實名>` scoped 呼叫落實；scoped 回 0 筆**一律**走 Tier 2 兜底（unscoped + 依 mailbox 後過濾規則 keep-only-Sent）
 > 2. **落實 Drafts/Trash 排除** — 由上方 recipe (1) 的統一 drop-set 後過濾落實（比對依 mailbox 後過濾規則，勿裸 `==`）；實名一律來自 `get_special_mailboxes`，不 hardcode 英文名
@@ -804,33 +805,22 @@ False-positive flagging 規則見 `rules/false-positive-detection.md`:
 - `sender`：工具剝 display name **並轉小寫**（`bareEmail().lowercased()`）。
 - 工具在 6 核心欄位後**多附一個 `body_type: text|html` 第 7 欄位**（keyed consumer 無害，但非「無縫隙」）。
 
-**依 direction 拆兩批（關鍵——按每封信自己的 mailbox 分區，不是按 recipe 來源）**：工具用**單一** `mailbox` 參數標**整批** direction，且只當 label（`mailbox` 含 `sent`(不分大小寫) 或 `寄件` → 整批 `sent`，否則 `received`；ids 是 rowId，`mailbox` 從不當查詢 selector）。工具**不會逐信判斷** direction，所以每批的 id 必須是**純**同向。
-
-⚠️ **絕不可按 recipe 來源拆**：recipe (1) 是跨匣 sender 搜尋、3b/3c 是**跨匣 subject 搜尋**，統一 drop-set 只丟 Drafts/Trash（**Sent 是 keep**），所以使用者**自己的寄出信會經 3b/3c 進 corpus**。若把 3b/3c 全歸「received 批」，這些寄出信會被誤標 `direction: received`（subject_keywords / zero-arg 模式整個 corpus 來自 3b/3c 時，**每封寄出信都誤標**），且同一 id 可能同時有 recipe (2) 與 3c 來源 → 兩批雙寫、`message_count` 灌水。
-
-**正解——對 Step 4 去重後的 corpus 依每封的 `mailbox` 做真分區**（無重疊、無雙寫）：
-- **批 B（sent）** = corpus 中 `matchesSpecial(id.mailbox, 該帳號 Sent 實名)` 為真的 ids（比對規則見 Step 3 的 `matchesSpecial`，**勿裸 `==`**）
-- **批 A（received）** = corpus **減去** 批 B **再減去下一點的 uncertain-mailbox ids**（uncertain 不進任何 batch，避免同 id 既入批 A 又轉 5.1 而雙寫）
-- 每封的 `mailbox` 在 Step 4.5 preview / Step 3 結果已有，**不需額外 fetch**
-- 無法分類 mailbox 的 id（罕見）→ 留給 **Step 5.1 fallback** 逐封處理（per-email 路徑能從該信自己的 mailbox 正確導 direction）
+**direction 由伺服器 per-email 判定（binary v2.26.0+，mail#316）——整個 corpus 一批送，不再拆批**：工具對每封信以 sender identity 判定 direction（bare sender、case-insensitive ∈ 使用者全帳號 own-addresses 聯集 → `sent`，否則 `received`；own addresses 來自本機 account mapping，無 AppleScript）。`mailbox` 參數對 direction 只剩 fail-open fallback 角色（見下），**不帶即可**。
 
 ```
-# 批 A：received（corpus − 批 B）——不帶 mailbox → direction=received
+# 整個 corpus 一批（Step 4 去重後全部 ids）——direction 由工具逐信判定
 batch_export_emails_markdown(
-  ids: [<批 A ids：mailbox 非 Sent>],
-  output_dir: "${output_dir}",
-  opts: { filenames: <見下 filename map> }
-)
-# 批 B：sent（mailbox matchesSpecial(Sent)）——mailbox 傳「字面 "Sent"」而非本地化實名
-batch_export_emails_markdown(
-  ids: [<批 B ids：mailbox 為 Sent>],
-  mailbox: "Sent",
+  ids: [<corpus 全部 ids>],
   output_dir: "${output_dir}",
   opts: { filenames: <見下 filename map> }
 )
 ```
 
-> **`mailbox: "Sent"` 用字面、不用實名（locale-robust）**：工具的 direction label 是對 `mailbox` 字串做 `sent`/`寄件` **substring** 判斷。本地化 Sent 實名（日文 `送信済み`、韓文 `보낸편지함`、中文 `已寄郵件`）兩 token 皆不含 → 會靜默 fall through 成 `received`。因 `mailbox` 只當 label 不做查詢，傳保證命中的字面 `"Sent"` 最穩。批 A **不帶** `mailbox`（→ received）。
+> **為什麼不能由 mailbox 推導（歷史教訓，mail#316）**：Gmail 寄出信存於 `[Gmail]/全部郵件`——All Mail 是**雙向超集**，mailbox 名稱結構上不攜帶 direction 資訊。舊版 SOP 的「依 mailbox 拆兩批」在 All-Mail 來源的 corpus 上把自寄信全標 `received`（實測 5 封 thread 3 封誤標、且為 frozen frontmatter 持久化）。**任何**「從信所在 mailbox 導 direction」的做法（含 per-email fallback）都同樣錯——正確依據只有 sender identity。
+
+> **`direction_inferred: true` 消費規則（fail-open 揭露）**：own-addresses 聯集為空（如全 EWS 帳號——地址不在本機 mapping）時，工具整批回退到舊 mailbox-label 行為，並在**每個** written manifest item 標 `direction_inferred: true`（negative-only：identity 判定成功的 item **無**此欄位）。SOP 消費：偵測到任一 item 帶此欄位 → 在 **Step 7 報告揭露**「該批 direction 為 mailbox-label 推測、非 sender-identity 判定」；混合向 corpus 且出現此欄位時，direction 不可信，逐封改走 Step 5.1（以下方 sender-identity 規則 client-side 判定）。
+
+> **版本邊界**：binary **< v2.26.0** 無 per-email 判定（`mailbox` 參數 substring 標整批、manifest 無 `direction_inferred` 鍵）→ 必須沿用舊「依 direction 拆兩批」紀律（見本檔 git history 的舊版 Step 5.0），或先升級 binary。偵測法：manifest item 全無 `direction_inferred` 且 binary 版本 < 2.26.0。
 
 **`opts.filenames`（保留歷史命名慣例，必傳——但只是「請求」名，不是最終權威）**：工具**預設** filename 吃已 `stripReplyPrefixes` 的 threadKey **且合併連續 dash**（`Re: x` → `x`），會偏離本 SOP 的 50 檔命名慣例（保留 `Re--`、不合併）。故對每個 id 用 **Step 5.1 的 filename 規則**（見下方「檔名格式」——從 raw subject 算，保留 `Re:`→`Re--`、不合併連續 `-`、截 50 graphemes、`-N` 碰撞後綴）算出檔名，組成 `{ id: "YYYY-MM-DD_{subject}.md", … }` 傳入。所需 (id, date, subject) 在 Step 4.5 preview 已有，**不需 body fetch**。
 
@@ -840,17 +830,18 @@ batch_export_emails_markdown(
 
 **dedup**：Step 4 已對 `${INDEX_FILE}` 做 Message-ID dedup，傳入的 ids 已是新信。可選傳 `skip_message_ids_path`（指向一份 INDEX_FILE Message-ID 清單，一行一個）作為 belt-and-suspenders 防 index/corpus drift；工具會把命中者標 `status: "skipped"` 不重寫。
 
-**保留 manifest（供 Step 8.5 Phase 0 消費，plugins#110）**：兩批呼叫回傳的 manifest **必須留存到記憶體**（或 run-scoped 暫存）供 Step 8.5 的 manifest-driven Phase 0 使用。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`（惟 `status:"written"` item **必帶** `message_id` + `written_path`——見下方誠實邊界）。
+**保留 manifest（供 Step 8.5 Phase 0 消費，plugins#110）**：批次呼叫回傳的 manifest（單一主呼叫；含 skip_partial re-export 補呼叫時一併保留） **必須留存到記憶體**（或 run-scoped 暫存）供 Step 8.5 的 manifest-driven Phase 0 使用。結構：頂層 `{output_dir, written, errors, skipped, items:[…]}`（頂層 5 鍵恆在，count 為衍生）。每個 item **恆有** `{id, status ("written"|"error"|"skipped"), attachments}`；**條件性**（可能缺）`message_id`、`written_path`、`attachment_errors`、`error`（惟 `status:"written"` item **必帶** `message_id` + `written_path`——見下方誠實邊界）。
 
 ⚠️ **manifest 欄位的誠實邊界**（downstream 必守）：
 - `status: "error"` item **恆無** `written_path`；`message_id` **視錯誤階段而定**（write-error / filename-escape-error 兩 branch 仍帶 `message_id`，fetch-error 則無）→ 該 id 一律 (a) 在 Step 7 報告揭露、(b) 走 **Step 5.1 fallback** 補抓（refetch 會自 live email 重取 message_id）；不得當成已寫。
 - `status: "skipped"`（dedup 命中）item 通常**無新** `written_path`。
+- `direction_inferred: true`（binary v2.26.0+，mail#316）為**條件性**欄位：只在 fail-open 回退時出現於 written item（見上方消費規則）；缺席 = sender-identity 判定成功（或 binary 過舊，鍵不存在——以版本邊界區分）。
 - manifest **不帶** `date`／`subject`／`thread_key`。故 Step 6 index / Step 8.5 Phase 0 若要這些欄位：`date`／`thread_key` 取自**寫出的 md frontmatter**（工具已寫入這兩個 frozen 欄位）；`subject` **不在** frontmatter（只在 body `Subject:` 行）→ 取自 **Step 4.5 preview** 的 `id→subject`（乾淨，非 body-line heuristic）。manifest 只提供「哪個 id → 哪個 message_id → 哪個 written_path」的骨架。
   > **`id→subject` preview slice 必須保留到 Step 8.5 Phase 0**：此為 Step 5.0 已依賴的同一份記憶體狀態（`opts.filenames` 也用它，見上方），Phase 0 只是延長其存活期（4.5→8.5）。若 agent 未保留、Phase 0 取不到某 id 的乾淨 subject → **fallback 讀該 md 的 body `Subject:` 行**（即 Phase 1 的 heuristic），而非寫空 subject。
 - **Step 8.5 本次由 plugins#110 改為兩 phase**：Phase 0 消費本 run manifest 做機械化 reconciliation（乾淨、零 body-heuristic），Phase 1 仍全量重掃 `${output_dir}` frontmatter 收斂歷史孤兒——manifest 消費是**本次已落地**的能力。
 
 - **partial-`.emlx` 訊號（binary v2.23.0+，mail#283 — mail#274 的 bulk 路徑閉環）**：body 尚未從伺服器下載的信（Mail 存成 `<rowid>.partial.emlx`）過去會被**靜默寫成 header-only md**。v2.23.0+ 的 manifest 帶負向訊號：item `body_downloaded: false`（僅 false 或缺席，絕不 true）+ 頂層 `body_not_downloaded` 計數（O(1) 檢查）。**SOP 消費規則**：
-  1. Step 5.0 兩批呼叫**一律帶 `opts.skip_partial: true`** —— header-only 信不落盤（status `"header_only"`，不佔 corpus、不產生 `-N` 疊檔），檔名 slot 仍保留（re-export 落回原名）。
+  1. Step 5.0 批次呼叫**一律帶 `opts.skip_partial: true`** —— header-only 信不落盤（status `"header_only"`，不佔 corpus、不產生 `-N` 疊檔），檔名 slot 仍保留（re-export 落回原名）。
   2. export 後檢查 `body_not_downloaded > 0` → 對每個 `status:"header_only"` item 的 id 跑單封 `get_email`（其 mail#274 fallback 兼作下載促發），然後**只對這些 id 重跑一次 `batch_export_emails_markdown`**（仍帶 `skip_partial:true`；再被 skip = body 仍未下載，Step 7 報告揭露、不重試迴圈）。
   3. `"header_only"` 與 dedup 的 `"skipped"` 是**不同 status**，Step 8.5 Phase 0 對兩者都不計為 written。
   4. **版本邊界**：binary < v2.23.0 無此訊號（manifest 缺 `body_not_downloaded` 鍵）→ 行為同舊（可能靜默 header-only），SOP 偵測到鍵缺席時在 Step 7 報告標註「partial 偵測不可用（binary 過舊）」。
@@ -996,7 +987,7 @@ direction: received
 - `in_reply_to`: 若有，來自郵件的 `In-Reply-To` header；若 MCP 未暴露，從 body 的 quote intro 嘗試提取第一個 Message-ID，否則留空
 - `date`: ISO 8601，**保留原始 Date-header 的時區 offset**（如 `…+08:00`；對齊 batch 工具 #244，兩路徑同表示法——若舊版寫 UTC `Z` 而 batch 寫 offset，跨午夜信的檔名日期前綴會差 ±1 天）。**enforcement（mail#275）**：Date header 為 **RFC822 原樣**（`Thu, 25 Jun 2026 09:30:45 +0800 (CST)`，常見於 webmail 系統寄件）時**必須先轉 ISO 再寫入** frontmatter——`email.utils.parsedate_to_datetime(raw).isoformat()`——直接抄原樣會經 Step 6/8.5 流入 index，汙染 max(date) 計算（mail#275 實證案例即此路徑）。**offset 缺失即錯誤（mail#319）**：任何寫入的 `date` 一律**必須帶時區 offset**（`+08:00` / `Z`）——來源給 naive local time 時不得當 UTC 寫入（mail#319 同批 synthetic 檔實測 +08:00 被當 UTC，差 8 小時，汙染 `last_updated = max(date)` 且跨午夜檔名日期差一天）；無法確定 offset 時比照 unparseable 揭露，不靜默猜
 - `sender`: 寄件人 email 地址（display name 剝除，**並轉小寫**——對齊 batch 工具的 `bareEmail().lowercased()`，否則 threads.json 的 participant 去重會把 `A@x` 與 `a@x` 當兩人）
-- `direction`: `received` 或 `sent`
+- `direction`: `received` 或 `sent`。**判定規則（mail#316）**：以 sender identity 判定——bare sender（lowercase）∈ 使用者**全帳號** own addresses 聯集（`list_accounts` 各帳號 `email_addresses` 聯集）→ `sent`，否則 `received`。**絕不可由信所在 mailbox 推導**——Gmail All Mail 是雙向超集，mailbox 不攜帶 direction 資訊（mail#316 實測誤標）。此規則與 batch 工具（binary v2.26.0+）的 server-side 判定同義，兩路徑不漂移
 
 這些 frontmatter 欄位是 **canonical truth**——`.threads.json` 僅為衍生索引。
 
