@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.43.0] - 2026-08-01
+
+### Added
+- Imported `rules/compose-wrapper-free.md` from the server repo (canonical copy lives there): the formal-mail cite-block discipline — wrapper-free eligibility for `compose_email`/`create_draft`, the mandatory `[legacy path — …]` disclosure, custom-sender / display-name-recipient / attachment recipes, and the TCC fallback ladder (`open_mailto` on -1743, never a silent wrapped body). Plugin users previously got none of this guidance.
+
+### Changed
+- `CLAUDE.md` lists the new rule under Rules.
+
 ### Added
 - **`distributed_archives` config field — first-class capture-then-distribute** ([mail#285](https://github.com/PsychQuant/che-apple-mail-mcp/issues/285)). Generalizes Step 2.1's sibling-archive dedup (previously only symlinks physically under `output_dir`, #49) to an opt-in YAML list of arbitrary distribution-target archive dirs. Use case: a broad capture-layer `filter` config pulls all relevant mail into a staging dir; the user then moves each message belonging to a sub-project into that sub-project's own archive. Before, the next capture run re-pulled the already-distributed mail (it still matches the filter, and moving it dropped it from the capture `output_dir` + index → dedup saw "new"). Now Step 2.1 folds the `message_id` frontmatter of every dir listed in `distributed_archives:` into the same `EXTENDED_DEDUP_IDS` set, so distribution sticks with **no manual tombstone**. Read-only (find + head + awk, never mv/rm/>), bounded (`-maxdepth 2`), and — unlike the silent symlink scan — a **missing distributed dir WARNS** to stderr (a wrong path would silently miss dedup and re-pull, the exact pain being fixed). 100% backward compatible: unset `distributed_archives:` is a no-op, identical to v2.37.0. Closes #285.
 
