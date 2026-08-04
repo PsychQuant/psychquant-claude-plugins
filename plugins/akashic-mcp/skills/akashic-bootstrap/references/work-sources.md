@@ -216,9 +216,11 @@ Bioinformatics Program, Institute of Statistical Science,
 Taiwan International Graduate Program, Academia Sinica
 ```
 
-這裡的研究所名是**學程主辦單位**。同一位作者的其他機構字串是另一個所、email domain 也指向那個所——他是學程的合聘師資，不是該所人員。
+這裡的研究所名是**學程主辦單位**。同一位作者的另一條機構字串是別的所，且那條才是他的研究單位——他是學程的合聘師資，不是該所人員。
 
-**判準**：機構名後面（或前面）緊接 `Program` / `Graduate Program` / `Center` / `Initiative` 這類詞時，先假定它是**單位名稱的一部分**而非隸屬，再用作者的其他訊號（email domain、其他機構字串的排序、該人的其他論文）確認。
+**判準**：機構名後面（或前面）緊接 `Program` / `Graduate Program` / `Center` / `Initiative` 這類詞時，先假定它是**單位名稱的一部分**而非隸屬，再用作者的其他訊號確認：其他機構字串的排序、該人的其他論文、機構自己的名冊。
+
+**email domain 多半沒有鑑別力**——一個評測跑抓到我原本寫錯的地方：`@gate.sinica.edu.tw` 是中研院的**院級共用網域**，跨所通用，分不出植微所與統計所。只有當網域是**所級**（例如 `@stat.sinica.edu.tw`）時它才是證據。用之前先確認那是哪一級。
 
 這是 SKILL.md 「反例檢核」的典型場合：問「如果他不是這個所的人，字串會長什麼樣」，答案就是上面那一條。
 
