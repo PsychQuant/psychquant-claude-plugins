@@ -42,18 +42,67 @@ safari-browser snapshot -c           # compact (hide invisible elements)
 safari-browser snapshot --json       # structured JSON output
 
 # Interact using @refs or CSS selectors
-safari-browser click @e2
 safari-browser fill @e1 "user@example.com"
-safari-browser press Enter
+safari-browser click @e2
+
+# Observe before the next action — exit 0 means the command ran,
+# not that the page did what you meant (see "Observe After Acting")
+safari-browser js "return location.pathname"
 
 # Get information
 safari-browser get url
 safari-browser get text "h1"
 
-# Wait for page changes
-safari-browser wait --url "dashboard"
+# Wait for page changes  (--for-url, NOT --url: --url targets a document)
+safari-browser wait --for-url "dashboard"
 safari-browser wait --js "document.querySelector('.loaded')"
 ```
+
+## Observe After Acting
+
+**Gate the next step on the page's state, not on the previous command's return value.**
+A command that exits 0 tells you the command ran. It does not tell you the page changed,
+or changed the way you meant.
+
+After every state-changing action — `click`, `fill`, `select`, `press`, `open`, `upload` —
+read back a cheap signal before continuing:
+
+```bash
+safari-browser click "@e3"
+safari-browser js "return location.pathname + ' | ' + (document.querySelector('#status')||{}).textContent"
+# decide what to do next from THIS, not from click's exit code
+```
+
+The default read is `location.pathname` plus whatever the action was supposed to affect —
+the field you filled, the row that should have appeared, the button that should now be
+gone. One extra call per action; recovery from an undetected divergence costs far more,
+and costs more the longer it goes unnoticed.
+
+### Why: four ways the signal comes loose from the state
+
+All four are from one session against a government portal (frameset + iframe,
+server-rendered forms). Each would have been caught immediately by a post-action read.
+
+| What happened | What the tool reported |
+|---|---|
+| A text-matched `確認` hit a *different* button and navigated to a PDF preview | success — four more commands ran against the wrong page |
+| `set URL` did nothing on a blank POST-result page | success; `location.pathname` never changed |
+| A widget-backed date field rendered one value while `.value` returned another | the string previously assigned — wrong in both directions |
+| A click navigated before its return value could be collected | `undefined` — a script gating on `=== "opened"` aborted a step that had worked |
+
+### Rules that follow
+
+- **Text is not identity.** `find text "確認"` matches the first thing that reads that way,
+  which on a page with a modal is often not the modal's button. Scope to a container, or
+  check the element's `id` / `onclick` before clicking it.
+- **Widget-backed fields need the widget's API.** Date pickers, comboboxes and rich editors
+  keep their own state; the underlying `input.value` is authoritative for neither reading
+  nor writing.
+- **`undefined` is not failure.** A navigation can begin before a return value is collected.
+  Confirm from the page, not from what came back.
+- **An empty result is not an empty page.** `get text` returning nothing may mean a blocked
+  tab — a JavaScript dialog freezes the tab and safari-browser will say so if it can see
+  one, but only when Accessibility is granted.
 
 ## Command Reference
 
@@ -171,7 +220,7 @@ safari-browser tab new                      # new tab
 ### Wait
 ```bash
 safari-browser wait <ms>                    # wait milliseconds
-safari-browser wait --url <pattern>         # wait for URL to contain pattern
+safari-browser wait --for-url <pattern>     # wait for URL to contain pattern
 safari-browser wait --js <expr>             # wait for JS truthy
 safari-browser wait --timeout <ms>          # custom timeout (default 30s)
 ```
@@ -272,7 +321,7 @@ safari-browser fill "input#email" "john@example.com"
 safari-browser select "select#country" "TW"
 safari-browser check "input#agree"
 safari-browser click "button[type='submit']"
-safari-browser wait --url "success"
+safari-browser wait --for-url "success"
 ```
 
 ### File Upload
