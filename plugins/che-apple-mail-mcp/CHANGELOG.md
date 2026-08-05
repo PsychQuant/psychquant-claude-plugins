@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.44.1] - 2026-08-05
+
+### Fixed
+- **`binary_version` pin 與 v2.44.0 自身的 CHANGELOG 相矛盾** —— v2.44.0 的 archive-mail Step 5.0 條目明載該 SOP 需要 **binary v2.26.0+**（伺服器端依 sender identity 逐信判定 `direction`，mail#316），但同一個 release 的 `plugin.json` 仍 pin `binary_version: 2.25.0`，`marketplace.json` 更落後到 `2.24.0`（三方不一致）。wrapper 依 pin 下載，使用者實際跑的是**沒有該修復**的 binary：照新 SOP 走（整批送、不傳 `mailbox`）會讓整批 `direction` 全標成 `received` —— 2026-08-05 一次 51 封的實跑中 24 封自寄信被誤標，需事後逐檔更正。失效是安靜的：manifest `errors: 0`、無 `direction_inferred` 訊號（那是 v2.26.0 才有的負向欄位），SOP 的版本邊界判準因此也無從觸發。
+
+  現同步三處到 `2.26.0`。使用者一併取得 v2.26.0 的其餘修復：mail#313（APFS 大小寫檔名碰撞導致的**靜默資料遺失** —— manifest 回報兩檔 written、磁碟只有一個）、mail#320（SIGPIPE 不再殺掉 server）、mail#317（SQLite mailbox filter 不再把 caller 字串當 LIKE pattern）。
+
+  無 SOP 內容變更 —— v2.44.0 的 shell 本來就是照 v2.26.0 寫的，本次只是讓 pin 追上它。
+
 ## [2.44.0] - 2026-08-02
 
 ### Fixed
