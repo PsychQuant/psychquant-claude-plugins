@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2026-08-14
+
+- 消解判定 ledger（Akashic-Library #232）：`akashic_resolve_people` 新增 `reject` 參數（顯式否決、entry 不動）；apply 同動作寫 `resolution-confirmed`；候選帶三態計數（confirmed/rejected/pending，不報比率）、已否決獨立 `rejected` 段、`pendingTotal` 可見
+- **Store format 8**：verdict reference 需要 store format ≥ 8——format < 8 的 store 上 reject 硬擋（指路訊息）、apply 照常歸戶但跳過 verdict 並以 `verdictsSkipped` 揭露；升級程序見 Akashic-Library #247
+- binary：signed + notarized universal（akashic-mcp-v0.5.0）
+
 ## [0.3.0] - 2026-08-04
 
 ### Added
