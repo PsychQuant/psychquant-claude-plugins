@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `binary_version` 2.27.0 → **2.28.0**，讓 v2.46.0 的 first-run FDA assist（mail#355）真正生效。該 hook 從落地起就是 **no-op**：它以版本閘擋住 2.28.0 以前的 binary，因為更舊的版本會把 `--check-fda --quiet` 當成普通 `--check-fda` 解析、印出訊息並打開系統設定 —— 正是它要避免的騷擾。binary v2.28.0 已發布（signed + notarized），閘門現在開了。
+
+  同版本一併到位的 binary 修復：QP 內文解碼（mail#339，19/28 封信曾寫成不可讀）、`list_attachments` 對自寄信件回 `[]` 的靜默漏抓（mail#365）、`.mcpb` 改由簽章 universal binary 打包（mail#323 —— 在此之前 Desktop 安裝拿到的是 ad-hoc binary，**結構上無法**被授予 Full Disk Access）。
+
 ### Added
 
 - **Coverage Audit 新增 8d 方向覆蓋（direction balance）** —— 稽核查得出「已知的信有沒有完整落地」，卻查不出「整批只有一半的對話」（mail#350）。實證：四個學會的歸檔庫 **266 封全部 `direction: received`、零寄件**，8a/8b 每次報綠燈；對其中一個補跑 Step 3 recipe (2) 的 Sent-scoped recipient 搜尋，撈出 **10 封從未歸檔的寄件**，最早回溯 2024-07 —— 「來回協商」的 thread 裡只剩對方講的話。
