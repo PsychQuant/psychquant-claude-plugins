@@ -57,7 +57,6 @@ claude plugin install che-word-mcp@macdoc                        # 或 macdoc@ma
 |--------|------|-----------|
 | **che-things-mcp** | Things 3 任務管理 | 47 |
 | **che-ical-mcp** | macOS 行事曆 & 提醒事項 | 20 |
-| **che-apple-mail-mcp** | Apple Mail 郵件管理 + 歸檔 | 60+ |
 | **che-duckdb-mcp** | DuckDB 資料庫操作 | 14 |
 | **r-shiny-debugger** | R Shiny App 功能測試 | - |
 | **ai-docs-guide** | Claude Code + OpenAI 文檔查詢助手 | - |
@@ -121,25 +120,18 @@ macOS 原生行事曆與提醒事項整合，使用 EventKit 框架。
 
 ---
 
-### che-apple-mail-mcp
+### che-apple-mail-mcp → 已遷出
 
-Apple Mail 郵件管理，透過 AppleScript 原生整合。
-
-**需求**: [CheAppleMailMCP](https://github.com/kiki830621/che-apple-mail-mcp/releases) binary
+`che-apple-mail-mcp` 於 2026-08-05 遷至自營 marketplace
+**[che-apple-mail-mcp](https://github.com/PsychQuant/che-apple-mail-mcp)**，
+與其 Swift binary source 同 repo（比照 `che-ical-mcp` 的 co-locate 形式）：
 
 ```bash
-# 郵件歸檔
-/che-apple-mail-mcp:archive-mail d06227105@ntu.edu.tw
-/che-apple-mail-mcp:archive-mail d06227105@ntu.edu.tw communication/emails
+/plugin marketplace add PsychQuant/che-apple-mail-mcp
+/plugin install che-apple-mail-mcp@che-apple-mail-mcp
 ```
 
-| 功能分類 | 說明 |
-|----------|------|
-| Mailboxes | 列出帳號、信箱 |
-| Emails | 搜尋、讀取、回覆、轉寄 |
-| Drafts | 草稿管理 |
-| Archive | 歸檔郵件到 Markdown |
-| Rules | 郵件規則管理 |
+呼叫方式不變：`/che-apple-mail-mcp:archive-mail` 等 command 與 skill 名皆相同。
 
 ---
 
