@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Coverage Audit 新增 8d 方向覆蓋（direction balance）** —— 稽核查得出「已知的信有沒有完整落地」，卻查不出「整批只有一半的對話」（mail#350）。實證：四個學會的歸檔庫 **266 封全部 `direction: received`、零寄件**，8a/8b 每次報綠燈；對其中一個補跑 Step 3 recipe (2) 的 Sent-scoped recipient 搜尋，撈出 **10 封從未歸檔的寄件**，最早回溯 2024-07 —— 「來回協商」的 thread 裡只剩對方講的話。
+
+  根因是分母的來源：8a 比對已歸檔信的附件、8b 比對已歸檔 subject 的兄弟，**兩軸的分母都來自 archive 內部已有的東西**，沒有任何一軸能看見「應該存在但從未被搜到」的一整邊。方向分布是唯一從 archive 內部就看得出「搜尋策略漏了一邊」的訊號 —— 它不問「這封信完整嗎」，問「這批信的形狀對嗎」。
+
+  8d 純讀磁碟 frontmatter，封閉列舉三條判定：零寄件且 ≥10 封 → 警告；同上且 corpus 內有回覆串證據（`in_reply_to` 非空或 `Re:`/`Fwd:` 主旨）→ 升級為強訊號；有 `direction_inferred: true` 的封數 → 註明該數不可當方向統計的可信基礎（mail#351）。**單向本身可以是正確的**（純電子報／公告訂閱），所以門檻以下與 `sent > 0` 都明確不發話，且三條都只報告、不阻擋 run。警告一併輸出可直接複製的補救指令。
+
 ## [2.44.1] - 2026-08-05
 
 ### Fixed
