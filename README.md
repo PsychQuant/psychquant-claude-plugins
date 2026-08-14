@@ -51,6 +51,17 @@ claude plugin install che-word-mcp@macdoc                        # 或 macdoc@ma
 
 新 marketplace 另提供 `che-pdf-mcp`、`che-pptx-mcp`（首發），wrapper 含強化的供應鏈驗證（強制 sha256 + Developer ID 簽章鏈 + exec-time 重驗）。
 
+## 收錄準則（#131 裁決，2026-08-14）
+
+Plugin 的 source 放哪，依「有無獨立 source repo」分流：
+
+| 形態 | 準則 |
+|------|------|
+| **有獨立 source repo 的 binary-wrapper plugin**（che-*-mcp 家族等） | **新增者預設「repo 即 plugin」**：shell（plugin.json／.mcp.json／wrapper／skills）住 source repo 的 `plugin/` 子樹，本 marketplace entry 以 **git-subdir source** 引用（先例：akashic-mcp，PsychQuant/Akashic-Library#275）。release 單 repo 化——shell bump 與 binary release 同 commit，不再跨 repo 同步 |
+| **既有 11 個 binary-wrapper plugin** | **不整批遷**——各自於下次 release 時機會主義遷移（該次本來就要動 shell，順勢搬遷邊際成本最低）；遷移程序複用 akashic 案（已知陷阱：`binary_version` validate warning、squash-merge × stacked-PR，見 Akashic-Library#275 verify） |
+| **marketplace-native plugin**（純 skill／rules，無外部 repo） | 留在本 repo `plugins/`——沒有兩源問題，遷移無收益 |
+| **完全自治**（連 entry 都自持） | 自架 marketplace（先例：che-word-mcp／macdoc、che-apple-mail-mcp）——適用於 plugin 家族自成生態者；與 git-subdir 的取捨：自架＝安裝入口也自管，git-subdir＝仍列本 marketplace |
+
 ## Plugins
 
 | Plugin | 說明 | MCP Tools |
