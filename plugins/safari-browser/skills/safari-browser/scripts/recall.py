@@ -65,15 +65,17 @@ def summarize(records, coverage, offset=0, page_size=200, search=""):
             # Validate every row before filtering so schema drift cannot look
             # like a successful empty search.
             fields = [url, title, filename, device] if source in ('downloads', 'cloud-tabs') else [url, title]
-            if source in ('downloads', 'cloud-tabs') and search and not any(search.lower() in (value or '').lower() for value in fields):
-                continue
+            matches = not search or source == 'history' or any(
+                search.lower() in (value or '').lower() for value in fields)
             if source == 'downloads' and not url:
-                hints.append({'filename': filename, 'date': date})
+                if matches:
+                    hints.append({'filename': filename, 'date': date})
                 continue
             item = candidates.setdefault(url, {
                 'url': url, 'titles': [], 'sources': [], 'latest_recorded_at': None,
-                'history_matches': 0, 'reading_list': False, 'folders': [], 'devices': [],
-                'filenames': [], '_instant': None})
+                'history_matches': 0, 'reading_list': None, 'folders': [], 'devices': [],
+                'filenames': [], '_instant': None, '_matches': False})
+            item['_matches'] |= matches
             if source not in item['sources']:
                 item['sources'].append(source)
             if title and title not in item['titles']:
@@ -84,7 +86,7 @@ def summarize(records, coverage, offset=0, page_size=200, search=""):
             if source == 'history':
                 item['history_matches'] += 1  # Retrieved matching rows, not lifetime visits.
             elif source == 'bookmarks':
-                item['reading_list'] |= row['reading_list']
+                item['reading_list'] = bool(item['reading_list']) or row['reading_list']
                 if folder not in item['folders']:
                     item['folders'].append(folder)
             elif source == 'cloud-tabs':
@@ -92,11 +94,12 @@ def summarize(records, coverage, offset=0, page_size=200, search=""):
                     item['devices'].append(device)
             elif filename not in item['filenames']:
                 item['filenames'].append(filename)
-    ordered = sorted(candidates.values(), key=lambda item: (
+    ordered = sorted((item for item in candidates.values() if item['_matches']), key=lambda item: (
         item['_instant'] is None, -(item['_instant'] or 0),
         (item['titles'][0] if item['titles'] else item['url']).lower(), item['url']))
     for item in ordered:
         del item['_instant']
+        del item['_matches']
     end = offset + page_size
     return {'total_candidates': len(ordered), 'offset': offset,
             'next_offset': end if end < len(ordered) else None,
@@ -143,7 +146,7 @@ def collect(args):
         limited = source in ('history', 'downloads')
         if limited:
             command += ['--limit', str(args.limit)]
-        if args.search and source in ('history', 'bookmarks'):
+        if args.search and source == 'history':
             command += ['--search=' + args.search]
         if args.since and source == 'history':
             command += ['--since', args.since]
@@ -175,7 +178,8 @@ def collect(args):
         records[source] = payload
         coverage[source] = {'returned_rows': len(payload), 'limit': args.limit if limited else None,
                             'at_limit': limited and len(payload) >= args.limit,
-                            'first_stderr_line': first, 'has_diagnostics': bool(lines)}
+                            'first_stderr_line': first, 'has_diagnostics': bool(lines),
+                            'search_mode': ('cli' if source == 'history' else 'after_url_merge') if args.search else 'none'}
     return records, coverage
 
 

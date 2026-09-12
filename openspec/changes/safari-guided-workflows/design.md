@@ -23,7 +23,7 @@
 
 ## Implementation Contract
 
-helper預設history→bookmarks→cloud-tabs→downloads，支援選來源、search、since、正數limit、offset及page-size；history/bookmarks用現有search，其他來源於記憶體依可見欄位過濾。輸出JSON候選和coverage，保留unknown日期與空download source_url線索；stderr原文先呈現，首行與有診斷標記留在coverage。未知schema/非零/阻擋警告即明確失敗。只處理既有權限，不修改TCC、binary或daemon。
+初版helper規劃history/bookmarks採CLI search；經R1審查後，以下R2契約取代這個查詢層選擇。helper預設history→bookmarks→cloud-tabs→downloads，支援選來源、search、since、正數limit、offset及page-size。history保留CLI search；bookmarks讀既有JSON全集，與其他來源依完整URL先合併，再按title/URL與device/filename線索選候選，保留不同標題的同URL線索。helper不依賴尚未合併的CLI #120，直接CLI search範例另明示功能前提。輸出JSON候選和coverage，保留unknown日期與空download source_url線索；stderr原文先呈現，首行與有診斷標記留在coverage。未知schema/非零/阻擋警告即明確失敗。只處理既有權限，不修改TCC、binary或daemon。
 
 命令範例對照實際CLI help與JSON欄位；功能測試用合成資料/fake CLI驗證完整URL去重、nullable日期、來源限制、失敗不產生成功空結果及每步停止。Forms不在真實表單操作，驗證以官方來源、命令語法及情境審查為限。新skill六節/frontmatter/name/description驗證；plugin.json與marketplace版本一致為2.9.0。
 
@@ -33,3 +33,7 @@ helper預設history→bookmarks→cloud-tabs→downloads，支援選來源、sea
 - 來源查詢與分頁非同一瞬間 → 每次是新觀察，不宣稱transaction across sources。
 - Forms的DOM與語言會變 → 以當下snapshot refs、可見文字與欄位回讀判斷，拒絕硬編personal selector。
 - 跨repoissue引用 → PR/commit使用完整PsychQuant/safari-browser引用；狀態仍寫回原issue。
+
+## R2 審查調整
+
+保留完整搜尋目的，將書籤搜尋放在URL合併後，既能保留Reading List/alias線索也能使用目前JSON介面。未觀察到書籤時reading_list是null，不宣稱false。主skill不新增Python自動授權，沿用原有工具權限規則。新增以真實Swift編碼器產生的合成JSON fixture，來源字段source_url是String、空值用空字串而非null；不把錯誤schema轉成成功空結果。Forms目標鎖定使用已觀察的form-ID前綴，檔案選擇明確交棒。

@@ -1,0 +1,1 @@
+Synthetic data emitted by the actual Swift data structs and encodeJSON functions from PsychQuant/safari-browser commit 4fd53a2. No real browser records. Generated with Foundation only; null dates/counts and empty download source_url are intentional.

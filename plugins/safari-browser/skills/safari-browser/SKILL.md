@@ -14,7 +14,6 @@ description: >-
 allowed-tools:
   - Bash(safari-browser:*)
   - Bash(safari-browser *)
-  - Bash(python3:*)
 ---
 
 # Safari Browser Automation
@@ -316,6 +315,8 @@ safari-browser mouse down / up / wheel <dy>
 Every other command drives the **running** browser. These four read Safari's own files under
 `~/Library/Safari/`, so they work with Safari closed and answer questions about the past.
 
+The direct `bookmarks --search` example requires a CLI build containing [the bookmark-search feature](https://github.com/PsychQuant/safari-browser/issues/120). Check `safari-browser bookmarks --help` first. If it is missing, update the CLI checkout to a revision containing that feature before installing; re-signing an old binary does not add it. The recall helper below uses existing `bookmarks --json` and performs its own title/URL matching, so it does not require that newer flag.
+
 ```bash
 safari-browser history --search agent --limit 50   # browsing history (default limit applies)
 safari-browser history --since 2026-08-01
@@ -407,4 +408,4 @@ Use between every `safari-browser` command when operating sensitive sites. Never
 
 ## Playbooks
 
-Site-specific operation guides live as sibling skills named `safari-<site>-<action>/SKILL.md` — Claude Code auto-surfaces them by description when the user's intent matches. Seeds currently shipping: `safari-plaud-upload`, `safari-github-star`. To add a personal playbook (private site, custom flow), drop a `SKILL.md` at `~/.claude/skills/safari-<site>-<action>/SKILL.md` using the same convention; Claude loads user-local skills natively and no custom precedence is added by this plugin. Contribution guide: `plugins/safari-browser/skills/CONTRIBUTING-PLAYBOOKS.md`. Authoritative spec: `openspec/specs/playbook-skills/spec.md` in the safari-browser repo.
+Site-specific operation guides live as sibling skills named `safari-<site>-<action>/SKILL.md` — Claude Code auto-surfaces them by description when the user's intent matches. Available playbooks: `safari-plaud-upload`, `safari-github-star`, and `safari-google-fill` (Google Forms). To add a personal playbook (private site, custom flow), drop a `SKILL.md` at `~/.claude/skills/safari-<site>-<action>/SKILL.md` using the same convention; Claude loads user-local skills natively and no custom precedence is added by this plugin. Contribution guide: `plugins/safari-browser/skills/CONTRIBUTING-PLAYBOOKS.md`. Authoritative spec: `openspec/specs/playbook-skills/spec.md` in the safari-browser repo.

@@ -15,7 +15,7 @@ Use for a Google Form the user wants to complete in Safari, especially multi-sec
 - The user supplied the form and intended answers/files. Determine whether their existing request authorizes filling, uploading and submitting; reuse that authorization instead of asking again.
 - Safari has the correct signed-in Google account and access to the form. File-upload questions require sign-in; check the displayed file count/type/size restrictions against the specified file.
 - Use the main Safari skill's command-result handling: inspect each exit code and full stderr, beginning with the first line. Stop on failures or blocking warnings; do not discard diagnostics.
-- Run `safari-browser documents --json`, select the actual form tab and set `FORM` to a unique URL substring. Resolve duplicate matches explicitly. Recheck the URL after navigation; do not use `--first-match` to guess.
+- The supplied form is open in Safari (open its URL first if that is already authorized). Run `safari-browser documents --json`, select the actual form tab and set `FORM` to a unique, observed form-ID path prefix that survives `viewform`/`formResponse` changes. Do not use a changing query parameter or terminal page name as the lock. For a short link, identify the resolved form tab first. Resolve duplicate matches explicitly and rediscover the target after an unexpected redirect; do not use `--first-match` to guess.
 - Example variables `TEXT_REF`, `CHOICE_REF`, `NEXT_REF` and `ANSWER` must come from the current snapshot and the user's prepared content, not from the numeric examples in another session.
 
 ## Steps
@@ -49,7 +49,7 @@ Use for a Google Form the user wants to complete in Safari, especially multi-sec
    ```
    Expected: the intended next section heading/questions appear. Forms can update in place with no URL change. A change in body-text length is only a clue; validate the actual section. If the section does not advance, inspect required-field errors or intentional branching before another click. Refresh references after each section change.
 
-4. At file upload, inspect the visible control and restrictions. If there is no usable file input, do not call `upload` with a guessed selector or put the document's text into an unrelated field. If opening Add file is already authorized, click its observed reference once and inspect the resulting page/dialog state. When the current DOM path cannot access the Picker (including a cross-origin frame boundary), hand off:
+4. At a file-upload question, this playbook hands file selection to the user. Inspect the visible control and restrictions. If there is no usable file input, do not call `upload` with a guessed selector or put the document's text into an unrelated field. If opening Add file is already authorized, click its observed reference once and inspect the resulting page/dialog state. When the current DOM path cannot access the Picker (including a cross-origin frame boundary), hand off:
    > Please choose the specified file in the Google file picker and wait for upload to finish. Let me know when the attachment appears; I will verify it before continuing.
    Pause for that action. Do not synthesize keyboard input, invent selectors inside inaccessible frames, repeatedly reopen the picker, or bypass origin restrictions. After the user finishes, take a fresh snapshot and verify the expected filename/attachment and that upload is no longer pending. User takeover might also navigate or submit: inspect the current state before resuming.
 

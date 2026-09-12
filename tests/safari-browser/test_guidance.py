@@ -89,6 +89,11 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(entry['description'], plugin['description'])
         self.assertTrue((ROOT / entry['source']).is_dir())
 
+    def test_main_skill_does_not_expand_automatic_tool_grants(self):
+        front = (PLUGIN / 'skills/safari-browser/SKILL.md').read_text().split('---', 2)[1]
+        permissions = re.findall(r'^  - (Bash\(.*\))$', front, re.M)
+        self.assertEqual(permissions, ['Bash(safari-browser:*)', 'Bash(safari-browser *)'])
+
     def test_reference_links_resolve(self):
         skill = PLUGIN / 'skills/safari-browser/SKILL.md'
         for link in re.findall(r'\]\((references/[^)]+)\)', skill.read_text()):

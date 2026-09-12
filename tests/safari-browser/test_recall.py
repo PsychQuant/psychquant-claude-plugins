@@ -51,6 +51,34 @@ class RecallTests(unittest.TestCase):
         self.assertEqual(result['next_offset'], 2)
         self.assertEqual(result['coverage'], coverage)
 
+    def test_query_after_url_merge_keeps_aliases_and_excludes_unrelated_pages(self):
+        records = {'bookmarks': [
+            {'url': 'https://x/a', 'title': 'Agent guide', 'folder': 'Research', 'reading_list': False},
+            {'url': 'https://x/a', 'title': 'Saved for later', 'folder': 'Reading List', 'reading_list': True},
+            {'url': 'https://x/b', 'title': 'Unrelated', 'folder': '', 'reading_list': False}]}
+        report = recall.summarize(records, {}, search='agent')
+        self.assertEqual(report['total_candidates'], 1)
+        self.assertTrue(report['candidates'][0]['reading_list'])
+        self.assertEqual(report['candidates'][0]['titles'], ['Agent guide', 'Saved for later'])
+
+    def test_reading_list_is_unknown_without_bookmark_evidence(self):
+        report = recall.summarize({'history': [{'url': 'https://x/a', 'title': 'A', 'visit_time': None}]}, {})
+        self.assertIsNone(report['candidates'][0]['reading_list'])
+
+    def test_fragment_alone_distinguishes_candidates(self):
+        report = recall.summarize({'history': [{'url': 'https://x/a#one'}, {'url': 'https://x/a#two'}]}, {})
+        self.assertEqual(report['total_candidates'], 2)
+
+
+    def test_device_and_filename_matching_without_history(self):
+        report = recall.summarize({
+            'cloud-tabs': [{'url': 'https://x/device', 'title': 'Other', 'device': 'Phone'}],
+            'downloads': [{'source_url': 'https://x/file', 'filename': 'phone.pdf', 'date': None},
+                          {'source_url': 'https://x/unrelated', 'filename': 'other.pdf', 'date': None}]
+        }, {}, search='phone')
+        self.assertEqual({c['url'] for c in report['candidates']}, {'https://x/device', 'https://x/file'})
+
+
 
 class CollectionTests(unittest.TestCase):
     def run_helper(self, failure='', malformed='', warning='', bad_schema='', extra=()):
@@ -142,6 +170,41 @@ print(json.dumps(rows))
         self.assertEqual(raised.exception.code, 124)
         self.assertEqual(run.call_count, 1)
         self.assertEqual(stream.getvalue(), 'first diagnostic\nmore detail\n')
+
+    def test_all_sources_use_real_encoder_shapes_and_old_bookmarks_json(self):
+        import json
+        import os
+        import subprocess
+        import tempfile
+        fixture = Path(__file__).parent / 'fixtures/cli-local-data.json'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / 'safari-browser'
+            binary.write_text("""#!/usr/bin/env python3
+import json,os,sys
+source=sys.argv[1]
+with open(os.environ['CALL_LOG'],'a') as f:f.write(source+'\\n')
+if source=='bookmarks' and any(a.startswith('--search') for a in sys.argv[2:]):
+ print('Unknown option --search',file=sys.stderr);raise SystemExit(64)
+with open(os.environ['FIXTURE']) as f:rows=json.load(f)[source]
+print(json.dumps(rows))
+""")
+            binary.chmod(0o755)
+            env = dict(os.environ, PATH=str(root)+os.pathsep+os.environ['PATH'],
+                       CALL_LOG=str(root/'calls'), FIXTURE=str(fixture))
+            result = subprocess.run([sys.executable, str(SCRIPT), '--search', 'agent', '--limit', '2'],
+                                    capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual((root/'calls').read_text().splitlines(), ['history', 'bookmarks', 'cloud-tabs', 'downloads'])
+            self.assertTrue(result.stdout.isascii())
+            a = next(c for c in report['candidates'] if c['url'].startswith('https://example.invalid/guide'))
+            self.assertEqual(a['sources'], ['history', 'bookmarks', 'cloud-tabs', 'downloads'])
+            self.assertTrue(a['reading_list'])
+            self.assertIn('Saved overview', a['titles'])
+            self.assertIn('Agent Ω notes', a['titles'])
+            self.assertEqual(report['download_hints'][0]['filename'], 'agent-attachment.pdf')
+            self.assertTrue(report['coverage']['downloads']['at_limit'])
 
 
 if __name__ == '__main__':

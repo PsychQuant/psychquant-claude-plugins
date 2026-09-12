@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Recall workflow
-The main skill SHALL describe source order, broad candidate collection, exact-URL deduplication, sorting and cross-source comparison. A read-only helper SHALL preserve distinct URLs with identical titles, query strings and fragments; retain source clues and unknown dates; and expose source caps and candidate pagination. Failed commands or invalid JSON/schema SHALL fail without a partial success report. Browser data SHALL remain in memory during collection.
+The main skill SHALL describe source order, broad candidate collection, exact-URL deduplication, sorting and cross-source comparison. A read-only helper SHALL preserve distinct URLs with identical titles, query strings and fragments; retain source clues and unknown dates; and expose source caps and candidate pagination. Failed commands or invalid JSON/schema SHALL fail without a partial success report. Browser data SHALL remain in memory during collection. The helper SHALL query existing bookmarks JSON without requiring the newer CLI search flag, merge full-URL evidence before local matching, and retain nonmatching title aliases for a matching URL. Reading List state SHALL remain unknown without bookmark evidence. The main skill SHALL NOT add a blanket Python auto-approval rule.
 
 #### Scenario: Repeated visits and identical titles
 - **WHEN** history contains repeated visits to URL A and a separate URL B with the same title, and bookmarks also contains A
