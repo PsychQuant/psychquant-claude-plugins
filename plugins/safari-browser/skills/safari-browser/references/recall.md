@@ -4,6 +4,8 @@ The aim is to produce a manageable candidate set for recognition, not to guess a
 
 ## Choose sources and scope
 
+The helper needs Python 3.9 or newer and `safari-browser` on PATH. It uses only the Python standard library; it does not install a runtime or packages.
+
 1. Start with **history**, using one broad remembered term and a date lower bound only when the user supplied one. A missing hit does not prove the page was never seen.
 2. Add **bookmarks and Reading List** when it was intentionally saved, or when history misses. The helper searches title/URL from `bookmarks --json`; this also preserves differently titled entries for a URL already found in another source. The newer direct CLI `bookmarks --search` is optional; `--folder` is a separate narrowing dimension.
 3. Add **cloud-tabs** for another device. It reflects available synchronized open tabs, not that device's complete history.
