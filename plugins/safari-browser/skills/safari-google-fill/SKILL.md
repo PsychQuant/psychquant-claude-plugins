@@ -22,7 +22,7 @@ Use for a Google Form the user wants to complete in Safari, especially multi-sec
 
 1. Inspect the current section and visible question types:
    ```bash
-   : "${FORM:?Set FORM to the verified unique form URL substring}"
+   : "${FORM:?Set FORM to the verified form-ID path prefix}"
    safari-browser snapshot --page --url "$FORM"
    ```
    Expected: the form's current section and actual controls are readable. A visible “Add file” / “新增檔案” control or file restriction is evidence of an upload question even when no `input[type=file]` or textarea is present. Private `FB_PUBLIC_LOAD_DATA_` codes are not authoritative.

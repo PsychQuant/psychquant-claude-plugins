@@ -5,4 +5,6 @@
 - [x] 1.4 R2審查調整：合併URL後搜尋、未知Reading List、既有JSON相容與原有工具權限；真實Swift編碼器fixture/fake CLI及metadata測試通過。
 ## 2. 整合
 - [x] 2.1 Consistent plugin packaging：同步2.9.0版本與description，驗證frontmatter/name/六節/連結及完整測試。
-- [ ] 2.2 獨立審查、跨repo PR及三個原始issue狀態同步。
+- [x] 2.2 獨立審查、跨repo PR及三個原始issue狀態同步。
+
+R2驗證：24項測試在預設Python及系統Python3.9.6通過；CLI help與實際Swift編碼器的合成JSON對照完成。六份CODE/DOCS審查通過；沒有查詢真實瀏覽內容、操作真實表單或更新已安裝cache。
