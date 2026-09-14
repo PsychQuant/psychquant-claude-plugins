@@ -34,6 +34,14 @@ macOS native browser automation CLI using Safari + AppleScript. **Core advantage
 | AI + human collaboration (user watches and takes over) | **safari-browser** (shared Safari window) |
 | Need CDP accessibility tree | agent-browser (safari-browser has JS-based snapshot) |
 
+## Inspect Command Results Before Continuing
+
+For every command, read stderr's **first line and full diagnostics**, and check its exit code. Nonzero means stop the sequence. A `⚠ BLOCKING DIALOG` warning also stops the next action even if a read-only command succeeded. Inspect `dialog list` and choose a named button only within the user's existing authorization; never automatically replay an action that might already have run.
+
+Keep stdout and stderr separate. Do not discard stderr or use `2>&1 | tail -1` / a live `head -1` pipe. Enable `set -o pipefail` for shell pipelines and check each step. For executable capture and loop guidance, read [command-results.md](references/command-results.md). Successful execution still requires the page-state checks below.
+
+Treat the command-reference and pattern blocks below as individual steps, not unchecked batches; apply this gate to every invocation.
+
 ## Core Workflow
 
 ```bash
@@ -307,18 +315,18 @@ safari-browser mouse down / up / wheel <dy>
 Every other command drives the **running** browser. These four read Safari's own files under
 `~/Library/Safari/`, so they work with Safari closed and answer questions about the past.
 
+The direct `bookmarks --search` example requires a CLI build containing [the bookmark-search feature](https://github.com/PsychQuant/safari-browser/issues/120). Check `safari-browser bookmarks --help` first. If it is missing, update the CLI checkout to a revision containing that feature before installing; re-signing an old binary does not add it. The recall helper below uses existing `bookmarks --json` and performs its own title/URL matching, so it does not require that newer flag.
+
 ```bash
 safari-browser history --search agent --limit 50   # browsing history (default limit applies)
 safari-browser history --since 2026-08-01
 safari-browser bookmarks --folder AI               # bookmarks + Reading List (folder filter)
-safari-browser bookmarks --json | jq '.[] | select(.title|test("swift";"i"))'   # no --search: filter via jq
+safari-browser bookmarks --search swift --json      # title/URL search; can combine with --folder
 safari-browser cloud-tabs                          # tabs open on your other devices
 safari-browser downloads
 ```
 
-All four take `--json`. Explanatory text goes to stderr, data rows to stdout — so
-`safari-browser history 2>/dev/null` is already clean, parseable output, and `--json` on an
-empty result prints `[]` rather than nothing.
+All four take `--json`. Data is on stdout; keep stderr for permission, missing-source and parse diagnostics. Parse only stdout and check the exit code before using it. An empty JSON result is `[]`, but its accompanying diagnostics determine what that means.
 
 **These require Full Disk Access, and the grant is bound to the binary's code signature —
 not to its path.** An ad-hoc signed binary (what `make install` produces) cannot hold a
@@ -328,10 +336,11 @@ to it. Follow what the error says rather than assuming "add it in System Setting
 A missing source file is **not** an error: `cloud-tabs` on a Mac that never enabled iCloud tab
 syncing exits 0 with a note on stderr. That is a configuration state, not a failure.
 
-**Finding a page you cannot name.** Guessing keywords repeatedly works badly. What works is
-narrowing to a set a human can scan in one pass — dedupe by title, list all of it, read with
-your eyes. If history misses, the page may be in `bookmarks` (including Reading List) or
-`cloud-tabs`; those are separate stores, not fallbacks of one another.
+**Finding a page you cannot name.** Read [the recall workflow](references/recall.md). Start with a broad clue in history, add bookmarks/Reading List, then other-device tabs or download clues as relevant. Collect a human-readable candidate batch rather than repeatedly guessing terms. Deduplicate by full URL, preserve identical titles on different URLs, and report all query/display limits.
+
+The read-only helper `scripts/recall.py` next to this SKILL.md collects JSON in memory, retains source clues and diagnostics, and produces sorted candidate pages with coverage metadata. It never opens URLs or writes browser-data temp files. Resolve `${CLAUDE_SKILL_DIR}` to this skill's directory before invoking it; see the reference for examples and verification limits.
+
+For Google Forms, use the sibling `safari-google-fill` playbook. It verifies section changes and hands inaccessible file picking to the user before checking the attachment and submission state.
 
 ## Common Patterns
 
@@ -399,4 +408,4 @@ Use between every `safari-browser` command when operating sensitive sites. Never
 
 ## Playbooks
 
-Site-specific operation guides live as sibling skills named `safari-<site>-<action>/SKILL.md` — Claude Code auto-surfaces them by description when the user's intent matches. Seeds currently shipping: `safari-plaud-upload`, `safari-github-star`. To add a personal playbook (private site, custom flow), drop a `SKILL.md` at `~/.claude/skills/safari-<site>-<action>/SKILL.md` using the same convention; Claude loads user-local skills natively and no custom precedence is added by this plugin. Contribution guide: `plugins/safari-browser/skills/CONTRIBUTING-PLAYBOOKS.md`. Authoritative spec: `openspec/specs/playbook-skills/spec.md` in the safari-browser repo.
+Site-specific operation guides live as sibling skills named `safari-<site>-<action>/SKILL.md` — Claude Code auto-surfaces them by description when the user's intent matches. Available playbooks: `safari-plaud-upload`, `safari-github-star`, and `safari-google-fill` (Google Forms). To add a personal playbook (private site, custom flow), drop a `SKILL.md` at `~/.claude/skills/safari-<site>-<action>/SKILL.md` using the same convention; Claude loads user-local skills natively and no custom precedence is added by this plugin. Contribution guide: `plugins/safari-browser/skills/CONTRIBUTING-PLAYBOOKS.md`. Authoritative spec: `openspec/specs/playbook-skills/spec.md` in the safari-browser repo.

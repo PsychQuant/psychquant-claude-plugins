@@ -1,0 +1,49 @@
+{
+  "bookmarks": [
+    {
+      "folder": "Research",
+      "reading_list": false,
+      "title": "Saved overview",
+      "url": "https://example.invalid/guide?q=1#part"
+    },
+    {
+      "folder": "Reading List",
+      "reading_list": true,
+      "title": "Read later",
+      "url": "https://example.invalid/guide?q=1#part"
+    }
+  ],
+  "cloud-tabs": [
+    {
+      "device": "Phone",
+      "title": "Synced guide",
+      "url": "https://example.invalid/guide?q=1#part"
+    }
+  ],
+  "downloads": [
+    {
+      "date": null,
+      "filename": "agent.pdf",
+      "source_url": "https://example.invalid/guide?q=1#part"
+    },
+    {
+      "date": null,
+      "filename": "agent-attachment.pdf",
+      "source_url": ""
+    }
+  ],
+  "history": [
+    {
+      "title": "Agent \u03a9 notes",
+      "url": "https://example.invalid/guide?q=1#part",
+      "visit_count": null,
+      "visit_time": "1970-01-01T09:00:00+09:00"
+    },
+    {
+      "title": "Agent \u03a9 notes",
+      "url": "https://example.invalid/other",
+      "visit_count": null,
+      "visit_time": null
+    }
+  ]
+}
