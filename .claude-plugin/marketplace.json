@@ -259,19 +259,6 @@
       "category": "development"
     },
     {
-      "name": "akashic-mcp",
-      "description": "Akashic-Library MCP server — file-based canonical literature store: search, relations, graph, derived-layer writes (tags/status/links/person updates), person & organization resolution, divergence recording with judgement, resolution verdicts (confirm/reject with three-state counts, no ratios), Zotero one-way pull (multiple Zotero sources per entry). Store format 18.",
-      "author": {
-        "name": "Che Cheng"
-      },
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/PsychQuant/Akashic-Library.git",
-        "path": "plugin"
-      },
-      "category": "productivity"
-    },
-    {
       "name": "che-biblatex-mcp",
       "version": "0.4.0",
       "description": "BibLaTeX MCP server — parse, validate (APA 7), auto-fix, section classify, and diff against Zotero",
@@ -281,5 +268,8 @@
       "source": "./plugins/che-biblatex-mcp",
       "category": "productivity"
     }
-  ]
+  ],
+  "renames": {
+    "akashic-mcp": null
+  }
 }
