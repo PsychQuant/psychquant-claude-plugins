@@ -22,3 +22,7 @@
 # Spectra app data
 .spectra/
 openspec/.vector-search.db*
+
+# Python
+__pycache__/
+*.pyc
