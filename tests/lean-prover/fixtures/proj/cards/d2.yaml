@@ -1,8 +1,0 @@
-definition:
-id: d2
-title: "a definition only a held-back theorem uses"
-natural: "NATURALD2 the other definition."
-expressions:
-  manuscript:
-    block: "sec:defs"
-audit: attested
