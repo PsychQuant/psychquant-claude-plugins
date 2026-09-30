@@ -17,7 +17,7 @@
 
 | 專案 | 路徑 | 內容 |
 |------|------|------|
-| Leanist | `~/Academic/projects/active/formal_verification/Leanist` | Lehmann (1999) 大樣本理論 |
+| Leanist | `~/Developer/Leanist-projects/Leanist` | Lehmann (1999) 大樣本理論 |
 | Mathlib | lake dependency | 數學庫 |
 
 ## 加入 lake dependency 的方式
@@ -26,7 +26,7 @@
 # lakefile.toml
 [[require]]
 name = "leanist"
-path = "../../../formal_verification/Leanist"
+path = "<相對路徑指向 ~/Developer/Leanist-projects/Leanist>"
 ```
 
 然後在 `.lean` 檔裡：
