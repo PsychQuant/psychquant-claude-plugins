@@ -42,12 +42,12 @@ argument-hint: "[lean_package_root] [--manuscript main.tex] [--graph graph.json]
 有 `--graph` 就令 `GRAPH` 為該檔，先確認它的 `check` 是 `lean`，然後跳到 Step 3。否則：
 
 ```bash
+# LEANIST_PROJECTS = the umbrella folder (~/Developer/Leanist-projects); the tools repo is Leanist-tools inside it
 CARD_GRAPH=$(command -v card-graph)
-[ -z "$CARD_GRAPH" ] && # LEANIST_PROJECTS = the umbrella folder (~/Developer/Leanist-projects); the tools repo is Leanist-tools inside it
-for c in "$LEANIST_PROJECTS/Leanist-tools/.build/release/card-graph" "$LEANIST_PROJECTS/Leanist-tools/.build/debug/card-graph"; do
+[ -z "$CARD_GRAPH" ] && for c in "$LEANIST_PROJECTS/Leanist-tools/.build/release/card-graph" "$LEANIST_PROJECTS/Leanist-tools/.build/debug/card-graph"; do
   [ -x "$c" ] && CARD_GRAPH=$c && break
 done
-[ -n "$CARD_GRAPH" ] || { echo "找不到 card-graph；請在 Leanist-projects 執行 swift build --product card-graph"; exit 1; }
+[ -n "$CARD_GRAPH" ] || { echo "找不到 card-graph；請在 Leanist-tools 執行 swift build --product card-graph"; exit 1; }
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/proved-manuscript.XXXXXX")
 GRAPH="$WORK/graph.json"
 "$CARD_GRAPH" <package-root> --library <Prefix> --lean > "$GRAPH" || { echo "card-graph 失敗，不產生文件"; exit 1; }
