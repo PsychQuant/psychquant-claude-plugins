@@ -11,6 +11,7 @@ Lean 4 自動證明磨削工具。廣度優先掃描 `.lean` 檔案中的 `sorry
 | `/lean-prover:grind` | 主迴圈：掃描、分類、嘗試證明、commit |
 | `/lean-prover:status` | 顯示當前 sorry/axiom 數量和 lake build 狀態 |
 | `/lean-prover:codex-prove-assist` | 智慧分配：Claude 分析 + Codex 暴力搜索 |
+| `/lean-prover:proved-manuscript` | 由定理卡的 Lean 檢查結果，產生只含「證明完」命題的整合版文件與證明前沿報告 |
 
 ## Agent
 

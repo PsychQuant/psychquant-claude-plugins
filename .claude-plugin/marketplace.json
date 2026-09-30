@@ -190,8 +190,8 @@
     },
     {
       "name": "lean-prover",
-      "version": "1.1.0",
-      "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with Mathlib API rules, codex-prove-assist, lean-prover agent, and auto-commit",
+      "version": "1.2.0",
+      "description": "Lean 4 automated proof grinding — breadth-first sorry elimination with Mathlib API rules, codex-prove-assist, lean-prover agent, auto-commit, and a proved-only manuscript with a proof-frontier report generated from theorem cards",
       "author": {
         "name": "Che Cheng"
       },

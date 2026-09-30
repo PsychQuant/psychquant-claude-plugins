@@ -1,0 +1,10 @@
+theorem:
+id: tZ
+title: "theorem Z"
+lean:
+  name: "Lib.Z"
+natural: "NATURALZ prose for Z."
+expressions:
+  manuscript:
+    block: "thm:z"
+audit: attested

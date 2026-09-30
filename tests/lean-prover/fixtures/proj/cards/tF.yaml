@@ -1,0 +1,10 @@
+theorem:
+id: tF
+title: "theorem F"
+lean:
+  name: "Lib.F"
+natural: "NATURALF prose for F (label missing)."
+expressions:
+  manuscript:
+    block: "thm:missing"
+audit: attested

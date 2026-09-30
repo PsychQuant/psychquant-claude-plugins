@@ -1,0 +1,10 @@
+theorem:
+id: tG
+title: "theorem G"
+lean:
+  name: "Lib.G"
+natural: "NATURALG prose for G."
+expressions:
+  manuscript:
+    block: "thm:g"
+audit: attested

@@ -1,0 +1,10 @@
+theorem:
+id: tE
+title: "theorem E"
+lean:
+  name: "Lib.E"
+natural: "NATURALE prose for E."
+expressions:
+  manuscript:
+    block: "thm:e"
+audit: attested
