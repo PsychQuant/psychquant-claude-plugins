@@ -1,0 +1,8 @@
+definition:
+id: d1
+title: "the shared definition"
+natural: "NATURALD1 the centering matrix, R ⪰ 0, R 𝟙, ℝ, μ₄, vᵀv and x⁵, y¹ + y² + y³ over 𝔽."
+expressions:
+  manuscript:
+    block: "sec:defs"
+audit: attested

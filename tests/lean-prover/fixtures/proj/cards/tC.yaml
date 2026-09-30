@@ -1,0 +1,8 @@
+theorem:
+id: tC
+title: "theorem C"
+natural: "NATURALC prose for C."
+expressions:
+  manuscript:
+    block: "thm:c"
+audit: attested

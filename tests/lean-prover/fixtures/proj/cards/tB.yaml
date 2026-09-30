@@ -1,0 +1,10 @@
+theorem:
+id: tB
+title: "theorem B"
+lean:
+  name: "Lib.B"
+natural: "NATURALB prose for B."
+expressions:
+  manuscript:
+    block: "thm:b"
+audit: attested
