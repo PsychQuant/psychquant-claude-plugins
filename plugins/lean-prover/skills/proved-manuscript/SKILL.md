@@ -43,7 +43,8 @@ argument-hint: "[lean_package_root] [--manuscript main.tex] [--graph graph.json]
 
 ```bash
 CARD_GRAPH=$(command -v card-graph)
-[ -z "$CARD_GRAPH" ] && for c in "$LEANIST_PROJECTS/.build/release/card-graph" "$LEANIST_PROJECTS/.build/debug/card-graph"; do
+[ -z "$CARD_GRAPH" ] && # LEANIST_PROJECTS = the umbrella folder (~/Developer/Leanist-projects); the tools repo is Leanist-tools inside it
+for c in "$LEANIST_PROJECTS/Leanist-tools/.build/release/card-graph" "$LEANIST_PROJECTS/Leanist-tools/.build/debug/card-graph"; do
   [ -x "$c" ] && CARD_GRAPH=$c && break
 done
 [ -n "$CARD_GRAPH" ] || { echo "找不到 card-graph；請在 Leanist-projects 執行 swift build --product card-graph"; exit 1; }
