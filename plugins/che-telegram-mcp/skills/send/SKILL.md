@@ -1,10 +1,11 @@
 ---
 name: send
 description: Send a Telegram message to a chat
+disable-model-invocation: true
+argument-hint: "[chat] [message]"
 allowed-tools:
-  - mcp__che-telegram-mcp__auth_status
-  - mcp__che-telegram-mcp__search_chats
-  - mcp__che-telegram-mcp__send_message
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_status
+  - mcp__plugin_che-telegram-mcp_telegram-all__search_chats
 ---
 
 # Send Telegram Message

@@ -16,14 +16,18 @@
 #      .recoveryCommand starts with "pkill"
 #
 # Usage:
-#   ./test-wrapper-mcp-error.sh
+#   bash tests/che-telegram-mcp/test-wrapper-mcp-error.sh
 #
 # Exit: 0 on all pass, 1 on any failure.
 
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WRAPPER="$SCRIPT_DIR/che-telegram-all-mcp-wrapper.sh"
+WRAPPER="$SCRIPT_DIR/../../plugins/che-telegram-mcp/scripts/che-telegram-all-mcp-wrapper.sh"
+if [ ! -f "$WRAPPER" ]; then
+    echo "✗ wrapper not found: $WRAPPER" >&2
+    exit 1
+fi
 FAIL=0
 TOTAL=0
 

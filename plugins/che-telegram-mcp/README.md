@@ -36,7 +36,7 @@ security add-generic-password -a "che-telegram-all-mcp" -s "TELEGRAM_2FA_PASSWOR
 security add-generic-password -a "che-telegram-all-mcp" -s "TELEGRAM_PHONE" -w '+886912345678' -U
 
 # 3. Authenticate (one-time; SMS code is the only thing you must enter live)
-/auth
+/che-telegram-mcp:auth
 ```
 
 Don't want the bot server spawning at startup? Add this to `.claude/settings.json` in your project (or `~/.claude/settings.json` for user-wide):
@@ -73,13 +73,13 @@ That's it — bot tools are now available without ever fetching the 223 MB TDLib
 
 ### Track C — Both servers
 
-You actually use both. Run all three keychain commands from Track A **plus** the one from Track B, then `/auth`. No `disabledMcpjsonServers` needed.
+You actually use both. Run all three keychain commands from Track A **plus** the one from Track B, then `/che-telegram-mcp:auth`. No `disabledMcpjsonServers` needed.
 
 ---
 
 ## How wrappers work
 
-The plugin's wrappers (`bin/che-telegram-{all,bot}-mcp-wrapper.sh`) detect your installation in this order:
+The plugin's wrappers (`scripts/che-telegram-{all,bot}-mcp-wrapper.sh`) detect your installation in this order:
 
 1. `~/bin/$BINARY_NAME`
 2. `/usr/local/bin/$BINARY_NAME`
@@ -127,24 +127,23 @@ xattr -dr com.apple.quarantine ~/bin/CheTelegramAllMCP ~/bin/CheTelegramBotMCP
 
 | Skill | Description |
 |-------|-------------|
-| `telegram-messaging` | Routes Claude to the right server (all vs bot) and walks through auth, reading, sending, search, history |
+| `telegram-messaging` | Routes Claude to the right server (all vs bot) and walks through auth, reading, sending, search, history. Claude loads it automatically when you ask about Telegram |
+| `auth` | `/che-telegram-mcp:auth` — walk through one-time authentication for personal account |
+| `chats` | `/che-telegram-mcp:chats` — show recent Telegram conversations |
+| `search` | `/che-telegram-mcp:search` — search Telegram message history |
+| `send` | `/che-telegram-mcp:send` — send a message to a chat |
 
-### Commands
+`auth`, `chats`, `search` and `send` run only when you type them (`disable-model-invocation: true`); for natural-language requests Claude uses `telegram-messaging`. Each one pre-approves the read-only tools it needs. `send` deliberately does **not** pre-approve `send_message`, so Claude Code still asks before a message goes out — a sent message cannot be recalled.
 
-| Command | Description |
-|---------|-------------|
-| `/auth` | Walk through one-time authentication for personal account |
-| `/chats` | Show recent Telegram conversations |
-| `/search` | Search Telegram message history |
-| `/send` | Send a message to a chat |
+> v1.4.0: these four moved from `commands/` to skills. Plugin skills are namespaced as `/plugin-name:skill-name`, so the full name is `/che-telegram-mcp:auth` (earlier versions of this README showed the short form `/auth`).
 
 ## Usage Examples
 
 ```
-/auth                            → Set up personal account (one-time)
-/chats                           → See recent conversations
-/search 會議紀錄                   → Search across chats
-/send @alice "see you tomorrow"  → Send a message
+/che-telegram-mcp:auth                            → Set up personal account (one-time)
+/che-telegram-mcp:chats                           → See recent conversations
+/che-telegram-mcp:search 會議紀錄                   → Search across chats
+/che-telegram-mcp:send @alice "see you tomorrow"  → Send a message
 ```
 
 Or just ask naturally:

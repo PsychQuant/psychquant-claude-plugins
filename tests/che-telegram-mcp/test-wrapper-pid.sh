@@ -10,7 +10,7 @@
 #      wrapper should NOT kill it.
 #
 # Usage:
-#   ./test-wrapper-pid.sh
+#   bash tests/che-telegram-mcp/test-wrapper-pid.sh
 #
 # Exit: 0 on all pass, 1 on any failure.
 

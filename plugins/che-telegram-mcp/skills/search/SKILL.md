@@ -1,11 +1,13 @@
 ---
 name: search
 description: Search Telegram message history
+disable-model-invocation: true
+argument-hint: "[query] [chat name]"
 allowed-tools:
-  - mcp__che-telegram-mcp__auth_status
-  - mcp__che-telegram-mcp__search_chats
-  - mcp__che-telegram-mcp__search_messages
-  - mcp__che-telegram-mcp__get_chat_history
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_status
+  - mcp__plugin_che-telegram-mcp_telegram-all__search_chats
+  - mcp__plugin_che-telegram-mcp_telegram-all__search_messages
+  - mcp__plugin_che-telegram-mcp_telegram-all__get_chat_history
 ---
 
 # Search Telegram Messages

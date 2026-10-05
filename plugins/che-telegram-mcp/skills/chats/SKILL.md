@@ -1,9 +1,10 @@
 ---
 name: chats
 description: Show recent Telegram conversations
+disable-model-invocation: true
 allowed-tools:
-  - mcp__che-telegram-mcp__auth_status
-  - mcp__che-telegram-mcp__get_chats
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_status
+  - mcp__plugin_che-telegram-mcp_telegram-all__get_chats
 ---
 
 # Recent Telegram Chats

@@ -1,12 +1,13 @@
 ---
 name: auth
 description: Authenticate Telegram personal account (one-time setup)
+disable-model-invocation: true
 allowed-tools:
-  - mcp__che-telegram-mcp__auth_status
-  - mcp__che-telegram-mcp__auth_set_parameters
-  - mcp__che-telegram-mcp__auth_send_phone
-  - mcp__che-telegram-mcp__auth_send_code
-  - mcp__che-telegram-mcp__auth_send_password
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_status
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_set_parameters
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_send_phone
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_send_code
+  - mcp__plugin_che-telegram-mcp_telegram-all__auth_send_password
 ---
 
 # Telegram Authentication
