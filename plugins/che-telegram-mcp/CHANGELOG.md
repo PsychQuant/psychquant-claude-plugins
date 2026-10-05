@@ -11,6 +11,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-05
+
+Plugin-shell upgrade to the current `harness-devtools:plugin-upgrade` baseline and the official plugin reference ([#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138), parent PsychQuant/che-msg#39). No binary change — the wrappers still pin `DESIRED_VERSION` 0.5.0.
+
+### Changed
+- Wrappers moved from `bin/` to `scripts/`; `.mcp.json` points there. Files in a plugin's `bin/` are put on the Bash tool's `PATH`, and claude.ai / Cowork do not install a plugin that has `bin/`. Restart Claude Code after updating so running servers stop pointing at the previous plugin cache.
+- The wrapper tests (`test-wrapper-mcp-error.sh`, `test-wrapper-pid.sh`) moved out of the shipped plugin to `tests/che-telegram-mcp/` in the marketplace repo.
+- `commands/{auth,chats,search,send}.md` are now skills (`skills/<name>/SKILL.md`), invoked as `/che-telegram-mcp:<name>`. They set `disable-model-invocation: true`, so they still run only when you type them; natural-language requests keep going through `telegram-messaging`.
+- `plugin.json` description now states the real tool counts (telegram-all 28, telegram-bot 31) instead of "28+".
+
+### Fixed
+- `allowed-tools` in the four entry points named `mcp__che-telegram-mcp__*`, which matches no tool, so the pre-approval never applied. They now use `mcp__plugin_che-telegram-mcp_telegram-all__*`.
+- SessionStart hook command quotes `${CLAUDE_PLUGIN_ROOT}` (the only `claude plugin validate` warning).
+
+### Security
+- `send` does not pre-approve `send_message`. With the corrected tool names, `allowed-tools` now actually skips the permission prompt, and a sent message cannot be recalled — so Claude Code still asks before sending. `auth`, `chats` and `search` pre-approve only the tools they list.
+
 ## [1.3.2] - 2026-05-22
 
 ### Fixed
