@@ -82,7 +82,7 @@ psychquant-claude-plugins/
 - 支援 `.shiny-tests.yaml` 定義測試案例
 - 同時觀察前端 UI 變化和後端 R 輸出
 
-### che-archive-lines (v1.0.0)
+### che-archive-lines (v1.1.0)
 
 **用途**: 自動化 LINE macOS 聊天記錄的歸檔
 
@@ -91,11 +91,11 @@ psychquant-claude-plugins/
 - LINE macOS 已安裝並登入
 - Accessibility 權限
 
-**使用**:
+**使用**（沒有其他指令同名時，短名 `/archive-lines` 也可以）:
 ```bash
-/archive-lines calibrate   # 第一次使用：校準按鈕位置
-/archive-lines save        # 自動儲存當前聊天
-/archive-lines test        # 測試點擊位置
+/che-archive-lines:archive-lines calibrate   # 第一次使用：Claude 顯示指令，在自己的終端機執行
+/che-archive-lines:archive-lines save        # 自動儲存當前聊天
+/che-archive-lines:archive-lines test        # 測試點擊位置
 ```
 
 **功能**:

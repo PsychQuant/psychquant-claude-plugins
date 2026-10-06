@@ -1,8 +1,9 @@
 ---
-description: 自動儲存 LINE macOS 聊天記錄（依座標點擊「⋮」→「儲存聊天」）。使用者輸入 /che-archive-lines:archive-lines calibrate|save|test|help 時使用。
+name: archive-lines
+description: 自動儲存 LINE macOS 聊天記錄（依座標點擊「⋮」→「儲存聊天」）。
 argument-hint: "[calibrate|save|test|help]"
 disable-model-invocation: true
-allowed-tools: Read
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh *)
 ---
 
 # Archive Lines
@@ -12,13 +13,13 @@ allowed-tools: Read
 ## 使用方式
 
 ```
-/che-archive-lines:archive-lines calibrate   # 第一次使用：校準按鈕位置
+/che-archive-lines:archive-lines calibrate   # 第一次使用：校準按鈕位置（在使用者自己的終端機執行）
 /che-archive-lines:archive-lines save        # 自動儲存當前聊天
 /che-archive-lines:archive-lines test        # 測試點擊位置
 /che-archive-lines:archive-lines help        # 顯示說明
 ```
 
-這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。skill 刻意不預先放行任何指令（`allowed-tools` 只有 `Read`）：在預設權限模式下，執行腳本前 Claude Code 會詢問，使用者可以選「不再詢問」；在 `bypassPermissions` 或 auto 模式下不會詢問。
+這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。`allowed-tools` 只預先放行這支腳本本身：Claude Code 會把規則裡的 `${CLAUDE_PLUGIN_ROOT}` 代換成 plugin 的安裝路徑，規則只比對以這支腳本開頭的指令，`bash -c …` 或串接在後面的其他指令都不會被放行。放行只在叫用 skill 的那一輪有效，使用者送出下一則訊息就失效。
 
 LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源只有「儲存聊天」匯出的 `.txt`。
 
@@ -26,41 +27,23 @@ LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源
 
 ### Step 1: 解析參數
 
-從 `$ARGUMENTS` 取得操作類型：
-- `calibrate`: 校準模式
-- `save`: 儲存模式
-- `test`: 測試模式
-- `help` 或空白: 顯示說明
+使用者輸入的參數：`$ARGUMENTS`
 
-### Step 2: 取得腳本路徑
+參數只接受 `calibrate`、`save`、`test`、`help` 四個字之一，空白視同 `help`。不是這四個字之一時，不要執行任何指令，回覆使用者這四個可用的操作即可。指令裡只放這四個字本身，不放使用者輸入的其他文字。
 
-腳本隨 plugin 安裝，路徑由 Claude Code 代換：
+### Step 2: 執行對應操作
 
-```bash
-SCRIPT="${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
-```
+每次執行都只用下面列出的那一行指令，單獨一個 Bash 呼叫：不要加 `cd`、`&&`、`;`、管線或其他指令，也不要先存進變數。放行規則比對的是整句指令，多了任何東西就比對不到，會改走使用者的一般權限設定。
 
-### Step 3: 執行對應操作
-
-#### calibrate - 校準模式
+#### help - 顯示說明
 
 ```bash
-# 執行校準腳本
-"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" calibrate
+"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" help
 ```
-
-流程：
-1. 啟動 LINE
-2. 取得視窗位置和大小
-3. 提示用戶把滑鼠移到「⋮」按鈕
-4. 按 Enter 後記錄滑鼠位置
-5. 計算相對偏移值（相對於視窗右上角）
-6. 儲存到 `~/.config/che-archive-lines/config.json`
 
 #### save - 儲存模式
 
 ```bash
-# 執行儲存腳本
 "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" save
 ```
 
@@ -77,13 +60,30 @@ SCRIPT="${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 #### test - 測試模式
 
 ```bash
-# 測試點擊位置
 "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" test
 ```
 
 只點擊「⋮」按鈕，不點擊選單，用於確認校準是否正確。
 
-### Step 4: 輸出結果
+#### calibrate - 校準模式（交給使用者在自己的終端機執行）
+
+**不要用 Bash 工具執行 calibrate。** 校準要等使用者把滑鼠移到「⋮」上再按 Enter，Bash 工具沒有互動式終端：直接執行會在等 Enter 時退出；用管線送換行進去，則會把當下的滑鼠位置寫成校準結果，覆蓋掉原本正確的設定（PsychQuant/psychquant-claude-plugins#145）。
+
+請把下面這行指令原樣顯示給使用者，請他貼到自己的終端機（Terminal.app、iTerm）執行，完成後再回來：
+
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" calibrate
+```
+
+校準流程（在使用者的終端機裡）：
+1. 啟動 LINE
+2. 取得視窗位置和大小
+3. 提示使用者把滑鼠移到「⋮」按鈕
+4. 按 Enter 後記錄滑鼠位置
+5. 計算相對偏移值（相對於視窗右上角）
+6. 儲存到 `~/.config/che-archive-lines/config.json`
+
+### Step 3: 輸出結果
 
 ```
 ═══════════════════════════════════════════
@@ -120,7 +120,7 @@ SCRIPT="${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 
 ## 注意事項
 
-1. **首次使用必須校準**: 執行 `/che-archive-lines:archive-lines calibrate`
+1. **首次使用必須校準**: 執行 `/che-archive-lines:archive-lines calibrate`，Claude 會顯示要在終端機執行的指令
 2. **視窗大小變化無影響**: 使用相對座標，自動計算
 3. **手動選擇儲存位置**: 腳本會開啟儲存對話框，需手動選擇路徑
 4. **僅支援當前聊天**: 每次只能儲存正在查看的聊天

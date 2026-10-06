@@ -31,7 +31,9 @@ brew install cliclick
 
 ## 使用方式
 
-指令的完整名稱是 `/che-archive-lines:archive-lines`（沒有其他指令同名時，`/archive-lines` 也可以）。這個 skill 只在你主動輸入時執行，Claude 不會自己觸發；腳本會依座標點擊 LINE 視窗、移動滑鼠，所以 skill 不預先放行任何指令：在預設權限模式下，執行腳本前 Claude Code 會詢問，你可以在詢問時選「不再詢問」；在 `bypassPermissions` 或 auto 模式下則不會詢問。
+指令的完整名稱是 `/che-archive-lines:archive-lines`；skill 設了 `name: archive-lines`，所以沒有其他指令使用 `/archive-lines` 這個名字時，短名也能叫用。
+
+這個 skill 只在你主動輸入時執行，Claude 不會自己觸發，因為腳本會依座標點擊 LINE 視窗、移動滑鼠。它只預先放行這支腳本本身：叫用 skill 的那一輪，`save`、`test`、`help` 直接執行、不詢問。放行規則錨定在 plugin 安裝路徑下的這支腳本，`bash -c …` 或串接在後面的其他指令都不會被放行；你送出下一則訊息後，放行就失效。
 
 ### 第一次使用
 
@@ -42,7 +44,8 @@ brew install cliclick
 /che-archive-lines:archive-lines calibrate
 ```
 
-3. 根據提示，將滑鼠移到聊天視窗右上角的「⋮」按鈕上，按 Enter
+3. 校準要在終端機裡等你按 Enter，Claude 的 Bash 工具沒有互動式終端，做不到這件事（[#145](https://github.com/PsychQuant/psychquant-claude-plugins/issues/145)）。所以 Claude 不會自己執行校準，而是顯示一行含完整路徑的指令，請貼到你自己的終端機（Terminal.app、iTerm）執行
+4. 根據提示，將滑鼠移到聊天視窗右上角的「⋮」按鈕上，按 Enter
 
 ### 儲存聊天
 
