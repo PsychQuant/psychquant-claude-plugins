@@ -79,7 +79,7 @@ You actually use both. Run all three keychain commands from Track A **plus** the
 
 ## How wrappers work
 
-The plugin's wrappers (`scripts/che-telegram-{all,bot}-mcp-wrapper.sh`) detect your installation in this order:
+The plugin's wrappers (`bin/che-telegram-{all,bot}-mcp-wrapper.sh`) detect your installation in this order:
 
 1. `~/bin/$BINARY_NAME`
 2. `/usr/local/bin/$BINARY_NAME`
@@ -133,9 +133,20 @@ xattr -dr com.apple.quarantine ~/bin/CheTelegramAllMCP ~/bin/CheTelegramBotMCP
 | `search` | `/che-telegram-mcp:search` — search Telegram message history |
 | `send` | `/che-telegram-mcp:send` — send a message to a chat |
 
-`auth`, `chats`, `search` and `send` run only when you type them (`disable-model-invocation: true`); for natural-language requests Claude uses `telegram-messaging`. Each one pre-approves the read-only tools it needs. `send` deliberately does **not** pre-approve `send_message`, so Claude Code still asks before a message goes out — a sent message cannot be recalled.
+`auth`, `chats`, `search` and `send` run only when you type them (`disable-model-invocation: true`); for natural-language requests Claude uses `telegram-messaging`.
 
-> v1.4.0: these four moved from `commands/` to skills. Plugin skills are namespaced as `/plugin-name:skill-name`, so the full name is `/che-telegram-mcp:auth` (earlier versions of this README showed the short form `/auth`).
+Each skill's `allowed-tools` lets Claude call the listed tools **without a permission prompt for the rest of that turn** (the grant clears when you send your next message):
+
+| Skill | Pre-approved | Not pre-approved |
+|-------|--------------|------------------|
+| `auth` | `auth_status` plus the credential-entry steps `auth_set_parameters`, `auth_send_phone`, `auth_send_code`, `auth_send_password` | — |
+| `chats` | `auth_status`, `get_chats` | — |
+| `search` | `auth_status`, `search_chats`, `search_messages`, `get_chat_history` | — |
+| `send` | `auth_status`, `search_chats` | **`send_message`** — a sent message cannot be recalled, so it is left out on purpose |
+
+Leaving `send_message` out means it goes through your normal permission settings. In the default permission mode Claude Code asks before sending. In `bypassPermissions` or auto mode, or if you have an allow rule for it, it does **not** ask — then the only remaining guard is the skill's own instruction to confirm the recipient and text with you first.
+
+> v1.4.0: these four moved from `commands/` to skills. Plugin skills are namespaced as `/plugin-name:skill-name`, so the full name is `/che-telegram-mcp:auth` (earlier versions of this README showed the short form `/auth`). Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
 
 ## Usage Examples
 
@@ -173,7 +184,7 @@ Or just ask naturally:
 
 > v0.5.0 added `auth_run` — a single tool drives the entire auth state machine. See [v0.5.0 release notes](https://github.com/PsychQuant/che-msg/releases/tag/v0.5.0).
 
-### `telegram-bot` (Bot API)
+### `telegram-bot` (Bot API) — 31 tools
 
 `get_me`, `get_updates`, `send_message`, `forward_message`, `get_chat`, `get_chat_administrators`, `get_chat_member_count`, `get_chat_member`, `set_chat_title`, `set_chat_description`, `pin_chat_message`, `unpin_chat_message`, `unpin_all_chat_messages`, `ban_chat_member`, `unban_chat_member`, `restrict_chat_member`, `promote_chat_member`, `leave_chat`, `delete_message`, `edit_message_text`, `copy_message`, `send_photo`, `send_document`, `send_video`, `send_audio`, `send_sticker`, `send_location`, `send_poll`, `set_my_commands`, `get_my_commands`, `delete_my_commands`
 
@@ -235,9 +246,16 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.3.2 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
+Plugin version: 1.4.0 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
 
 ### Changelog
+
+**1.4.0** (2026-10-06)
+
+- **`commands/` → skills**: `auth`, `chats`, `search`, `send` are now `skills/<name>/SKILL.md`, invoked as `/che-telegram-mcp:<name>`. They set `disable-model-invocation: true`, so — unlike the 1.3.2 commands — Claude no longer invokes them on its own. See [#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138).
+- **`allowed-tools` now actually apply**: the old entries named `mcp__che-telegram-mcp__*`, which matches no tool. The corrected names pre-approve the tools in the table above; `send` leaves `send_message` out on purpose.
+- **Wrapper tests moved out of the shipped plugin** to `tests/che-telegram-mcp/` in the marketplace repo, so only the two wrappers remain in `bin/` (and on the Bash tool's `PATH`). The wrappers stay in `bin/` because the harness-devtools release tooling finds them there.
+- SessionStart hook quotes `${CLAUDE_PLUGIN_ROOT}`; `plugin.json` states the real tool counts (telegram-all 28, telegram-bot 31).
 
 **1.3.2** (2026-05-22)
 

@@ -12,7 +12,7 @@
 GITHUB_REPO="PsychQuant/che-msg"
 
 # Search locations — MUST match the wrapper's `for loc in ...` list.
-# See scripts/che-telegram-{all,bot}-mcp-wrapper.sh.
+# See bin/che-telegram-{all,bot}-mcp-wrapper.sh.
 check_binary() {
     local name="$1" pkg_dir="$2" label="$3"
     local found=""

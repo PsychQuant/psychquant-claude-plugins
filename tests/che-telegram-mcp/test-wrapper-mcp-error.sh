@@ -23,7 +23,7 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WRAPPER="$SCRIPT_DIR/../../plugins/che-telegram-mcp/scripts/che-telegram-all-mcp-wrapper.sh"
+WRAPPER="$SCRIPT_DIR/../../plugins/che-telegram-mcp/bin/che-telegram-all-mcp-wrapper.sh"
 if [ ! -f "$WRAPPER" ]; then
     echo "✗ wrapper not found: $WRAPPER" >&2
     exit 1

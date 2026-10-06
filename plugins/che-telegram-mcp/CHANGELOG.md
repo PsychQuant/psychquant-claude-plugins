@@ -11,14 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.4.0] - 2026-10-05
+## [1.4.0] - 2026-10-06
 
 Plugin-shell upgrade to the current `harness-devtools:plugin-upgrade` baseline and the official plugin reference ([#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138), parent PsychQuant/che-msg#39). No binary change — the wrappers still pin `DESIRED_VERSION` 0.5.0.
 
 ### Changed
-- Wrappers moved from `bin/` to `scripts/`; `.mcp.json` points there. Files in a plugin's `bin/` are put on the Bash tool's `PATH`, and claude.ai / Cowork do not install a plugin that has `bin/`. Restart Claude Code after updating so running servers stop pointing at the previous plugin cache.
-- The wrapper tests (`test-wrapper-mcp-error.sh`, `test-wrapper-pid.sh`) moved out of the shipped plugin to `tests/che-telegram-mcp/` in the marketplace repo.
-- `commands/{auth,chats,search,send}.md` are now skills (`skills/<name>/SKILL.md`), invoked as `/che-telegram-mcp:<name>`. They set `disable-model-invocation: true`, so they still run only when you type them; natural-language requests keep going through `telegram-messaging`.
+- **Behavior change:** `commands/{auth,chats,search,send}.md` are now skills (`skills/<name>/SKILL.md`), invoked as `/che-telegram-mcp:<name>`. They set `disable-model-invocation: true`, so Claude no longer invokes them on its own — up to 1.3.2 these were commands that Claude could also load by itself. Natural-language requests go through `telegram-messaging`, which stays model-invocable.
+- The wrapper tests (`test-wrapper-mcp-error.sh`, `test-wrapper-pid.sh`) moved out of the shipped plugin to `tests/che-telegram-mcp/` in the marketplace repo, so only the two wrappers remain in `bin/` and on the Bash tool's `PATH`.
+- The wrappers themselves stay in `bin/`. Moving them to `scripts/` was tried in this release and reverted: harness-devtools (`plugin-binary-meta.sh`, `plugin-update`, `plugin-deploy`) only looks for wrappers in `bin/` and `hooks/`, and outside those its `DESIRED_VERSION` pin detection and the plugin-deploy release gate silently stopped working for this plugin.
 - `plugin.json` description now states the real tool counts (telegram-all 28, telegram-bot 31) instead of "28+".
 
 ### Fixed
@@ -26,7 +26,8 @@ Plugin-shell upgrade to the current `harness-devtools:plugin-upgrade` baseline a
 - SessionStart hook command quotes `${CLAUDE_PLUGIN_ROOT}` (the only `claude plugin validate` warning).
 
 ### Security
-- `send` does not pre-approve `send_message`. With the corrected tool names, `allowed-tools` now actually skips the permission prompt, and a sent message cannot be recalled — so Claude Code still asks before sending. `auth`, `chats` and `search` pre-approve only the tools they list.
+- **Net effect is a widening for `auth`, `chats` and `search`:** before, nothing was pre-approved (the names were wrong); now each skill pre-approves the tools it lists for the rest of the turn in which it runs. For `auth` that includes the credential-entry tools `auth_set_parameters`, `auth_send_phone`, `auth_send_code` and `auth_send_password`. The grant clears when the user sends the next message.
+- `send` deliberately does not pre-approve `send_message`, because a sent message cannot be recalled. That leaves `send_message` under the user's normal permission settings: in the default permission mode Claude Code asks before sending; in `bypassPermissions` or auto mode, or with an allow rule for the tool, it does not, and the skill's instruction to confirm the recipient and text first is the only remaining guard.
 
 ## [1.3.2] - 2026-05-22
 
