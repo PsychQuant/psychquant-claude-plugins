@@ -17,12 +17,9 @@ LINE macOS 版使用 Qt 框架，其 UI 元素不支援 macOS Accessibility API�
 ### 從 Marketplace 安裝
 
 ```bash
-/plugin install che-archive-lines@PsychQuant/psychquant-claude-plugins
+/plugin marketplace add PsychQuant/psychquant-claude-plugins
+/plugin install che-archive-lines@psychquant-claude-plugins
 ```
-
-### 手動安裝
-
-將此目錄複製到 `~/.claude/plugins/che-archive-lines/`
 
 ### 依賴
 
@@ -34,13 +31,15 @@ brew install cliclick
 
 ## 使用方式
 
+指令的完整名稱是 `/che-archive-lines:archive-lines`（沒有其他指令同名時，`/archive-lines` 也可以）。這個 skill 只在你主動輸入時執行，Claude 不會自己觸發；腳本會依座標點擊 LINE 視窗、移動滑鼠，所以 skill 不預先放行任何指令：在預設權限模式下，執行腳本前 Claude Code 會詢問，你可以在詢問時選「不再詢問」；在 `bypassPermissions` 或 auto 模式下則不會詢問。
+
 ### 第一次使用
 
 1. 開啟 LINE 並進入任一聊天視窗
 2. 執行校準：
 
 ```
-/archive-lines calibrate
+/che-archive-lines:archive-lines calibrate
 ```
 
 3. 根據提示，將滑鼠移到聊天視窗右上角的「⋮」按鈕上，按 Enter
@@ -48,7 +47,7 @@ brew install cliclick
 ### 儲存聊天
 
 ```
-/archive-lines save
+/che-archive-lines:archive-lines save
 ```
 
 執行後會：
@@ -59,7 +58,7 @@ brew install cliclick
 ### 測試
 
 ```
-/archive-lines test
+/che-archive-lines:archive-lines test
 ```
 
 僅點擊「⋮」按鈕，用於確認校準是否正確。
@@ -79,6 +78,12 @@ brew install cliclick
 }
 ```
 
+## 資料來源
+
+LINE macOS 版本機的訊息資料庫（`~/Library/Containers/jp.naver.line.mac/…/db/*.edb`）是加密的，無法直接讀取。讀得懂的資料來源只有「儲存聊天」匯出的 `.txt`，也就是這個 plugin 觸發的功能。讀取匯出檔的 LINE MCP 由 [PsychQuant/che-msg#41](https://github.com/PsychQuant/che-msg/issues/41) 追蹤。
+
+匯出的 `.txt` 是對話雙方的逐字內容，請不要 commit 進 git remote。
+
 ## 技術原理
 
 1. **相對座標**: 按鈕位置以視窗右上角為基準計算偏移，視窗移動或縮放時自動調整
@@ -96,8 +101,8 @@ brew install cliclick
 
 ### 選單沒有打開
 
-1. 執行 `/archive-lines test` 確認點擊位置
-2. 如果點擊位置不對，重新執行 `/archive-lines calibrate`
+1. 執行 `/che-archive-lines:archive-lines test` 確認點擊位置
+2. 如果點擊位置不對，重新執行 `/che-archive-lines:archive-lines calibrate`
 
 ### 權限錯誤
 

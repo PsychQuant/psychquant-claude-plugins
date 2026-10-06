@@ -40,7 +40,7 @@
     },
     {
       "name": "che-archive-lines",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "歸檔 LINE macOS 聊天記錄到文字檔，使用座標點擊自動化",
       "author": {
         "name": "Che Cheng"

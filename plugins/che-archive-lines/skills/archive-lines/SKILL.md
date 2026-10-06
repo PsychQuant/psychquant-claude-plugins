@@ -1,7 +1,8 @@
 ---
-description: 自動儲存 LINE macOS 聊天記錄
-argument-hint: [calibrate|save|test|help]
-allowed-tools: Bash(*), Read, Write, Glob
+description: 自動儲存 LINE macOS 聊天記錄（依座標點擊「⋮」→「儲存聊天」）。使用者輸入 /che-archive-lines:archive-lines calibrate|save|test|help 時使用。
+argument-hint: "[calibrate|save|test|help]"
+disable-model-invocation: true
+allowed-tools: Read
 ---
 
 # Archive Lines
@@ -11,11 +12,15 @@ allowed-tools: Bash(*), Read, Write, Glob
 ## 使用方式
 
 ```
-/archive-lines calibrate   # 第一次使用：校準按鈕位置
-/archive-lines save        # 自動儲存當前聊天
-/archive-lines test        # 測試點擊位置
-/archive-lines help        # 顯示說明
+/che-archive-lines:archive-lines calibrate   # 第一次使用：校準按鈕位置
+/che-archive-lines:archive-lines save        # 自動儲存當前聊天
+/che-archive-lines:archive-lines test        # 測試點擊位置
+/che-archive-lines:archive-lines help        # 顯示說明
 ```
+
+這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。skill 刻意不預先放行任何指令（`allowed-tools` 只有 `Read`）：在預設權限模式下，執行腳本前 Claude Code 會詢問，使用者可以選「不再詢問」；在 `bypassPermissions` 或 auto 模式下不會詢問。
+
+LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源只有「儲存聊天」匯出的 `.txt`。
 
 ## 執行步驟
 
@@ -29,19 +34,10 @@ allowed-tools: Bash(*), Read, Write, Glob
 
 ### Step 2: 取得腳本路徑
 
+腳本隨 plugin 安裝，路徑由 Claude Code 代換：
+
 ```bash
-SCRIPT_DIR="$(dirname "$(dirname "$0")")/scripts"
-SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
-```
-
-如果使用 plugin 安裝，腳本路徑為：
-```
-~/.claude/plugins/che-archive-lines/scripts/line-save-chat.sh
-```
-
-或從 marketplace 來源：
-```
-/Users/che/Library/CloudStorage/Dropbox/che_workspace/projects/psychquant-claude-plugins/plugins/che-archive-lines/scripts/line-save-chat.sh
+SCRIPT="${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 ```
 
 ### Step 3: 執行對應操作
@@ -50,7 +46,7 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 
 ```bash
 # 執行校準腳本
-./scripts/line-save-chat.sh calibrate
+"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" calibrate
 ```
 
 流程：
@@ -65,7 +61,7 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 
 ```bash
 # 執行儲存腳本
-./scripts/line-save-chat.sh save
+"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" save
 ```
 
 流程：
@@ -82,7 +78,7 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 
 ```bash
 # 測試點擊位置
-./scripts/line-save-chat.sh test
+"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" test
 ```
 
 只點擊「⋮」按鈕，不點擊選單，用於確認校準是否正確。
@@ -124,7 +120,7 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 
 ## 注意事項
 
-1. **首次使用必須校準**: 執行 `/archive-lines calibrate`
+1. **首次使用必須校準**: 執行 `/che-archive-lines:archive-lines calibrate`
 2. **視窗大小變化無影響**: 使用相對座標，自動計算
 3. **手動選擇儲存位置**: 腳本會開啟儲存對話框，需手動選擇路徑
 4. **僅支援當前聊天**: 每次只能儲存正在查看的聊天
@@ -133,8 +129,8 @@ SCRIPT="$SCRIPT_DIR/line-save-chat.sh"
 ## 故障排除
 
 ### 選單沒有打開
-- 執行 `/archive-lines test` 確認點擊位置
-- 重新執行 `/archive-lines calibrate` 校準
+- 執行 `/che-archive-lines:archive-lines test` 確認點擊位置
+- 重新執行 `/che-archive-lines:archive-lines calibrate` 校準
 
 ### 點擊到錯誤位置
 - LINE 視窗可能被其他視窗遮擋
