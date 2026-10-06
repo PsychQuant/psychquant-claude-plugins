@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-06
+
+Documentation corrections found while verifying [#139](https://github.com/PsychQuant/psychquant-claude-plugins/issues/139), which shares this plugin's skill layout ([#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138)). No change to the skills, wrappers or binaries; the wrappers still pin `DESIRED_VERSION` 0.5.0.
+
+### Fixed
+- The 1.4.0 README and Security note said that "in the default permission mode Claude Code asks before sending" with `send`. Since Claude Code v2.1.283, interactive terminal and VS Code sessions start in auto mode, where a classifier reviews the call and nothing is asked, so most readers would have drawn the opposite conclusion. The README now names the modes as Claude Code does: Manual (config value `default`) and `acceptEdits` ask; auto and `bypassPermissions` do not; `dontAsk` denies the call; an allow rule skips the prompt in Manual mode.
+- The 1.4.0 notes said the bare `/auth` (and `/chats`, `/search`, `/send`) still works while no other command uses the name. A plugin skill gets a bare alias only from a frontmatter `name` field, and these skills set none, so only `/che-telegram-mcp:<name>` works.
+
+### Tests
+- `tests/che-telegram-mcp/test-plugin-layout.sh` (marketplace repo) now finds the frontmatter boundary the way Claude Code does — the first `---` after the opening line, even inside a value — so a stray `---` that makes Claude Code drop `disable-model-invocation` no longer passes. Check (h) accepts only the unquoted literal `true` for the four slash skills, since Claude Code before 2.1.218 recognises nothing else; check (g) still rejects any value Claude Code may read as true on the router. Mutation cases 31 → 37.
+
 ## [1.4.0] - 2026-10-06
 
 Plugin-shell upgrade to the current `harness-devtools:plugin-upgrade` baseline and the official plugin reference ([#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138), parent PsychQuant/che-msg#39). No binary change — the wrappers still pin `DESIRED_VERSION` 0.5.0.

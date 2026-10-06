@@ -146,9 +146,16 @@ Each skill's `allowed-tools` lets Claude call the listed tools **without a permi
 
 For `auth` this mostly covers the first turn: once Claude asks for your phone number or the SMS code and you reply, the grant has already cleared, so `auth_send_phone` / `auth_send_code` / `auth_send_password` go through your normal permission settings unless you re-invoke `/che-telegram-mcp:auth` with the value.
 
-Leaving `send_message` out means it goes through your normal permission settings. In the default permission mode Claude Code asks before sending. In `bypassPermissions` or auto mode, or if you have an allow rule for it, it does **not** ask — then the only remaining guard is the skill's own instruction to confirm the recipient and text with you first.
+Leaving `send_message` out means it goes through your normal permission settings, which depend on the [permission mode](https://code.claude.com/docs/en/permission-modes):
 
-> v1.4.0: these four moved from `commands/` to skills; examples now use the full name `/che-telegram-mcp:<name>`. The bare `/auth` still works as long as no other command uses that name — `search` and `send` collide with other plugins, which is why the full name is shown. Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
+- **Manual** (config value `default`) and `acceptEdits`: Claude Code asks before sending.
+- **auto**: a classifier reviews the call instead of you, and there is no prompt. Since Claude Code v2.1.283, auto is the mode interactive terminal and VS Code sessions start in unless you configure another.
+- `bypassPermissions`: no prompt.
+- `dontAsk`: the call is denied, so `send` cannot send.
+
+An allow rule for `send_message` in your settings also skips the prompt in Manual mode. Whenever no prompt appears, the only remaining guard is the skill's own instruction to confirm the recipient and text with you first.
+
+> v1.4.0: these four moved from `commands/` to skills; invoke them by the full name `/che-telegram-mcp:<name>`. A plugin skill gets a bare alias such as `/auth` only from a frontmatter `name` field, and these skills set none, so the bare names do not work (the 1.4.0 notes said they did; corrected in 1.4.1). Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
 
 ## Usage Examples
 
@@ -248,9 +255,14 @@ This plugin requires:
 
 ## Version
 
-Plugin version: 1.4.0 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
+Plugin version: 1.4.1 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-telegram-bot-mcp` v0.5.0 binaries; wrapper auto-upgrades on version mismatch)
 
 ### Changelog
+
+**1.4.1** (2026-10-06)
+
+- **Docs corrected**: the permission note for `send` names the modes as Claude Code does. 1.4.0 said "in the default permission mode Claude Code asks", but since Claude Code v2.1.283 interactive sessions start in auto mode, which does not ask; `dontAsk` denies the send. The bare `/auth`, `/chats`, `/search`, `/send` do not work, although 1.4.0 said they did. See [#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138).
+- No change to the skills, wrappers or binaries.
 
 **1.4.0** (2026-10-06)
 

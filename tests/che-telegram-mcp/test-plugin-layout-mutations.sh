@@ -167,6 +167,18 @@ P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1disable-model-invocation:
 expect_fail "router disabled with a trailing comment" "FAIL \(g\)"
 P=$(fresh); perl -ni -e 'print unless /^disable-model-invocation:/' "$P/skills/send/SKILL.md"
 expect_fail "send loses disable-model-invocation" "FAIL \(h\)"
+# (h) accepts only the literal true; (g) rejects anything Claude Code may read as true
+for v in '1' 'yes' '"true"'; do
+    P=$(fresh); DMI="disable-model-invocation: $v" perl -pi -e 's/^disable-model-invocation:.*$/$ENV{DMI}/' "$P/skills/send/SKILL.md"
+    expect_fail "send with disable-model-invocation: $v" "FAIL \(h\)"
+done
+for v in 'on' '1'; do
+    P=$(fresh); DMI="disable-model-invocation: $v" perl -0pi -e 's/^(description: [^\n]*\n)/$1$ENV{DMI}\n/m' "$P/skills/telegram-messaging/SKILL.md"
+    expect_fail "router disabled with disable-model-invocation: $v" "FAIL \(g\)"
+done
+# Claude Code ends the frontmatter at the first ---, even inside a value
+P=$(fresh); perl -pi -e 's/^description: /description: Send --- /' "$P/skills/send/SKILL.md"
+expect_fail "--- inside send's description drops disable-model-invocation" "FAIL \(h\)"
 P=$(fresh); mkdir -p "$P/commands"; printf -- '---\nname: x\n---\n' > "$P/commands/x.md"
 expect_fail "commands/ reappears" "FAIL \(e\)"
 P=$(fresh); perl -0pi -e 's/\A---\r?\n/# notes\n---\n/' "$P/skills/chats/SKILL.md"

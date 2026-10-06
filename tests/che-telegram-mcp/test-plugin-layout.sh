@@ -27,12 +27,21 @@
 #        An allowlist also fails closed for tools added later.
 #   (g)  telegram-messaging exists and stays model-invocable — it is the
 #        natural-language router. A glob edit over skills/*/SKILL.md once added
-#        disable-model-invocation to it along with the four slash skills.
+#        disable-model-invocation to it along with the four slash skills. Any
+#        value Claude Code may read as true (true/yes/on/1, 2.1.218+) fails.
 #   (h)  the four slash skills (auth, chats, search, send) set
-#        disable-model-invocation: true — they run only when the user types them
+#        disable-model-invocation to the literal, unquoted `true` — they run
+#        only when the user types them. Claude Code before 2.1.218 recognises
+#        only true, so yes/on/1/"true" fail here. (g) and (h) each fail in
+#        their own safe direction.
 #   (fm) every skill file has frontmatter Claude Code can read
 #
-# Frontmatter is parsed with a real YAML parser (PyYAML), after stripping a
+# The frontmatter boundary is found the way Claude Code finds it: the first
+# `---` after the opening line, anywhere — not only at the start of a line. A
+# `---` inside a value ends the frontmatter early in Claude Code, and the test
+# sees the same truncated block (#139 verify round 1 found the line-anchored
+# boundary passing a skill whose disable-model-invocation Claude Code dropped).
+# The block is then parsed with a real YAML parser (PyYAML), after stripping a
 # UTF-8 BOM — hand-written parsing missed blank lines, comments, quoted keys
 # and BOMs in two successive verify rounds. (f) additionally scans the raw
 # frontmatter text for tool names, independent of the parser.
@@ -165,19 +174,22 @@ for srv, tools in documented.items():
 
 # ---------- frontmatter (real YAML parser) ----------
 def frontmatter(path):
-    """Return (dict, raw_text) or (None, None) when the file has no frontmatter.
-    Strips a UTF-8 BOM and normalises newlines first — Claude Code accepts both."""
+    """Return (dict, raw_text, strings_dict) or (None, None, None) when the file
+    has no frontmatter. Strips a UTF-8 BOM and normalises newlines first —
+    Claude Code accepts both. strings_dict is the same block read with
+    BaseLoader (builds no Python objects; every scalar stays a string), so (h)
+    can tell a literal true from yes/on/1/"true"."""
     text = open(path, encoding="utf-8-sig").read().replace("\r\n", "\n")
-    if not text.startswith("---\n"):
-        return None, None
-    end = text.find("\n---\n", 4)
-    if end < 0:
-        raise SystemExit(f"{path}: unterminated frontmatter")
-    raw = text[4:end]
+    # Claude Code's own boundary: lazy, not anchored to a line start.
+    m = re.match(r"---\s*\n([\s\S]*?)---\s*\n?", text)
+    if not m:
+        return None, None, None
+    raw = m.group(1)
     data = yaml.safe_load(raw) or {}
-    if not isinstance(data, dict):
+    strings = yaml.load(raw, Loader=yaml.BaseLoader) or {}
+    if not isinstance(data, dict) or not isinstance(strings, dict):
         raise SystemExit(f"{path}: frontmatter is not a mapping")
-    return data, raw
+    return data, raw, strings
 
 def tool_list(value):
     if value is None:
@@ -189,9 +201,15 @@ def tool_list(value):
     raise SystemExit(f"allowed-tools has unsupported type {type(value).__name__}")
 
 def truthy(value):
+    """Anything Claude Code 2.1.218+ may read as true — used by (g)."""
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() in ("true", "yes", "on", "1")
+
+def literal_true(skill, key="disable-model-invocation"):
+    """Only the unquoted literal true — used by (h)."""
+    data, strings = meta[skill], meta_strings[skill]
+    return data.get(key) is True and str(strings.get(key, "")).strip().lower() == "true"
 
 prefix = re.compile(r"^mcp__plugin_che-telegram-mcp_telegram-(all|bot)__([a-z0-9_]+)$")
 
@@ -214,14 +232,14 @@ if os.path.isdir(sk):
         if os.path.isfile(p):
             skill_files.append((p, d))
 
-meta = {}
+meta, meta_strings = {}, {}
 for path, skill in skill_files:
     rel = os.path.relpath(path, root)
-    data, raw = frontmatter(path)
+    data, raw, strings = frontmatter(path)
     if data is None:
         bad("fm", f"{rel}: no frontmatter Claude Code can read (must start with ---)")
         continue
-    meta[skill] = data
+    meta[skill], meta_strings[skill] = data, strings
     seen = set()
     for t in tool_list(data.get("allowed-tools")):
         m = prefix.match(t)
@@ -251,8 +269,9 @@ elif "telegram-messaging" in meta and truthy(meta["telegram-messaging"].get("dis
 for name in ("auth", "chats", "search", "send"):
     if not os.path.isfile(os.path.join(root, "skills", name, "SKILL.md")):
         bad("h", f"skills/{name}/SKILL.md is missing")
-    elif name in meta and not truthy(meta[name].get("disable-model-invocation", False)):
-        bad("h", f"skills/{name}/SKILL.md does not set disable-model-invocation: true")
+    elif name in meta and not literal_true(name):
+        bad("h", f"skills/{name}/SKILL.md does not set disable-model-invocation to the literal true "
+                 f"(found {meta_strings[name].get('disable-model-invocation')!r})")
 
 print("\n".join(problems))
 EOF
