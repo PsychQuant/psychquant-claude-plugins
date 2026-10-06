@@ -133,20 +133,22 @@ xattr -dr com.apple.quarantine ~/bin/CheTelegramAllMCP ~/bin/CheTelegramBotMCP
 | `search` | `/che-telegram-mcp:search` — search Telegram message history |
 | `send` | `/che-telegram-mcp:send` — send a message to a chat |
 
-`auth`, `chats`, `search` and `send` run only when you type them (`disable-model-invocation: true`); for natural-language requests Claude uses `telegram-messaging`.
+`auth`, `chats`, `search` and `send` run only when you type them (`disable-model-invocation: true`); for natural-language requests Claude uses `telegram-messaging`. The same setting also means scheduled tasks whose prompt is one of these skills, and subagent skill preloads, no longer run them.
 
-Each skill's `allowed-tools` lets Claude call the listed tools **without a permission prompt for the rest of that turn** (the grant clears when you send your next message):
+Each skill's `allowed-tools` lets Claude call the listed tools **without a permission prompt, but only in the turn where you invoked the skill** — the grant clears as soon as you send your next message (invoking the skill again re-applies it):
 
 | Skill | Pre-approved | Not pre-approved |
 |-------|--------------|------------------|
-| `auth` | `auth_status` plus the credential-entry steps `auth_set_parameters`, `auth_send_phone`, `auth_send_code`, `auth_send_password` | — |
+| `auth` | `auth_status`, `auth_set_parameters`, `auth_send_phone`, `auth_send_code`, `auth_send_password` | — |
 | `chats` | `auth_status`, `get_chats` | — |
 | `search` | `auth_status`, `search_chats`, `search_messages`, `get_chat_history` | — |
 | `send` | `auth_status`, `search_chats` | **`send_message`** — a sent message cannot be recalled, so it is left out on purpose |
 
+For `auth` this mostly covers the first turn: once Claude asks for your phone number or the SMS code and you reply, the grant has already cleared, so `auth_send_phone` / `auth_send_code` / `auth_send_password` go through your normal permission settings unless you re-invoke `/che-telegram-mcp:auth` with the value.
+
 Leaving `send_message` out means it goes through your normal permission settings. In the default permission mode Claude Code asks before sending. In `bypassPermissions` or auto mode, or if you have an allow rule for it, it does **not** ask — then the only remaining guard is the skill's own instruction to confirm the recipient and text with you first.
 
-> v1.4.0: these four moved from `commands/` to skills. Plugin skills are namespaced as `/plugin-name:skill-name`, so the full name is `/che-telegram-mcp:auth` (earlier versions of this README showed the short form `/auth`). Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
+> v1.4.0: these four moved from `commands/` to skills; examples now use the full name `/che-telegram-mcp:<name>`. The bare `/auth` still works as long as no other command uses that name — `search` and `send` collide with other plugins, which is why the full name is shown. Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
 
 ## Usage Examples
 

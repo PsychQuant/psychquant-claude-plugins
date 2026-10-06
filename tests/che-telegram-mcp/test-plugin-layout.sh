@@ -3,32 +3,43 @@
 #
 # Guards the shape that `claude plugin validate` does not check:
 #   (a)  bin/ holds only the MCP wrappers (*-wrapper.sh) — no test scripts.
-#        Files in bin/ go on the Bash tool's PATH, so nothing else belongs there.
-#        The wrappers themselves stay in bin/: harness-devtools (plugin-update,
-#        plugin-deploy, plugin-binary-meta.sh) only finds wrappers in bin/ and
-#        hooks/, and moving them out silently disabled its release gate (#138
-#        verify round 1).
+#        Files in bin/ go on the Bash tool's PATH, so nothing else belongs there
+#        (dotfiles such as .DS_Store are ignored). The wrappers themselves stay
+#        in bin/: harness-devtools only finds them there (plugin-binary-meta.sh
+#        scans bin/ and hooks/, plugin-deploy only bin/), and moving them out
+#        silently disabled its pin detection and release gate (#138 verify
+#        round 1).
 #   (b)  every .mcp.json command is ${CLAUDE_PLUGIN_ROOT}/bin/<name>-wrapper.sh
 #        and resolves to an executable file
-#   (b2) every wrapper carries a literal DESIRED_VERSION pin — the value the
-#        devtools post-release bump rewrites
+#   (b2) every wrapper assigns DESIRED_VERSION exactly once, as a literal x.y.z.
+#        devtools reads the LAST assignment, so a later or conditional override
+#        makes the pin unreadable.
 #   (c)  every ${CLAUDE_PLUGIN_ROOT} in a hook command sits inside double quotes
-#   (d)  every mcp__ entry in allowed-tools uses the real plugin tool prefix and
-#        names a tool the README documents under THAT server
+#   (d)  allowed-tools lists only this plugin's MCP tools (no Bash, Write, …),
+#        with the real prefix, each documented in the README under ITS server
 #   (e)  no commands/ — the slash entry points live in skills/
-#   (f)  no skill pre-approves an irreversible tool. Irreversible = any tool the
-#        README documents that is not get_*/search_*/auth_* or the read-only
-#        dump_chat_to_markdown. A sent, edited, deleted or forwarded message
-#        cannot be recalled, so the permission prompt stays where one exists.
+#   (f)  a skill may pre-approve only tools on an explicit read-only allowlist;
+#        the login steps (auth_set_parameters/send_phone/send_code/send_password/
+#        run) only in skills/auth. Everything else keeps its permission prompt —
+#        sending, editing, deleting or forwarding messages, chat management,
+#        logout, bot get_updates (an offset drops pending updates for good) and
+#        dump_chat_to_markdown (writes, and overwrites, any path it is given).
+#        An allowlist also fails closed for tools added later.
 #   (g)  telegram-messaging exists and stays model-invocable — it is the
 #        natural-language router. A glob edit over skills/*/SKILL.md once added
 #        disable-model-invocation to it along with the four slash skills.
 #   (h)  the four slash skills (auth, chats, search, send) set
 #        disable-model-invocation: true — they run only when the user types them
+#   (fm) every skill file has frontmatter Claude Code can read
+#
+# Frontmatter is parsed with a real YAML parser (PyYAML), after stripping a
+# UTF-8 BOM — hand-written parsing missed blank lines, comments, quoted keys
+# and BOMs in two successive verify rounds. (f) additionally scans the raw
+# frontmatter text for tool names, independent of the parser.
 #
 # Every check FAILS CLOSED: if its parser cannot run (bad JSON, missing file,
-# no python3), the check fails. An empty "no problems found" output is only
-# trusted when the parser exited 0.
+# no python3, no PyYAML), the test fails. An empty "no problems found" output
+# is only trusted when the parser exited 0.
 #
 # Usage:
 #   bash tests/che-telegram-mcp/test-plugin-layout.sh
@@ -58,14 +69,37 @@ echo "test-plugin-layout.sh (#138) — $PLUGIN_DIR"
 OUT=$(python3 - "$PLUGIN_DIR" <<'EOF'
 import json, os, re, sys
 
+try:
+    import yaml
+except ImportError:
+    raise SystemExit("PyYAML is required (pip install pyyaml) — frontmatter checks cannot run without a real YAML parser")
+
 root = sys.argv[1]
 problems = []
 def bad(tag, msg): problems.append(f"{tag} {msg}")
+
+# Tools a skill may pre-approve. Everything else the README documents is
+# side-effecting or irreversible and must keep its permission prompt:
+# send/edit/delete/forward messages, chat management, logout, bot
+# get_updates (an offset confirms and drops pending updates for good) and
+# dump_chat_to_markdown (writes any path it is given, overwriting).
+READ_ONLY = {
+    "all": {"auth_status", "get_me", "get_chats", "get_chat", "get_chat_history",
+            "search_chats", "search_messages", "get_chat_members", "get_contacts", "get_user"},
+    "bot": {"get_me", "get_chat", "get_chat_administrators", "get_chat_member_count",
+            "get_chat_member", "get_my_commands"},
+}
+# Login steps: each send triggers Telegram-side effects (a login code, flood
+# limits). Only the auth skill may pre-approve them.
+AUTH_STEPS = {"auth_set_parameters", "auth_send_phone", "auth_send_code",
+              "auth_send_password", "auth_run"}
 
 # ---------- (a) bin/ contents ----------
 bindir = os.path.join(root, "bin")
 if os.path.isdir(bindir):
     for name in sorted(os.listdir(bindir)):
+        if name.startswith("."):          # Finder metadata etc. — not shipped, not on PATH as a command
+            continue
         p = os.path.join(bindir, name)
         if not name.endswith("-wrapper.sh"):
             bad("a", f"bin/{name} is not an MCP wrapper (only *-wrapper.sh belongs on PATH)")
@@ -86,9 +120,14 @@ for name, spec in servers.items():
     if not (os.path.isfile(path) and os.access(path, os.X_OK)):
         bad("b", f"{name}: {path} is not an executable file")
         continue
-    src = open(path).read()
-    if not re.search(r'^\s*DESIRED_VERSION="[0-9]+\.[0-9]+\.[0-9]+"', src, re.M):
-        bad("b2", f"{name}: {os.path.basename(path)} has no literal DESIRED_VERSION=\"x.y.z\"")
+    # devtools reads the LAST assignment, so a later or conditional override
+    # makes the pin unreadable. Require exactly one assignment, and a literal.
+    code = [l for l in open(path).read().splitlines() if not l.lstrip().startswith("#")]
+    assigns = [l for l in code if re.search(r"(^|[\s;&|(])DESIRED_VERSION=", l)]
+    literal = [l for l in assigns if re.match(r'^\s*DESIRED_VERSION="[0-9]+\.[0-9]+\.[0-9]+"\s*$', l)]
+    if len(assigns) != 1 or len(literal) != 1:
+        bad("b2", f"{name}: {os.path.basename(path)} must assign DESIRED_VERSION exactly once, as a literal x.y.z "
+                  f"(found {len(assigns)} assignment(s), {len(literal)} literal)")
 
 # ---------- (c) hook quoting ----------
 def inside_double_quotes(s, i):
@@ -115,9 +154,7 @@ for event, matchers in hooks.get("hooks", {}).items():
 readme = open(os.path.join(root, "README.md")).read()
 def section_tools(header_pat):
     m = re.search(header_pat + r".*?\n(.*?)(?=\n### |\n## |\Z)", readme, re.S)
-    if not m:
-        return None
-    return set(re.findall(r"`([a-z][a-z0-9_]*)`", m.group(1)))
+    return set(re.findall(r"`([a-z][a-z0-9_]*)`", m.group(1))) if m else None
 documented = {
     "all": section_tools(r"(?m)^### `telegram-all`"),
     "bot": section_tools(r"(?m)^### `telegram-bot`"),
@@ -126,107 +163,95 @@ for srv, tools in documented.items():
     if not tools:
         raise SystemExit(f"README has no tool list for telegram-{srv} — cannot check (d)/(f)")
 
-def irreversible(tool):
-    return not (tool.startswith(("get_", "search_", "auth_")) or tool == "dump_chat_to_markdown")
-
-# ---------- frontmatter ----------
+# ---------- frontmatter (real YAML parser) ----------
 def frontmatter(path):
-    text = open(path, encoding="utf-8").read()          # universal newlines: CRLF -> LF
+    """Return (dict, raw_text) or (None, None) when the file has no frontmatter.
+    Strips a UTF-8 BOM and normalises newlines first — Claude Code accepts both."""
+    text = open(path, encoding="utf-8-sig").read().replace("\r\n", "\n")
     if not text.startswith("---\n"):
-        return None
-    parts = text.split("\n---\n", 1)
-    if len(parts) < 2:
+        return None, None
+    end = text.find("\n---\n", 4)
+    if end < 0:
         raise SystemExit(f"{path}: unterminated frontmatter")
-    return parts[0][4:]
+    raw = text[4:end]
+    data = yaml.safe_load(raw) or {}
+    if not isinstance(data, dict):
+        raise SystemExit(f"{path}: frontmatter is not a mapping")
+    return data, raw
 
-def field_block(fm, key):
-    """Raw text of a top-level key: its inline value plus any following list /
-    indented continuation lines. Handles quoted, flow-style and column-0 lists."""
-    lines = fm.split("\n")
-    out, grabbing = [], False
-    for line in lines:
-        if re.match(rf"^{re.escape(key)}\s*:", line):
-            grabbing = True
-            out.append(line.split(":", 1)[1])
-            continue
-        if grabbing:
-            if re.match(r"^\s*-\s", line) or (line[:1] in (" ", "\t") and line.strip()):
-                out.append(line)
-                continue
-            grabbing = False
-    return "\n".join(out) if out else None
-
-def tool_tokens(raw):
-    if raw is None:
+def tool_list(value):
+    if value is None:
         return []
-    cleaned = re.sub(r"[\[\]\"',]", " ", raw)
-    cleaned = re.sub(r"(?m)^\s*-\s", " ", cleaned)
-    return [t for t in cleaned.split() if t]
+    if isinstance(value, str):
+        return [t for t in re.split(r"[,\s]+", value) if t]
+    if isinstance(value, list):
+        return [str(t) for t in value]
+    raise SystemExit(f"allowed-tools has unsupported type {type(value).__name__}")
 
-def truthy(raw):
-    if raw is None:
-        return False
-    v = re.sub(r"[\"'\s]", "", raw).lower()
-    return v in ("true", "yes", "on", "1")
+def truthy(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "yes", "on", "1")
 
 prefix = re.compile(r"^mcp__plugin_che-telegram-mcp_telegram-(all|bot)__([a-z0-9_]+)$")
+
+def check_tool(rel, skill, srv, tool):
+    if tool in READ_ONLY[srv]:
+        return
+    if tool in AUTH_STEPS and srv == "all" and skill == "auth":
+        return
+    bad("f", f"{rel}: pre-approves {tool} (not in the read-only allowlist"
+             + ("" if tool not in AUTH_STEPS else "; auth steps are allowed only in skills/auth") + ")")
+
 skill_files = []
-for d in ("commands",):
-    p = os.path.join(root, d)
-    if os.path.isdir(p):
-        skill_files += [os.path.join(p, f) for f in sorted(os.listdir(p)) if f.endswith(".md")]
+cmd_dir = os.path.join(root, "commands")
+if os.path.isdir(cmd_dir):
+    skill_files += [(os.path.join(cmd_dir, f), f[:-3]) for f in sorted(os.listdir(cmd_dir)) if f.endswith(".md")]
 sk = os.path.join(root, "skills")
 if os.path.isdir(sk):
-    skill_files += [os.path.join(sk, d, "SKILL.md") for d in sorted(os.listdir(sk))
-                    if os.path.isfile(os.path.join(sk, d, "SKILL.md"))]
+    for d in sorted(os.listdir(sk)):
+        p = os.path.join(sk, d, "SKILL.md")
+        if os.path.isfile(p):
+            skill_files.append((p, d))
 
-for f in skill_files:
-    rel = os.path.relpath(f, root)
-    fm = frontmatter(f)
-    if fm is None:
+meta = {}
+for path, skill in skill_files:
+    rel = os.path.relpath(path, root)
+    data, raw = frontmatter(path)
+    if data is None:
+        bad("fm", f"{rel}: no frontmatter Claude Code can read (must start with ---)")
         continue
-    raw = field_block(fm, "allowed-tools")
-    flagged = set()
-    for t in tool_tokens(raw):
-        if "mcp__" not in t:
-            continue
+    meta[skill] = data
+    seen = set()
+    for t in tool_list(data.get("allowed-tools")):
         m = prefix.match(t)
         if not m:
-            bad("d", f"{rel}: wrong prefix {t}")
+            bad("d", f"{rel}: allowed-tools may list only this plugin's MCP tools; found {t}")
             continue
         srv, tool = m.group(1), m.group(2)
+        seen.add((srv, tool))
         if tool not in documented[srv]:
             bad("d", f"{rel}: {tool} is not documented under telegram-{srv} in README")
-        if irreversible(tool) and tool not in flagged:
-            flagged.add(tool)
-            bad("f", f"{rel}: pre-approves irreversible tool {tool}")
-    # Belt and braces for (f): independent of the tokenizer, take the segment
-    # after the LAST "__" of every mcp-style token in the raw field text, so a
-    # spelling the tokenizer mangles (or a wrong prefix) still cannot slip an
-    # irreversible tool past this check.
-    if raw is not None:
-        for tok in re.findall(r"[A-Za-z0-9_-]*__[A-Za-z0-9_-]+", raw):
-            tool = tok.rsplit("__", 1)[1]
-            if irreversible(tool) and tool not in flagged:
-                flagged.add(tool)
-                bad("f", f"{rel}: pre-approves irreversible tool {tool}")
+        check_tool(rel, skill, srv, tool)
+    # Independent of the parser: every tool named anywhere in the frontmatter
+    # text must also pass (f). A spelling the parser reads differently cannot
+    # hide a pre-approval this way.
+    for srv, tool in re.findall(r"telegram-(all|bot)__([a-z0-9_]+)", raw):
+        if (srv, tool) not in seen:
+            seen.add((srv, tool))
+            check_tool(rel, skill, srv, tool)
 
 # ---------- (g) router ----------
-router = os.path.join(root, "skills", "telegram-messaging", "SKILL.md")
-if not os.path.isfile(router):
+if not os.path.isfile(os.path.join(root, "skills", "telegram-messaging", "SKILL.md")):
     bad("g", "skills/telegram-messaging/SKILL.md is missing")
-else:
-    fm = frontmatter(router) or ""
-    if truthy(field_block(fm, "disable-model-invocation")):
-        bad("g", "skills/telegram-messaging/SKILL.md sets disable-model-invocation")
+elif "telegram-messaging" in meta and truthy(meta["telegram-messaging"].get("disable-model-invocation", False)):
+    bad("g", "skills/telegram-messaging/SKILL.md sets disable-model-invocation")
 
 # ---------- (h) slash skills ----------
 for name in ("auth", "chats", "search", "send"):
-    p = os.path.join(root, "skills", name, "SKILL.md")
-    if not os.path.isfile(p):
+    if not os.path.isfile(os.path.join(root, "skills", name, "SKILL.md")):
         bad("h", f"skills/{name}/SKILL.md is missing")
-        continue
-    if not truthy(field_block(frontmatter(p) or "", "disable-model-invocation")):
+    elif name in meta and not truthy(meta[name].get("disable-model-invocation", False)):
         bad("h", f"skills/{name}/SKILL.md does not set disable-model-invocation: true")
 
 print("\n".join(problems))
@@ -252,15 +277,16 @@ report() {  # $1 = tag, $2 = description when clean
 
 report a  "bin/ holds only executable *-wrapper.sh files"
 report b  ".mcp.json commands are \${CLAUDE_PLUGIN_ROOT}/bin/*-wrapper.sh and executable"
-report b2 "every wrapper pins a literal DESIRED_VERSION"
+report b2 "every wrapper assigns DESIRED_VERSION exactly once, as a literal"
 report c  "hook commands quote \${CLAUDE_PLUGIN_ROOT}"
-report d  "allowed-tools use the real prefix and documented tools of the right server"
+report fm "every skill file has readable frontmatter"
+report d  "allowed-tools list only this plugin's documented MCP tools"
 if [ -e "$PLUGIN_DIR/commands" ]; then
     fail "(e) commands/ exists: $(ls "$PLUGIN_DIR/commands" | tr '\n' ' ')"
 else
     pass "(e) no commands/"
 fi
-report f  "no skill pre-approves an irreversible tool"
+report f  "skills pre-approve only allowlisted read-only tools (auth steps only in auth)"
 report g  "telegram-messaging exists and stays model-invocable"
 report h  "auth/chats/search/send set disable-model-invocation: true"
 
