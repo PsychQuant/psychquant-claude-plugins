@@ -39,28 +39,19 @@
 #        session, beyond the turn's grant) or has a !`command` / ```! block in
 #        its body (run when the skill is invoked, before Claude reads it; one
 #        that matches the skill's own allowed-tools runs with no prompt)
-#   (fm) every skill has frontmatter Claude Code reads the same way this test
-#        does (see below)
+#   (fm) every skill's frontmatter stays inside the subset Claude Code and this
+#        test read the same way (see below)
 #
-# The frontmatter boundary is found the way Claude Code finds it: the first
-# `---` after the opening line, anywhere — not only at the start of a line —
-# with JavaScript's \s (Python's also matches NEL and \x1c-\x1f) and no newline
-# translation (a lone CR does not end a line for Claude Code).
-# The block is parsed with PyYAML (YAML 1.1), Claude Code uses Bun.YAML (1.2),
-# and the two disagree outside plain block YAML: PyYAML treats NEL, U+2028 and
-# U+2029 as line breaks where Bun rejects the whole block (dropping
-# disable-model-invocation and name), and only PyYAML expands merge keys
-# (#139 verify round 3). So (fm) also requires the block to stay inside a plain
-# subset both read alike: no control or line-separator characters, and every
-# line a `key: value`, `key:`, `  - item`, comment or blank, with no anchor,
-# alias, tag, block scalar, flow collection or explicit key. A
-# `---` inside a value ends the frontmatter early in Claude Code, and the test
-# sees the same truncated block (#139 verify round 1 found the line-anchored
-# boundary passing a skill whose disable-model-invocation Claude Code dropped).
-# The block is then parsed with a real YAML parser (PyYAML), after stripping a
-# UTF-8 BOM — hand-written parsing missed blank lines, comments, quoted keys
-# and BOMs in two successive verify rounds. (f) additionally scans the raw
-# frontmatter text for tool names, independent of the parser.
+# Frontmatter is split off and screened by tests/lib/frontmatter_subset.py: the
+# boundary is found the way Claude Code finds it, and a block outside the plain
+# YAML subset in which PyYAML (used here) and Claude Code's Bun.YAML read the
+# same thing fails (fm) and is NOT parsed — the checks that need its values
+# report it as unverifiable. See that module for the cases (NEL, U+2028, open
+# quotes, `...`, …) and the fuzz evidence. Inside the subset it is
+# parsed with PyYAML (after stripping a UTF-8 BOM) — hand-written parsing missed
+# blank lines, comments, quoted keys and BOMs in two successive verify rounds.
+# (f) additionally scans the raw frontmatter text for tool names, independent
+# of the parser.
 #
 # Every check FAILS CLOSED: if its parser cannot run (bad JSON, missing file,
 # no python3, no PyYAML), the test fails. An empty "no problems found" output
@@ -91,7 +82,13 @@ echo "test-plugin-layout.sh (#138) — $PLUGIN_DIR"
 
 # One python pass does all parsing and prints one line per problem, tagged by
 # check letter. Exit status != 0 means the parse itself broke.
-OUT=$(python3 - "$PLUGIN_DIR" <<'EOF'
+LIB_DIR="$(cd "$SCRIPT_DIR/../lib" 2>/dev/null && pwd)"
+if [ -z "$LIB_DIR" ] || [ ! -f "$LIB_DIR/frontmatter_subset.py" ]; then
+    echo "FAIL tests/lib/frontmatter_subset.py not found — no frontmatter check can run"
+    exit 1
+fi
+
+OUT=$(python3 - "$PLUGIN_DIR" "$LIB_DIR" <<'EOF'
 import json, os, re, sys
 
 try:
@@ -100,6 +97,8 @@ except ImportError:
     raise SystemExit("PyYAML is required (pip install pyyaml) — frontmatter checks cannot run without a real YAML parser")
 
 root = sys.argv[1]
+sys.path.insert(0, sys.argv[2])
+import frontmatter_subset as fs
 problems = []
 def bad(tag, msg): problems.append(f"{tag} {msg}")
 
@@ -189,43 +188,26 @@ for srv, tools in documented.items():
         raise SystemExit(f"README has no tool list for telegram-{srv} — cannot check (d)/(f)")
 
 # ---------- frontmatter (real YAML parser) ----------
-# JavaScript's \s, which Claude Code's frontmatter regex uses. Python's \s also
-# matches NEL (U+0085) and \x1c-\x1f, which JavaScript's does not.
-JS_WS = "[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
-FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
-# The plain-YAML subset PyYAML and Bun.YAML read alike (see the header).
-FM_BAD_CHAR = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029\ufeff]|\r(?!\n)")
-SCALAR = r"[^\s&*!|>%@`{\[?#][^\r]*"
-FM_LINE = re.compile(rf"(?:[A-Za-z][A-Za-z0-9-]*:(?: +{SCALAR})?| +- +{SCALAR}| *(?:#[^\r]*)?) *\r?")
-
-def subset_problems(raw):
-    """Lines of a frontmatter block outside the subset both parsers read alike."""
-    out = []
-    if FM_BAD_CHAR.search(raw):
-        out.append("contains a control or line-separator character PyYAML and Bun.YAML read differently")
-    for n, line in enumerate(raw.split("\n"), 1):
-        if not FM_LINE.fullmatch(line):
-            out.append(f"line {n} is outside the plain YAML both parsers read alike: {line.strip()[:60]}")
-    return out
-
 def frontmatter(path):
-    """Return (dict, raw_text, strings_dict, body) or (None, None, None, text)
-    when the file has no frontmatter Claude Code can read. Strips a UTF-8 BOM;
-    newlines are NOT translated (newline=""), so a lone CR stays a CR, as it
-    does for Claude Code. strings_dict is the same block read with BaseLoader
-    (builds no Python objects; every scalar stays a string), so (g) and (h) can
-    tell a literal true/false from yes/on/1/"true"."""
+    """Return (dict, raw_text, strings_dict, body, fm_problems). dict and
+    strings_dict are None when there is no frontmatter or it is outside the
+    subset (fm_problems says why). Strips a UTF-8 BOM; newlines are NOT translated
+    (newline=""), so a lone CR stays a CR, as it does for Claude Code.
+    strings_dict is the same block read with BaseLoader (builds no Python
+    objects; every scalar stays a string), so (g) and (h) can tell a literal
+    true/false from yes/on/1/"true"."""
     text = open(path, encoding="utf-8-sig", newline="").read()
-    # Claude Code's own boundary: lazy, not anchored to a line start.
-    m = FM_RE.match(text)
-    if not m:
-        return None, None, None, text
-    raw = m.group(1)
+    raw, body = fs.split(text)
+    if raw is None:
+        return None, None, None, body, ["no frontmatter Claude Code can read (must start with ---)"]
+    fm_problems = fs.subset_problems(raw)
+    if fm_problems:
+        return None, raw, None, body, fm_problems
     data = yaml.safe_load(raw) or {}
     strings = yaml.load(raw, Loader=yaml.BaseLoader) or {}
     if not isinstance(data, dict) or not isinstance(strings, dict):
         raise SystemExit(f"{path}: frontmatter is not a mapping")
-    return data, raw, strings, text[m.end():]
+    return data, raw, strings, body, []
 
 def tool_list(value):
     if value is None:
@@ -270,23 +252,25 @@ if os.path.isdir(sk):
         if os.path.isfile(p):
             skill_files.append((p, d))
 
-meta, meta_strings = {}, {}
+meta, meta_strings, unreadable = {}, {}, set()
 for path, skill in skill_files:
     rel = os.path.relpath(path, root)
-    data, raw, strings, body = frontmatter(path)
-    if data is None:
-        bad("fm", f"{rel}: no frontmatter Claude Code can read (must start with ---)")
-        continue
-    meta[skill], meta_strings[skill] = data, strings
-    for problem in subset_problems(raw):
-        bad("fm", f"{rel}: frontmatter {problem}")
-    # (i) commands that would run outside allowed-tools
-    if "hooks" in data:
-        bad("i", f"{rel}: frontmatter sets hooks (they run without a permission prompt)")
+    data, raw, strings, body, fm_problems = frontmatter(path)
+    # (i) parser-independent part: blocks in the body
     if re.search(r"!`|```!", body):
-        bad("i", f"{rel}: body has a !`command` or ```! block (runs before Claude sees the skill)")
+        bad("i", f"{rel}: body has a !`command` or ```! block (runs when the skill is invoked, before Claude reads it)")
     seen = set()
-    for t in tool_list(data.get("allowed-tools")):
+    if data is None:
+        for problem in fm_problems:
+            bad("fm", f"{rel}: frontmatter {problem}")
+        unreadable.add(skill)
+        bad("d", f"{rel}: frontmatter cannot be read the way Claude Code reads it — cannot check allowed-tools")
+        bad("i", f"{rel}: frontmatter cannot be read the way Claude Code reads it — cannot check for hooks")
+    else:
+        meta[skill], meta_strings[skill] = data, strings
+        if "hooks" in data:
+            bad("i", f"{rel}: frontmatter sets hooks (they stay registered for the rest of the session)")
+    for t in tool_list(data.get("allowed-tools")) if data is not None else []:
         m = prefix.match(t)
         if not m:
             bad("d", f"{rel}: allowed-tools may list only this plugin's MCP tools; found {t}")
@@ -299,7 +283,7 @@ for path, skill in skill_files:
     # Independent of the parser: every tool named anywhere in the frontmatter
     # text must also pass (f). A spelling the parser reads differently cannot
     # hide a pre-approval this way.
-    for srv, tool in re.findall(r"telegram-(all|bot)__([a-z0-9_]+)", raw):
+    for srv, tool in re.findall(r"telegram-(all|bot)__([a-z0-9_]+)", raw or ""):
         if (srv, tool) not in seen:
             seen.add((srv, tool))
             check_tool(rel, skill, srv, tool)
@@ -307,6 +291,8 @@ for path, skill in skill_files:
 # ---------- (g) router ----------
 if not os.path.isfile(os.path.join(root, "skills", "telegram-messaging", "SKILL.md")):
     bad("g", "skills/telegram-messaging/SKILL.md is missing")
+elif "telegram-messaging" in unreadable:
+    bad("g", "skills/telegram-messaging/SKILL.md frontmatter cannot be read — cannot check")
 elif "telegram-messaging" in meta and not router_invocable("telegram-messaging"):
     bad("g", "skills/telegram-messaging/SKILL.md sets disable-model-invocation")
 
@@ -314,6 +300,8 @@ elif "telegram-messaging" in meta and not router_invocable("telegram-messaging")
 for name in ("auth", "chats", "search", "send"):
     if not os.path.isfile(os.path.join(root, "skills", name, "SKILL.md")):
         bad("h", f"skills/{name}/SKILL.md is missing")
+    elif name in unreadable:
+        bad("h", f"skills/{name}/SKILL.md frontmatter cannot be read — cannot check")
     elif name in meta and not literal_true(name):
         bad("h", f"skills/{name}/SKILL.md does not set disable-model-invocation to the literal true "
                  f"(found {meta_strings[name].get('disable-model-invocation')!r})")

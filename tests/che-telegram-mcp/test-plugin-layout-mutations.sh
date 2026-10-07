@@ -35,6 +35,7 @@ fresh() {   # build a clean scratch copy; echo its plugin dir
     mkdir -p "$SCRATCH/tree/tests/che-telegram-mcp" "$SCRATCH/tree/plugins"
     cp -R "$SRC_PLUGIN" "$SCRATCH/tree/plugins/che-telegram-mcp"
     cp "$LAYOUT_TEST" "$SCRATCH/tree/tests/che-telegram-mcp/"
+    cp -R "$SCRIPT_DIR/../lib" "$SCRATCH/tree/tests/lib"
     echo "$SCRATCH/tree/plugins/che-telegram-mcp"
 }
 
@@ -200,13 +201,23 @@ subst() {  # $1 = file, $2 = python expression over bytes b
 P=$(fresh); subst "$P/skills/send/SKILL.md" 'b.replace(b"---\r\n",b"---\xc2\x85\r\n",1)'
 expect_fail "NEL after the opening --- (Claude Code's \\s does not match it)" "FAIL \(fm\)"
 P=$(fresh); subst "$P/skills/send/SKILL.md" 'b.replace(b"\r\ndisable-model-invocation",b"\xe2\x80\xa8disable-model-invocation",1)'
-expect_fail "U+2028 inside send's frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
+expect_fail "U+2028 inside send's frontmatter (Bun.YAML rejects the block)" "FAIL \(fm\)"
 P=$(fresh); subst "$P/skills/send/SKILL.md" 'b.replace(b"\r\ndisable-model-invocation",b"\xc2\x85disable-model-invocation",1)'
 expect_fail "NEL inside send's frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1? extra\n/m' "$P/skills/chats/SKILL.md"
 expect_fail "explicit-key line" "FAIL \(fm\)"
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1_base: &b\n  disable-model-invocation: true\n<<: *b\n/m' "$P/skills/telegram-messaging/SKILL.md"
 expect_fail "merge key disables the router (BaseLoader keeps << literal)" "FAIL \(g\)"
+P=$(fresh); subst "$P/skills/send/SKILL.md" 'b.replace(b"\r\ndisable-model-invocation",b"\xe2\x80\xa9disable-model-invocation",1)'
+expect_fail "U+2029 inside send's frontmatter" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^description: [^\r]*/description: "Send a Telegram message\r\nvia: the personal account"/' "$P/skills/send/SKILL.md"
+expect_fail "quoted value left open, next line looks like a key (PyYAML joins, Bun rejects)" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^(description: [^\r]*)/$1 .../' "$P/skills/send/SKILL.md"
+expect_fail "... inside a value (Bun.YAML ends the document there)" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^(description: [^\r]*)/$1 .../' "$P/skills/send/SKILL.md"
+expect_fail "unreadable frontmatter makes (h) unverifiable, not passed" "FAIL \(h\)"
+P=$(fresh); perl -pi -e 's/^(description: [^\n]*)/$1 .../' "$P/skills/telegram-messaging/SKILL.md"
+expect_fail "unreadable router frontmatter makes (g) unverifiable, not passed" "FAIL \(g\)"
 # Claude Code ends the frontmatter at the first ---, even inside a value
 P=$(fresh); perl -pi -e 's/^description: /description: Send --- /' "$P/skills/send/SKILL.md"
 expect_fail "--- inside send's description drops disable-model-invocation" "FAIL \(h\)"

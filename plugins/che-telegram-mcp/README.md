@@ -146,19 +146,23 @@ Each skill's `allowed-tools` lets Claude call the listed tools **without a permi
 
 For `auth` this mostly covers the first turn: once Claude asks for your phone number or the SMS code and you reply, the grant has already cleared, so `auth_send_phone` / `auth_send_code` / `auth_send_password` go through your normal permission settings unless you re-invoke `/che-telegram-mcp:auth` with the value.
 
-Leaving `send_message` out means it goes through your normal [permission settings](https://code.claude.com/docs/en/permissions). If you want to be asked before every `send_message` call from your personal account — the tool `/che-telegram-mcp:send` uses — whatever mode you are in, add an ask rule for `mcp__plugin_che-telegram-mcp_telegram-all__send_message` to `permissions.ask` in your settings: Claude Code never auto-approves a tool matched by an explicit ask rule, not even in auto or `bypassPermissions` mode, and in `dontAsk` mode it refuses the call instead of asking. That rule covers only that one tool. Other tools that send, change or delete messages need ask rules of their own: on `telegram-all`, `edit_message`, `delete_messages` and `forward_messages`; on `telegram-bot`, `send_message`, `forward_message`, `copy_message`, `edit_message_text`, `delete_message`, `send_photo`, `send_document`, `send_video`, `send_audio`, `send_sticker`, `send_location` and `send_poll`. `telegram-messaging` can reach all of them from a natural-language request.
+Leaving `send_message` out means it goes through your normal [permission settings](https://code.claude.com/docs/en/permissions). If you want to be asked before Claude sends or changes anything, whatever mode you are in, add ask rules to `permissions.ask` in your settings: Claude Code never auto-approves a tool matched by an explicit ask rule, not even in auto or `bypassPermissions` mode, and in `dontAsk` mode it refuses the call instead of asking.
+
+- `/che-telegram-mcp:send` does not tie itself to one server, so cover `send_message` on both: `mcp__plugin_che-telegram-mcp_telegram-all__send_message` and `mcp__plugin_che-telegram-mcp_telegram-bot__send_message`.
+- The other tools that send, change or delete something — and that `telegram-messaging` can reach from a natural-language request — need ask rules of their own. On `telegram-all`: everything in the Write, Manage and Group lists below, plus `logout` and `dump_chat_to_markdown` (it writes a file). On `telegram-bot`: every tool except `get_me`, `get_chat`, `get_chat_administrators`, `get_chat_member_count`, `get_chat_member` and `get_my_commands` (`get_updates` with an offset drops pending updates for good).
+- Or add a whole-server rule, `mcp__plugin_che-telegram-mcp_telegram-all` or `mcp__plugin_che-telegram-mcp_telegram-bot`, to be asked for every call to that server, reads and the skills' pre-approved lookups included.
 
 Without such a rule, what happens depends on the [permission mode](https://code.claude.com/docs/en/permission-modes) and your allow rules:
 
 - **Manual** (config value `default`) and `acceptEdits`: Claude Code asks before sending, unless an allow rule matches `send_message`.
-- **auto**: a classifier reviews the call instead of you, and there is normally no prompt; an allow rule that matches skips the classifier too. Since Claude Code v2.1.283, auto is the mode interactive terminal and VS Code sessions start in unless you configure another.
+- **auto**: a classifier reviews the call instead of you, and there is normally no prompt; an allow rule that matches skips the classifier too. Auto falls back to asking after repeated classifier blocks. Since Claude Code v2.1.283, auto is the mode interactive terminal and VS Code sessions start in unless you configure another.
 - `bypassPermissions`: no prompt.
 - `dontAsk`: the call is refused unless an allow rule matches it; with one, it is sent without a prompt.
-- Other modes, such as `plan`: see the permission-modes page.
+- The remaining modes (`plan`, and any added later): see the permission-modes page.
 
 Whenever no prompt appears, the only remaining guard is the skill's own instruction to confirm the recipient and text with you first.
 
-> v1.4.0: these four moved from `commands/` to skills; examples use the full name `/che-telegram-mcp:<name>`. Each skill sets a frontmatter `name` (as the 1.3.2 commands did), so the bare `/auth` still works as long as no other command uses that name. `auth`, `chats`, `search` and `send` are common names: if another installed plugin already has a command or skill with one of them, the bare form may run that one instead, which is why the full name is shown. Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
+> v1.4.0: these four moved from `commands/` to skills; examples use the full name `/che-telegram-mcp:<name>`. Each skill sets a frontmatter `name` (as the 1.3.2 commands did), so the bare `/auth` still works as long as no other command or skill uses that name. `auth`, `chats`, `search` and `send` are common names: if another installed plugin already has a command or skill with one of them, the bare form may run that one instead, which is why the full name is shown. Up to 1.3.2 they were commands that Claude could also invoke on its own, and their `allowed-tools` named tools that do not exist, so nothing was ever pre-approved.
 
 ## Usage Examples
 
@@ -264,7 +268,7 @@ Plugin version: 1.4.1 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-teleg
 
 **1.4.1** (2026-10-06)
 
-- **Docs corrected**: the permission note for `send` no longer says that "the default permission mode asks" — since Claude Code v2.1.283 interactive sessions start in auto mode, which does not ask unless an ask rule matches. It now names the modes as Claude Code does, says what an allow rule changes, and recommends an ask rule for the personal-account `send_message` as the one setting that makes it ask in any mode, listing the other sending tools that need their own. See [#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138).
+- **Docs corrected**: the permission note for `send` no longer says that "the default permission mode asks" — since Claude Code v2.1.283 interactive sessions start in auto mode, which normally does not ask (it does when an ask rule matches, and after repeated classifier blocks). It now names the modes as Claude Code does, says what an allow rule changes, and recommends an ask rule for the personal-account `send_message` as the one setting that makes it ask in any mode, listing the other tools that send or change something, on both servers, that need their own; or a whole-server ask rule. The bare-name note no longer says that `search` and `send` collide with other plugins: whether a name collides depends on what else is installed. The bare names work as in 1.4.0. See [#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138).
 - No change to the skills, wrappers or binaries.
 
 **1.4.0** (2026-10-06)
