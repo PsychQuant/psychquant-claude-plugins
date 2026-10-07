@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2026-10-06
+## [1.1.0] - 2026-10-08
 
 Plugin-shell upgrade to the current `harness-devtools:plugin-upgrade` baseline and the official plugin reference ([#139](https://github.com/PsychQuant/psychquant-claude-plugins/issues/139), parent PsychQuant/che-msg#39). `scripts/line-save-chat.sh` changes only in how it reads, checks and writes the values it does arithmetic on, and in its calibration prompt ([#149](https://github.com/PsychQuant/psychquant-claude-plugins/issues/149); see Security).
 

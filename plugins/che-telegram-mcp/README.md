@@ -266,7 +266,7 @@ Plugin version: 1.4.1 (currently pins `che-telegram-all-mcp` v0.5.0 + `che-teleg
 
 ### Changelog
 
-**1.4.1** (2026-10-06)
+**1.4.1** (2026-10-08)
 
 - **Docs corrected**: the permission note for `send` no longer says that "the default permission mode asks" — on recent Claude Code (every plan since v2.1.284 per the changelog, Pro, Max and Team plans earlier) interactive sessions start in auto mode, which normally does not ask (it does when an ask rule matches, and after repeated classifier blocks). It now names the modes as Claude Code does, says what an allow rule changes, and recommends ask rules as the one setting that asks in any mode, unless a `PermissionRequest` hook or a mod approves the call: for `send_message` on both servers (`send` does not tie itself to one) and for every other tool that sends or changes something, listed per server; or a whole-server ask rule. The bare-name note no longer says that `search` and `send` collide with other plugins: whether a name collides depends on what else is installed. The bare names work as in 1.4.0. See [#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138).
 - No change to the skills, wrappers or binaries.

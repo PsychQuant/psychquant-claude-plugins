@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.4.1] - 2026-10-06
+## [1.4.1] - 2026-10-08
 
 Documentation corrections found while verifying [#139](https://github.com/PsychQuant/psychquant-claude-plugins/issues/139), which shares this plugin's skill layout ([#138](https://github.com/PsychQuant/psychquant-claude-plugins/issues/138)). No change to the skills, wrappers or binaries; the wrappers still pin `DESIRED_VERSION` 0.5.0.
 
