@@ -17,6 +17,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# 整數檢查：設定值會進 $((…)) 算術展開，而 bash 會展開其中的陣列下標，
+# 非整數的值（例如 a[$(指令)]）會被當成運算式、執行裡面的指令 (#149)。
+# 不接受前導零：bash 會把 010 當八進位讀成 8，08 則直接報錯。
+is_int() {
+    [[ "$1" =~ ^-?(0|[1-9][0-9]{0,5})$ ]]
+}
+
 # 檢查 cliclick 是否安裝
 check_dependencies() {
     if ! command -v cliclick &> /dev/null; then
@@ -55,9 +62,10 @@ load_config() {
         OFFSET_X=$(cat "$CONFIG_FILE" | grep -o '"offset_x":[^,}]*' | cut -d':' -f2 | tr -d ' ')
         OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
         MENU_OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"menu_offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+        MENU_OFFSET_Y=${MENU_OFFSET_Y:-240}
 
-        if [ -z "$OFFSET_X" ] || [ -z "$OFFSET_Y" ]; then
-            echo -e "${RED}錯誤：設定檔格式不正確${NC}"
+        if ! is_int "$OFFSET_X" || ! is_int "$OFFSET_Y" || ! is_int "$MENU_OFFSET_Y"; then
+            echo -e "${RED}錯誤：設定檔格式不正確（偏移值必須是整數），請重新執行 calibrate${NC}"
             return 1
         fi
         return 0
@@ -71,6 +79,11 @@ save_config() {
     local offset_x=$1
     local offset_y=$2
     local menu_offset_y=${3:-240}
+
+    if ! is_int "$offset_x" || ! is_int "$offset_y" || ! is_int "$menu_offset_y"; then
+        echo -e "${RED}錯誤：偏移值必須是整數，設定檔沒有寫入${NC}"
+        exit 1
+    fi
 
     mkdir -p "$CONFIG_DIR"
     cat > "$CONFIG_FILE" << EOF
@@ -136,6 +149,10 @@ calibrate() {
     echo "按 Enter 使用預設值 (240px)，或輸入像素值："
     read -r menu_input
     local menu_offset_y=${menu_input:-240}
+    if ! is_int "$menu_offset_y"; then
+        echo -e "${RED}錯誤：請輸入整數像素值（例如 240），設定檔沒有寫入${NC}"
+        exit 1
+    fi
 
     # 儲存設定
     save_config "$offset_x" "$offset_y" "$menu_offset_y"
