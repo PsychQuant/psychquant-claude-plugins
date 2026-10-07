@@ -22,7 +22,7 @@ allowed-tools:
 /che-archive-lines:archive-lines help        # 顯示說明
 ```
 
-這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。`allowed-tools` 只預先放行三句指令：這支腳本加上 `save`、`test` 或 `help`（Claude Code 會把規則裡的 `${CLAUDE_PLUGIN_ROOT}` 代換成 plugin 的安裝路徑）。不論使用者輸入的是哪個操作，三句在那一輪都免詢問，所以 Step 1 只能執行使用者要的那一個。`calibrate` 和任何其他指令都不在其中，照使用者的一般權限設定處理。放行只在叫用 skill 的那一輪有效：使用者送出下一則訊息後，如果再執行這支腳本（例如使用者說「再存一次」），照使用者的一般權限設定處理，auto 模式下由 classifier 判斷，不一定會詢問。
+這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。`allowed-tools` 只預先放行三句指令：這支腳本加上 `save`、`test` 或 `help`（Claude Code 會把規則裡的 `${CLAUDE_PLUGIN_ROOT}` 代換成 plugin 的安裝路徑）。不論使用者輸入的是哪個操作，三句在那一輪都免詢問，所以只能執行 Step 1 解析出來的那一個。`calibrate` 和任何其他指令都不在其中，照使用者的一般權限設定處理。放行只在叫用 skill 的那一輪有效：使用者送出下一則訊息後，如果再執行這支腳本（例如使用者說「再存一次」），照使用者的一般權限設定處理，auto 模式下由 classifier 判斷，不一定會詢問。
 
 LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源只有「儲存聊天」匯出的 `.txt`。
 

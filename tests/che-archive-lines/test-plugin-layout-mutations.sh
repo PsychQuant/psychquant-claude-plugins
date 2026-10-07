@@ -26,9 +26,11 @@ FAILED=0
 
 fresh() {
     rm -rf "$SCRATCH/tree"
-    mkdir -p "$SCRATCH/tree/tests/che-archive-lines" "$SCRATCH/tree/plugins"
+    mkdir -p "$SCRATCH/tree/tests/che-archive-lines" "$SCRATCH/tree/plugins" "$SCRATCH/tree/.claude-plugin"
     cp -R "$SRC_PLUGIN" "$SCRATCH/tree/plugins/che-archive-lines"
     cp "$LAYOUT_TEST" "$SCRATCH/tree/tests/che-archive-lines/"
+    cp -R "$SCRIPT_DIR/../lib" "$SCRATCH/tree/tests/lib"
+    cp "$SCRIPT_DIR/../../.claude-plugin/marketplace.json" "$SCRATCH/tree/.claude-plugin/"
     echo "$SCRATCH/tree/plugins/che-archive-lines"
 }
 run_layout() { bash "$SCRATCH/tree/tests/che-archive-lines/test-plugin-layout.sh" 2>&1; }
@@ -76,7 +78,7 @@ P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $R_HELP $R_SAVE $R_TEST"
 expect_pass "allowed-tools as a one-line string, in another order, is accepted"
 
 P=$(fresh); perl -0pi -e 's/\A---\n/---\nallowed-tools: [Read\n/' "$P/$SKILL"
-expect_fail "broken YAML fails closed" "parser crashed"
+expect_fail "broken YAML is never parsed (outside the subset)" "FAIL \(fm\)"
 
 P=$(fresh); mkdir -p "$P/commands"; printf -- '---\ndescription: x\n---\n' > "$P/commands/archive-lines.md"
 expect_fail "commands/ reappears" "FAIL \(a\)"
@@ -169,13 +171,28 @@ subst() {  # $1 = file, $2 = python expression over bytes b
 P=$(fresh); subst "$P/$SKILL" 'b.replace(b"---\n",b"---\xc2\x85\n",1)'
 expect_fail "NEL after the opening --- (Claude Code's \\s does not match it)" "FAIL \(fm\)"
 P=$(fresh); subst "$P/$SKILL" 'b.replace(b"\ndisable-model-invocation",b"\xe2\x80\xa8disable-model-invocation",1)'
-expect_fail "U+2028 inside the frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
+expect_fail "U+2028 inside the frontmatter (Bun.YAML rejects the block)" "FAIL \(fm\)"
 P=$(fresh); subst "$P/$SKILL" 'b.replace(b"\ndisable-model-invocation",b"\xc2\x85disable-model-invocation",1)'
-expect_fail "NEL inside the frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
+expect_fail "NEL inside the frontmatter (Claude Code's re-parse loses disable-model-invocation)" "FAIL \(fm\)"
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1? extra\n/m' "$P/$SKILL"
 expect_fail "explicit-key line" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^name: archive-lines$/name: &n archive-lines/' "$P/$SKILL"
 expect_fail "anchor in a value" "FAIL \(fm\)"
+
+P=$(fresh); subst "$P/$SKILL" 'b.replace(b"\ndisable-model-invocation",b"\xe2\x80\xa9disable-model-invocation",1)'
+expect_fail "U+2029 inside the frontmatter" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^description: .*$/description: "Save the current LINE chat\nvia: the bundled script"/' "$P/$SKILL"
+expect_fail "quoted value left open, next line looks like a key (PyYAML joins, Bun rejects)" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^(disable-model-invocation: true)$/$1\ndescription: "Save the LINE chat #x\ndisable-model-invocation: false\n#"/' "$P/$SKILL"; perl -ni -e 'print unless /^description: [^"]/' "$P/$SKILL"
+expect_fail "open quote that Claude Code's re-parse turns into disable-model-invocation: false" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^(description: .*)$/$1 .../' "$P/$SKILL"
+expect_fail "... inside a value (Bun.YAML ends the document there)" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^name: archive-lines$/name:\tarchive-lines/' "$P/$SKILL"
+expect_fail "tab in the frontmatter" "FAIL \(fm\)"
+P=$(fresh); perl -0pi -e 's/^(name: archive-lines\n)/$1name: other\n/m' "$P/$SKILL"
+expect_fail "duplicate key" "FAIL \(fm\)"
+P=$(fresh); perl -0pi -e 's/^(argument-hint: [^\n]*\n)/$1  - stray\n/m' "$P/$SKILL"
+expect_fail "list item under a key that has a value" "FAIL \(fm\)"
 
 # ---- (e): only the reviewed frontmatter keys ----
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1model: opus\n/m' "$P/$SKILL"
@@ -190,6 +207,11 @@ P=$(fresh); python3 -c 'import json,sys;p=sys.argv[1];d=json.load(open(p));d["ho
 expect_fail "plugin.json declares hooks" "FAIL \(a\)"
 P=$(fresh); mkdir -p "$P/skills/other"; printf -- '---\nname: other\ndescription: x\nallowed-tools: Bash(*)\n---\n' > "$P/skills/other/SKILL.md"
 expect_fail "a second skill" "FAIL \(a\)"
+
+P=$(fresh); mkdir -p "$P/bin"; printf '#!/bin/bash\n' > "$P/bin/line-save-chat.sh"
+expect_fail "bin/ added" "FAIL \(a\)"
+P=$(fresh); python3 -c 'import json,sys;p=sys.argv[1];d=json.load(open(p));[e.update(hooks={"SessionStart":[]}) for e in d["plugins"] if e["name"]=="che-archive-lines"];json.dump(d,open(p,"w"))' "$SCRATCH/tree/.claude-plugin/marketplace.json"
+expect_fail "marketplace entry declares hooks" "FAIL \(a\)"
 
 # ---- (n) ----
 P=$(fresh); perl -ni -e 'print unless /^name:/' "$P/$SKILL"

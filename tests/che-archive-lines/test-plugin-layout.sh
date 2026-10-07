@@ -6,8 +6,11 @@
 #        plugin.json (no hooks, mcpServers, lspServers, monitors or component
 #        paths in it), skills/archive-lines/SKILL.md, scripts/line-save-chat.sh,
 #        README.md and CHANGELOG.md. A hooks/ directory, .mcp.json, .lsp.json,
-#        commands/, agents/ or a second skill could run commands that no check
-#        below looks at (#139 verify round 3).
+#        commands/, agents/, bin/ or a second skill could run commands that no
+#        check below looks at (#139 verify round 3). The plugin's entry in the
+#        repo's .claude-plugin/marketplace.json is checked too: Claude Code
+#        merges an entry's hooks, skills, commands and agents into the plugin
+#        (round 4).
 #   (b)  EVERY mention of line-save-chat.sh in the skill body is the path
 #        ${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh, and that script exists
 #        and is executable. Claude Code substitutes ${CLAUDE_PLUGIN_ROOT} in skill
@@ -41,23 +44,14 @@
 #        earlier versions recognise only true, so the test accepts only true.
 #   (n)  name: archive-lines — without a frontmatter name, a plugin skill has no
 #        bare /archive-lines alias, and the README promises one.
-#   (fm) the skill has frontmatter Claude Code reads the same way this test does.
+#   (fm) the skill's frontmatter stays inside the subset Claude Code and this
+#        test read the same way (tests/lib/frontmatter_subset.py).
 #
-# How the frontmatter is read, and why:
-#   - The boundary is found the way Claude Code finds it: the first `---` after
-#     the opening line, anywhere — not only at the start of a line — so a `---`
-#     inside a value ends the frontmatter early here too (round 1). The match
-#     uses JavaScript's \s, not Python's (which also matches NEL and
-#     \x1c-\x1f), on text read without newline translation, so a lone CR does
-#     not end a line here either (round 2).
-#   - The block is parsed with PyYAML (YAML 1.1); Claude Code uses Bun.YAML
-#     (YAML 1.2). The two disagree outside plain block YAML: PyYAML treats NEL,
-#     U+2028 and U+2029 as line breaks where Bun rejects the whole block, and
-#     only PyYAML expands merge keys (round 3). So (fm) first requires the block
-#     to stay inside a plain subset both parsers read alike — no control or
-#     line-separator characters, and every line a `key: value`, a `key:`, a
-#     `  - item`, a comment or blank, with no anchor, alias, tag, block scalar,
-#     flow collection or explicit key — and fails otherwise.
+# How the frontmatter is read: tests/lib/frontmatter_subset.py splits it off
+# the way Claude Code does and lists why a block falls outside the plain YAML
+# subset in which PyYAML (used here) and Claude Code's Bun.YAML read the same
+# thing and Bun's first parse succeeds; (fm) fails on any such reason. See that
+# module for the cases and the fuzz evidence (tests/frontmatter-subset-fuzz/).
 # Every check FAILS CLOSED: if the parser cannot run, the test fails instead of
 # passing.
 #
@@ -84,7 +78,13 @@ fi
 
 echo "test-plugin-layout.sh (#139) — $PLUGIN_DIR"
 
-OUT=$(python3 - "$PLUGIN_DIR" <<'EOF'
+LIB_DIR="$(cd "$SCRIPT_DIR/../lib" 2>/dev/null && pwd)"
+if [ -z "$LIB_DIR" ] || [ ! -f "$LIB_DIR/frontmatter_subset.py" ]; then
+    echo "FAIL tests/lib/frontmatter_subset.py not found — no frontmatter check can run"
+    exit 1
+fi
+
+OUT=$(python3 - "$PLUGIN_DIR" "$LIB_DIR" <<'EOF'
 import json, os, re, sys
 
 try:
@@ -93,6 +93,8 @@ except ImportError:
     raise SystemExit("PyYAML is required (pip install pyyaml) — frontmatter checks cannot run without a real YAML parser")
 
 root = sys.argv[1]
+sys.path.insert(0, sys.argv[2])
+import frontmatter_subset as fs
 problems = []
 def bad(tag, msg): problems.append(f"{tag} {msg}")
 
@@ -100,13 +102,6 @@ SCRIPT_PATH = "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 ALLOWED_RULES = {f"Bash({SCRIPT_PATH} {verb})" for verb in ("save", "test", "help")}
 FM_KEYS = {"name", "description", "argument-hint", "disable-model-invocation", "allowed-tools"}
 
-# JavaScript's \s, which Claude Code's frontmatter regex uses.
-JS_WS = "[\t\n\v\f\r    -     　﻿]"
-FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
-# The plain-YAML subset PyYAML and Bun.YAML read alike (see the header).
-FM_BAD_CHAR = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f  ﻿]|\r(?!\n)")
-SCALAR = r"[^\s&*!|>%@`{\[?#][^\r]*"
-FM_LINE = re.compile(rf"(?:[A-Za-z][A-Za-z0-9-]*:(?: +{SCALAR})?| +- +{SCALAR}| *(?:#[^\r]*)?) *\r?")
 IGNORED = {".DS_Store"}
 
 def listing(path):
@@ -124,6 +119,17 @@ for rel, want in expected.items():
     got = listing(os.path.join(root, rel))
     if got != want:
         bad("a", f"{rel or '.'}/ contains {got}, expected exactly {want}")
+market = os.path.join(root, "..", "..", ".claude-plugin", "marketplace.json")
+if not os.path.isfile(market):
+    bad("a", "repo .claude-plugin/marketplace.json not found — cannot check the plugin's entry")
+else:
+    entries = [e for e in json.load(open(market)).get("plugins", []) if e.get("name") == "che-archive-lines"]
+    if len(entries) != 1:
+        bad("a", f"marketplace.json has {len(entries)} che-archive-lines entries, expected 1")
+    else:
+        extra = set(entries[0]) - {"name", "version", "description", "author", "source", "category"}
+        if extra:
+            bad("a", f"marketplace entry declares {sorted(extra)} (Claude Code merges them into the plugin)")
 manifest = os.path.join(root, ".claude-plugin", "plugin.json")
 if os.path.isfile(manifest):
     extra = set(json.load(open(manifest))) - {"name", "version", "description", "author",
@@ -144,28 +150,25 @@ if not os.path.isfile(skill):
         bad(tag, "skills/archive-lines/SKILL.md is missing — cannot check")
 else:
     text = open(skill, encoding="utf-8-sig", newline="").read()
-    # Claude Code's own boundary: lazy, not anchored to a line start.
-    m = FM_RE.match(text)
-    if not m:
+    block, body = fs.split(text)
+    if block is None:
         bad("fm", "skills/archive-lines/SKILL.md has no frontmatter Claude Code can read")
         for tag in ("e", "f", "n"):
             bad(tag, "no readable frontmatter — cannot check")
-        body = text
+    elif fs.subset_problems(block):
+        # Outside the subset PyYAML's reading cannot be trusted, so it is not
+        # used: (e) (f) (n) are reported as unverifiable, never as passes.
+        for problem in fs.subset_problems(block):
+            bad("fm", f"frontmatter {problem}")
+        for tag in ("e", "f", "n"):
+            bad(tag, "frontmatter outside the subset Claude Code and this test read alike — cannot check")
     else:
-        block = m.group(1)
-        if FM_BAD_CHAR.search(block):
-            bad("fm", "frontmatter contains a control or line-separator character that "
-                      "PyYAML and Claude Code (Bun.YAML) read differently")
-        for n, line in enumerate(block.split("\n"), 1):
-            if not FM_LINE.fullmatch(line):
-                bad("fm", f"frontmatter line {n} is outside the plain YAML both parsers read alike: {line.strip()[:60]}")
         fm = yaml.safe_load(block) or {}
         # BaseLoader builds no Python objects: every scalar stays a string, so
         # (f) can tell a literal true from yes/on/1/"true".
         fm_raw = yaml.load(block, Loader=yaml.BaseLoader) or {}
         if not isinstance(fm, dict) or not isinstance(fm_raw, dict):
             raise SystemExit("frontmatter is not a mapping")
-        body = text[m.end():]
 
 # ---------- (b) ----------
 if body is not None:
