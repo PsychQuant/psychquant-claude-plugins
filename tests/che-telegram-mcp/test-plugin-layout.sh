@@ -27,17 +27,23 @@
 #        An allowlist also fails closed for tools added later.
 #   (g)  telegram-messaging exists and stays model-invocable — it is the
 #        natural-language router. A glob edit over skills/*/SKILL.md once added
-#        disable-model-invocation to it along with the four slash skills. Any
-#        value Claude Code may read as true (true/yes/on/1, 2.1.218+) fails.
+#        disable-model-invocation to it along with the four slash skills. The
+#        key must be absent or the literal false: Claude Code also reads yes/on/
+#        1 — and numbers such as 1.0 — as true, so anything else fails.
 #   (h)  the four slash skills (auth, chats, search, send) set
 #        disable-model-invocation to the literal, unquoted `true` — they run
 #        only when the user types them. Claude Code before 2.1.218 recognises
 #        only true, so yes/on/1/"true" fail here. (g) and (h) each fail in
 #        their own safe direction.
+#   (i)  no skill runs commands outside allowed-tools: no `hooks:` in the
+#        frontmatter (hooks registered when the skill is invoked) and no
+#        !`command` or ```! block in the body (run before Claude sees the skill)
 #   (fm) every skill file has frontmatter Claude Code can read
 #
 # The frontmatter boundary is found the way Claude Code finds it: the first
-# `---` after the opening line, anywhere — not only at the start of a line. A
+# `---` after the opening line, anywhere — not only at the start of a line —
+# with JavaScript's \s (no Python-only NEL) and no newline translation (a lone
+# CR does not end a line for Claude Code). A
 # `---` inside a value ends the frontmatter early in Claude Code, and the test
 # sees the same truncated block (#139 verify round 1 found the line-anchored
 # boundary passing a skill whose disable-model-invocation Claude Code dropped).
@@ -173,23 +179,29 @@ for srv, tools in documented.items():
         raise SystemExit(f"README has no tool list for telegram-{srv} — cannot check (d)/(f)")
 
 # ---------- frontmatter (real YAML parser) ----------
+# JavaScript's \s, which Claude Code's frontmatter regex uses. Python's \s also
+# matches NEL (U+0085), which JavaScript's does not.
+JS_WS = "[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
+FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
+
 def frontmatter(path):
-    """Return (dict, raw_text, strings_dict) or (None, None, None) when the file
-    has no frontmatter. Strips a UTF-8 BOM and normalises newlines first —
-    Claude Code accepts both. strings_dict is the same block read with
-    BaseLoader (builds no Python objects; every scalar stays a string), so (h)
-    can tell a literal true from yes/on/1/"true"."""
-    text = open(path, encoding="utf-8-sig").read().replace("\r\n", "\n")
+    """Return (dict, raw_text, strings_dict, body) or (None, None, None, text)
+    when the file has no frontmatter Claude Code can read. Strips a UTF-8 BOM;
+    newlines are NOT translated (newline=""), so a lone CR stays a CR, as it
+    does for Claude Code. strings_dict is the same block read with BaseLoader
+    (builds no Python objects; every scalar stays a string), so (g) and (h) can
+    tell a literal true/false from yes/on/1/"true"."""
+    text = open(path, encoding="utf-8-sig", newline="").read()
     # Claude Code's own boundary: lazy, not anchored to a line start.
-    m = re.match(r"---\s*\n([\s\S]*?)---\s*\n?", text)
+    m = FM_RE.match(text)
     if not m:
-        return None, None, None
+        return None, None, None, text
     raw = m.group(1)
     data = yaml.safe_load(raw) or {}
     strings = yaml.load(raw, Loader=yaml.BaseLoader) or {}
     if not isinstance(data, dict) or not isinstance(strings, dict):
         raise SystemExit(f"{path}: frontmatter is not a mapping")
-    return data, raw, strings
+    return data, raw, strings, text[m.end():]
 
 def tool_list(value):
     if value is None:
@@ -200,11 +212,10 @@ def tool_list(value):
         return [str(t) for t in value]
     raise SystemExit(f"allowed-tools has unsupported type {type(value).__name__}")
 
-def truthy(value):
-    """Anything Claude Code 2.1.218+ may read as true — used by (g)."""
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() in ("true", "yes", "on", "1")
+def router_invocable(skill, key="disable-model-invocation"):
+    """(g): absent, or the literal false. Anything else may read as true."""
+    strings = meta_strings[skill]
+    return key not in strings or str(strings[key]).strip().lower() == "false"
 
 def literal_true(skill, key="disable-model-invocation"):
     """Only the unquoted literal true — used by (h)."""
@@ -235,11 +246,16 @@ if os.path.isdir(sk):
 meta, meta_strings = {}, {}
 for path, skill in skill_files:
     rel = os.path.relpath(path, root)
-    data, raw, strings = frontmatter(path)
+    data, raw, strings, body = frontmatter(path)
     if data is None:
         bad("fm", f"{rel}: no frontmatter Claude Code can read (must start with ---)")
         continue
     meta[skill], meta_strings[skill] = data, strings
+    # (i) commands that would run outside allowed-tools
+    if "hooks" in data:
+        bad("i", f"{rel}: frontmatter sets hooks (they run without a permission prompt)")
+    if re.search(r"!`|```!", body):
+        bad("i", f"{rel}: body has a !`command` or ```! block (runs before Claude sees the skill)")
     seen = set()
     for t in tool_list(data.get("allowed-tools")):
         m = prefix.match(t)
@@ -262,7 +278,7 @@ for path, skill in skill_files:
 # ---------- (g) router ----------
 if not os.path.isfile(os.path.join(root, "skills", "telegram-messaging", "SKILL.md")):
     bad("g", "skills/telegram-messaging/SKILL.md is missing")
-elif "telegram-messaging" in meta and truthy(meta["telegram-messaging"].get("disable-model-invocation", False)):
+elif "telegram-messaging" in meta and not router_invocable("telegram-messaging"):
     bad("g", "skills/telegram-messaging/SKILL.md sets disable-model-invocation")
 
 # ---------- (h) slash skills ----------
@@ -308,6 +324,7 @@ fi
 report f  "skills pre-approve only allowlisted read-only tools (auth steps only in auth)"
 report g  "telegram-messaging exists and stays model-invocable"
 report h  "auth/chats/search/send set disable-model-invocation: true"
+report i  "no skill sets hooks or runs !\`command\` blocks"
 
 echo
 if [ "$FAILURES" -gt 0 ]; then

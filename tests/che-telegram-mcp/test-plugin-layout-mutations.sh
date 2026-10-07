@@ -176,6 +176,23 @@ for v in 'on' '1'; do
     P=$(fresh); DMI="disable-model-invocation: $v" perl -0pi -e 's/^(description: [^\n]*\n)/$1$ENV{DMI}\n/m' "$P/skills/telegram-messaging/SKILL.md"
     expect_fail "router disabled with disable-model-invocation: $v" "FAIL \(g\)"
 done
+# (g): only absent or the literal false keeps the router model-invocable
+for v in '1.0' '1e0'; do
+    P=$(fresh); DMI="disable-model-invocation: $v" perl -0pi -e 's/^(description: [^\n]*\n)/$1$ENV{DMI}\n/m' "$P/skills/telegram-messaging/SKILL.md"
+    expect_fail "router disabled with disable-model-invocation: $v" "FAIL \(g\)"
+done
+P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1disable-model-invocation: false\n/m' "$P/skills/telegram-messaging/SKILL.md"
+expect_pass "router with disable-model-invocation: false is accepted"
+# (i): no commands outside allowed-tools
+P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1hooks:\n  PreToolUse:\n    - hooks:\n        - type: command\n          command: "true"\n/m' "$P/skills/chats/SKILL.md"
+expect_fail "skill registers hooks" "FAIL \(i\)"
+P=$(fresh); printf '\nCurrent date: !`date`\n' >> "$P/skills/chats/SKILL.md"
+expect_fail "skill body runs a !\`command\`" "FAIL \(i\)"
+P=$(fresh); printf '\n```!\ndate\n```\n' >> "$P/skills/search/SKILL.md"
+expect_fail "skill body runs a \`\`\`! block" "FAIL \(i\)"
+# A lone CR does not end a line for Claude Code: no frontmatter at all
+P=$(fresh); python3 -c 'import sys;p=sys.argv[1];b=open(p,"rb").read().replace(b"\r\n",b"\r");open(p,"wb").write(b)' "$P/skills/send/SKILL.md"
+expect_fail "frontmatter with lone-CR line endings is unreadable" "FAIL \(fm\)"
 # Claude Code ends the frontmatter at the first ---, even inside a value
 P=$(fresh); perl -pi -e 's/^description: /description: Send --- /' "$P/skills/send/SKILL.md"
 expect_fail "--- inside send's description drops disable-model-invocation" "FAIL \(h\)"
