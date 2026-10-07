@@ -18,9 +18,10 @@ rounds 1–4 and in the fuzz run below:
     following lines as keys (e.g. disable-model-invocation: false) while the
     test still sees one long description.
   - Bun 1.3.11 (the fuzz host's) treats `---` and `...` as document markers
-    even inside a value (`description: x ...` reads as `x`). The Bun 1.4.x
-    inside current Claude Code (2.1.293 embeds 1.4.3) reads them literally; the
-    ban below stays because it only rejects more and Bun versions differ.
+    even inside a value (`description: x ...` reads as `x`). Bun 1.4.2, tested
+    by a #139 verify reviewer, reads them literally; Claude Code 2.1.293 embeds
+    Bun 1.4.3, which nobody here has tested directly. The ban below stays
+    because it only rejects more and Bun versions differ.
   - PyYAML reads unquoted 010 as octal 8, 1:30 as 90 and yes/on/no/off/null as
     booleans or None — also as keys; Bun reads 010 as 10, 1:30 and on as text.
 
