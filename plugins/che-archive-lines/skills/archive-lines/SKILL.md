@@ -3,7 +3,10 @@ name: archive-lines
 description: 自動儲存 LINE macOS 聊天記錄（依座標點擊「⋮」→「儲存聊天」）。
 argument-hint: "[calibrate|save|test|help]"
 disable-model-invocation: true
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh *)
+allowed-tools:
+  - Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh save)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh test)
+  - Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh help)
 ---
 
 # Archive Lines
@@ -19,7 +22,7 @@ allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh *)
 /che-archive-lines:archive-lines help        # 顯示說明
 ```
 
-這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。`allowed-tools` 只預先放行這支腳本本身：Claude Code 會把規則裡的 `${CLAUDE_PLUGIN_ROOT}` 代換成 plugin 的安裝路徑，規則只比對以這支腳本開頭的指令，`bash -c …` 或串接在後面的其他指令都不會被放行。放行只在叫用 skill 的那一輪有效，使用者送出下一則訊息就失效。
+這個 skill 只在使用者主動輸入時執行（`disable-model-invocation: true`）：腳本會依座標點擊 LINE 視窗、移動滑鼠。`allowed-tools` 只預先放行三句指令：這支腳本加上 `save`、`test` 或 `help`（Claude Code 會把規則裡的 `${CLAUDE_PLUGIN_ROOT}` 代換成 plugin 的安裝路徑）。`calibrate` 和任何其他指令都不在其中，照使用者的一般權限設定處理。放行只在叫用 skill 的那一輪有效，使用者送出下一則訊息就失效。
 
 LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源只有「儲存聊天」匯出的 `.txt`。
 
@@ -33,7 +36,7 @@ LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源
 
 ### Step 2: 執行對應操作
 
-每次執行都只用下面列出的那一行指令，單獨一個 Bash 呼叫：不要加 `cd`、`&&`、`;`、管線或其他指令，也不要先存進變數。放行規則比對的是整句指令，多了任何東西就比對不到，會改走使用者的一般權限設定。
+每次執行都只用下面列出的那一行指令，單獨一個 Bash 呼叫：不要加 `cd`、`&&`、`;`、管線、重導向或其他指令，也不要先存進變數。多出來的部分不在這個 skill 預先放行的範圍內。
 
 #### help - 顯示說明
 
@@ -67,7 +70,7 @@ LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源
 
 #### calibrate - 校準模式（交給使用者在自己的終端機執行）
 
-**不要用 Bash 工具執行 calibrate。** 校準要等使用者把滑鼠移到「⋮」上再按 Enter，Bash 工具沒有互動式終端：直接執行會在等 Enter 時退出；用管線送換行進去，則會把當下的滑鼠位置寫成校準結果，覆蓋掉原本正確的設定（PsychQuant/psychquant-claude-plugins#145）。
+**不要用 Bash 工具執行 calibrate**，它也不在預先放行的範圍內。校準要等使用者把滑鼠移到「⋮」上再按 Enter，Bash 工具沒有互動式終端：直接執行會在等 Enter 時退出；用管線送兩行以上的輸入進去，則會把當下的滑鼠位置寫成校準結果，第二行還會原樣寫進設定檔，覆蓋掉原本正確的設定（PsychQuant/psychquant-claude-plugins#145）。
 
 請把下面這行指令原樣顯示給使用者，請他貼到自己的終端機（Terminal.app、iTerm）執行，完成後再回來：
 
@@ -75,11 +78,13 @@ LINE 本機的訊息資料庫（`.edb`）是加密的，讀得懂的資料來源
 "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" calibrate
 ```
 
+同時提醒使用者：腳本會先把 LINE 叫到前景，這時鍵盤輸入會進 LINE，直接按 Enter 可能把 LINE 輸入框裡的草稿送出去。要先用 Cmd-Tab 切回終端機（不要用滑鼠點），確認終端機視窗沒有蓋住 LINE 右上角的「⋮」，再把滑鼠移到「⋮」上，在終端機按 Enter。
+
 校準流程（在使用者的終端機裡）：
-1. 啟動 LINE
+1. 啟動 LINE（LINE 跳到前景）
 2. 取得視窗位置和大小
 3. 提示使用者把滑鼠移到「⋮」按鈕
-4. 按 Enter 後記錄滑鼠位置
+4. 使用者切回終端機按 Enter 後，記錄滑鼠位置
 5. 計算相對偏移值（相對於視窗右上角）
 6. 儲存到 `~/.config/che-archive-lines/config.json`
 

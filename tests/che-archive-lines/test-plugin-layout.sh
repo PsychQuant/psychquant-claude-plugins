@@ -13,13 +13,20 @@
 #   (d)  no hard-coded per-machine path anywhere in the plugin: no home
 #        directory, no cloud-sync folder (CloudStorage, Dropbox, iCloud's Mobile
 #        Documents), no ~/.claude/plugins/<name>/ copy location. This repo is
-#        public. Files are scanned as bytes decoded with errors="replace", so a
-#        file that is not valid UTF-8 is still scanned, never skipped.
-#   (e)  allowed-tools is exactly Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh *):
-#        the script runs without a prompt in the turn that invokes the skill, and
-#        nothing else is pre-approved. The rule is anchored at the installed path,
-#        so `bash -c …` or a command chained after the script does not match it
-#        (checked with `claude -p --plugin-dir` probes on 2.1.291, #139 round 2).
+#        public. Files are read as bytes and decoded as UTF-16 when they carry a
+#        UTF-16 BOM, otherwise as UTF-8 with errors="replace", so no file is
+#        skipped.
+#   (e)  allowed-tools is exactly these three rules, in any order:
+#          Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh save)
+#          Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh test)
+#          Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh help)
+#        Claude Code matches a rule against each subcommand of a pipeline, so a
+#        trailing `*` (…line-save-chat.sh *) also pre-approved calibrate, even
+#        with `printf '\n\n' |` piped in front — verify round 2 (#139) probed
+#        that, and with #149 it chains into running any command. With exact
+#        rules calibrate goes through the user's normal permission settings.
+#        Also: no `hooks:` in the frontmatter and no !`command` / ```! block in
+#        the body — both run commands outside allowed-tools.
 #   (f)  disable-model-invocation is the literal, unquoted `true` — only the user
 #        starts GUI automation. Claude Code 2.1.218+ also accepts yes/on/1, but
 #        earlier versions recognise only true, so the test accepts only true.
@@ -30,7 +37,9 @@
 # The frontmatter boundary is found the way Claude Code finds it: the first
 # `---` after the opening line, anywhere — not only at the start of a line. A
 # `---` inside a value therefore ends the frontmatter early in Claude Code, and
-# the test sees the same truncated block (verify finding, #139 round 1).
+# the test sees the same truncated block (verify finding, #139 round 1). The
+# match uses JavaScript's \s (no Python-only NEL) on text read without newline
+# translation, so a lone CR does not end a line here either (round 2).
 # Frontmatter is then parsed with PyYAML after stripping a UTF-8 BOM. Every
 # check FAILS CLOSED: if the parser cannot run, the test fails instead of
 # passing.
@@ -71,7 +80,11 @@ problems = []
 def bad(tag, msg): problems.append(f"{tag} {msg}")
 
 SCRIPT_PATH = "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
-ALLOWED_RULE = f"Bash({SCRIPT_PATH} *)"
+ALLOWED_RULES = {f"Bash({SCRIPT_PATH} {verb})" for verb in ("save", "test", "help")}
+# JavaScript's \s, which Claude Code's frontmatter regex uses (Python's \s also
+# matches NEL, U+0085).
+JS_WS = "[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
+FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
 
 # ---------- (a) ----------
 if os.path.exists(os.path.join(root, "commands")):
@@ -89,9 +102,9 @@ if not os.path.isfile(skill):
     for tag in ("fm", "c", "e", "f", "n"):
         bad(tag, "skills/archive-lines/SKILL.md is missing — cannot check")
 else:
-    text = open(skill, encoding="utf-8-sig").read().replace("\r\n", "\n")
+    text = open(skill, encoding="utf-8-sig", newline="").read()
     # Claude Code's own boundary: lazy, not anchored to a line start.
-    m = re.match(r"---\s*\n([\s\S]*?)---\s*\n?", text)
+    m = FM_RE.match(text)
     if not m:
         bad("fm", "skills/archive-lines/SKILL.md has no frontmatter Claude Code can read")
         for tag in ("e", "f", "n"):
@@ -142,7 +155,11 @@ for dirpath, _, files in os.walk(root):
         p = os.path.join(dirpath, fname)
         rel = os.path.relpath(p, root)
         try:
-            content = open(p, "rb").read().decode("utf-8", errors="replace")
+            data = open(p, "rb").read()
+            if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+                content = data.decode("utf-16", errors="replace")
+            else:
+                content = data.decode("utf-8", errors="replace")
         except OSError as e:
             bad("d", f"{rel} cannot be read — cannot check ({e})")
             continue
@@ -162,9 +179,14 @@ if fm is not None:
         tools = [str(t).strip() for t in raw]
     else:
         raise SystemExit(f"allowed-tools has unsupported type {type(raw).__name__}")
-    if tools != [ALLOWED_RULE]:
-        bad("e", f"allowed-tools must be exactly [{ALLOWED_RULE}]; found {tools}")
+    if sorted(tools) != sorted(ALLOWED_RULES):
+        bad("e", f"allowed-tools must be exactly {sorted(ALLOWED_RULES)}; found {tools}")
+    if "hooks" in fm:
+        bad("e", "frontmatter sets hooks (they run without a permission prompt)")
+if body is not None and re.search(r"!`|```!", body):
+    bad("e", "skill body has a !`command` or ```! block (runs before Claude sees the skill)")
 
+if fm is not None:
     # ---------- (f) ----------
     key = "disable-model-invocation"
     if not (fm.get(key) is True and str(fm_raw.get(key, "")).strip().lower() == "true"):
@@ -200,7 +222,7 @@ report fm "the skill has readable frontmatter"
 report b  "every script path in the skill is \${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 report c  "no \$0, \$(dirname) or unbraced \$CLAUDE_PLUGIN_ROOT"
 report d  "no hard-coded per-machine path in the plugin"
-report e  "allowed-tools pre-approves only the bundled script"
+report e  "allowed-tools pre-approves only save/test/help of the bundled script"
 report f  "disable-model-invocation: true"
 report n  "name: archive-lines"
 

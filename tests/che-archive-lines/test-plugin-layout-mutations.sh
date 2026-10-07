@@ -53,14 +53,15 @@ expect_pass() {
     fi
 }
 add_bom() { python3 -c 'import sys;p=sys.argv[1];b=open(p,"rb").read();open(p,"wb").write(b"\xef\xbb\xbf"+b)' "$1"; }
-set_allowed() {  # $1 = file, $2 = replacement for the whole allowed-tools line
-    ALLOWED_LINE="$2" perl -pi -e 's/^allowed-tools:.*$/$ENV{ALLOWED_LINE}/' "$1"
+set_allowed() {  # $1 = file, $2 = replacement for the whole allowed-tools block (key + list items)
+    ALLOWED_LINE="$2" perl -0pi -e 's/^allowed-tools:[^\n]*\n(?:[ \t]+-[^\n]*\n)*/$ENV{ALLOWED_LINE}\n/m' "$1"
 }
 set_dmi() {  # $1 = file, $2 = replacement for the whole disable-model-invocation line
     DMI_LINE="$2" perl -pi -e 's/^disable-model-invocation:.*$/$ENV{DMI_LINE}/' "$1"
 }
 SKILL=skills/archive-lines/SKILL.md
-RULE='Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh *)'
+S='${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh'
+R_SAVE="Bash($S save)"; R_TEST="Bash($S test)"; R_HELP="Bash($S help)"; R_CAL="Bash($S calibrate)"
 SAVE_CMD='"${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh" save'
 replace_save() {  # $1 = file, $2 = replacement for the save invocation
     FROM="$SAVE_CMD" TO="$2" perl -pi -e 's/\Q$ENV{FROM}\E/$ENV{TO}/' "$1"
@@ -71,9 +72,8 @@ echo "test-plugin-layout-mutations.sh (#139)"
 P=$(fresh); expect_pass "unmodified copy passes"
 P=$(fresh); add_bom "$P/$SKILL"
 expect_pass "UTF-8 BOM on the skill is accepted"
-P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools:
-  - $RULE"
-expect_pass "allowed-tools as a YAML list with the same rule is accepted"
+P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $R_HELP $R_SAVE $R_TEST"
+expect_pass "allowed-tools as a one-line string, in another order, is accepted"
 
 P=$(fresh); perl -0pi -e 's/\A---\n/---\nallowed-tools: [Read\n/' "$P/$SKILL"
 expect_fail "broken YAML fails closed" "parser crashed"
@@ -113,21 +113,37 @@ P=$(fresh); printf '\nScript: ~/Library/Mobile Documents/com~apple~CloudDocs/x.s
 expect_fail "iCloud Drive path" "FAIL \(d\)"
 P=$(fresh); printf '\n\xff /Users/example/secret/\n' >> "$P/README.md"
 expect_fail "home path in a file that is not valid UTF-8" "FAIL \(d\)"
+P=$(fresh); python3 -c 'import sys;p=sys.argv[1];t=open(p,encoding="utf-8").read();open(p,"w",encoding="utf-16").write(t+"\nSee /Users/example/secret/\n")' "$P/README.md"
+expect_fail "home path in a UTF-16 file" "FAIL \(d\)"
 
-# ---- (e): exactly the one anchored rule ----
+# ---- (e): exactly the three exact rules; nothing runs outside them ----
 P=$(fresh); set_allowed "$P/$SKILL" 'allowed-tools: Bash(*), Read, Write, Glob'
 expect_fail "allowed-tools back to Bash(*)" "FAIL \(e\)"
-P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $RULE Read"
-expect_fail "bare Read added next to the rule" "FAIL \(e\)"
+P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: Bash($S *)"
+expect_fail "trailing-* rule (also pre-approves calibrate and piped input)" "FAIL \(e\)"
 P=$(fresh); set_allowed "$P/$SKILL" 'allowed-tools: Bash(bash *line-save-chat.sh *)'
 expect_fail "leading-wildcard rule (also matches bash -c)" "FAIL \(e\)"
+P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $R_SAVE $R_TEST $R_HELP $R_CAL"
+expect_fail "calibrate rule added" "FAIL \(e\)"
+P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $R_SAVE $R_TEST $R_HELP Read"
+expect_fail "bare Read added next to the rules" "FAIL \(e\)"
+P=$(fresh); set_allowed "$P/$SKILL" "allowed-tools: $R_SAVE $R_TEST"
+expect_fail "help rule missing" "FAIL \(e\)"
 P=$(fresh); set_allowed "$P/$SKILL" "\"allowed-tools\":
-  - $RULE
+  - $R_SAVE
+  - $R_TEST
+  - $R_HELP
 
   - Write"
 expect_fail "quoted key + blank line hides Write" "FAIL \(e\)"
 P=$(fresh); set_allowed "$P/$SKILL" 'allowed-tools: Bash(*)'; add_bom "$P/$SKILL"
 expect_fail "BOM does not hide Bash(*)" "FAIL \(e\)"
+P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1hooks:\n  PreToolUse:\n    - hooks:\n        - type: command\n          command: "true"\n/m' "$P/$SKILL"
+expect_fail "skill registers hooks" "FAIL \(e\)"
+P=$(fresh); printf '\nCurrent date: !`date`\n' >> "$P/$SKILL"
+expect_fail "skill body runs a !\`command\`" "FAIL \(e\)"
+P=$(fresh); printf '\n```!\ndate\n```\n' >> "$P/$SKILL"
+expect_fail "skill body runs a \`\`\`! block" "FAIL \(e\)"
 
 # ---- (f): only the literal true; the frontmatter boundary Claude Code uses ----
 P=$(fresh); perl -ni -e 'print unless /^disable-model-invocation:/' "$P/$SKILL"
@@ -142,6 +158,9 @@ P=$(fresh); set_dmi "$P/$SKILL" 'disable-model-invocation: "true"'
 expect_fail "disable-model-invocation: \"true\" (quoted)" "FAIL \(f\)"
 P=$(fresh); perl -pi -e 's/^description: /description: LINE --- /' "$P/$SKILL"
 expect_fail "--- inside a value ends the frontmatter early (as in Claude Code)" "FAIL \(f\)"
+
+P=$(fresh); python3 -c 'import sys;p=sys.argv[1];b=open(p,"rb").read().replace(b"\n",b"\r");open(p,"wb").write(b)' "$P/$SKILL"
+expect_fail "lone-CR line endings: Claude Code reads no frontmatter" "FAIL \(fm\)"
 
 # ---- (n) ----
 P=$(fresh); perl -ni -e 'print unless /^name:/' "$P/$SKILL"
