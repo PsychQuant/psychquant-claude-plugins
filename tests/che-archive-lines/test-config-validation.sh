@@ -27,15 +27,17 @@ trap 'rm -rf "$SCRATCH"' EXIT
 
 STUB="$SCRATCH/stub"
 mkdir -p "$STUB"
+# STUB_POS / STUB_WINDOW override what the stubs report (default: a sane
+# cursor position and LINE window), so a case can feed a payload through them.
 cat > "$STUB/cliclick" <<EOF
 #!/bin/bash
 echo "\$*" >> "$SCRATCH/clicks.log"
-[ "\$1" = p ] && echo "500,300"
+[ "\$1" = p ] && echo "\${STUB_POS:-500,300}"
 exit 0
 EOF
 cat > "$STUB/osascript" <<'EOF'
 #!/bin/bash
-case "$*" in *"System Events"*) echo "100 100 800 600" ;; esac
+case "$*" in *"System Events"*) echo "${STUB_WINDOW:-100 100 800 600}" ;; esac
 exit 0
 EOF
 chmod +x "$STUB/cliclick" "$STUB/osascript"
@@ -61,8 +63,9 @@ write_config() {  # $1 offset_x, $2 offset_y, $3 menu_offset_y line (empty = omi
         echo '}'
     } > "$CONFIG"
 }
-run() {  # $@ = script arguments; stdin passes through
-    HOME="$SCRATCH/home" PATH="$STUB:$PATH" bash "$TARGET" "$@" > "$SCRATCH/out.log" 2>&1
+run() {  # $@ = script arguments; stdin passes through. Runs the script by its
+         # shebang (/bin/bash, 3.2 on macOS), as the skill does — not PATH's bash.
+    HOME="$SCRATCH/home" PATH="$STUB:$PATH" "$TARGET" "$@" > "$SCRATCH/out.log" 2>&1
 }
 ok()   { echo "  ✓ $1"; PASSED=$((PASSED + 1)); }
 bad()  { echo "  ✗ $1"; sed 's/^/      /' "$SCRATCH/out.log"; FAILED=$((FAILED + 1)); }
@@ -79,6 +82,10 @@ expect_rejected() {  # $1 name, then script args; the run must fail, run no payl
 # payload uses an unbraced $IFS for the space. (A ${IFS} payload is cut off at
 # its } by that grep, which hides the bug instead of testing it.)
 PAYLOAD="a[\$(touch\$IFS$MARK)]"
+case "$MARK" in
+    *[[:space:],:}]*) echo "✗ scratch path $MARK contains a space, comma, colon or } — the payload would be cut off and every payload case would pass vacuously"; exit 1 ;;
+esac
+[ -x "$TARGET" ] || { echo "✗ $TARGET is not executable"; exit 1; }
 
 echo "test-config-validation.sh (#149)"
 
@@ -106,11 +113,40 @@ reset; write_config -20 30 "x+1";       expect_rejected "expression instead of a
 reset; write_config -20 30 "010";       expect_rejected "leading zero (bash reads it as octal)" save
 reset; write_config -20 30 "1234567";   expect_rejected "more than six digits" save
 
+# A key that appears twice: grep returns both lines, and is_int must reject the
+# pair as a whole (a per-line check would accept the valid second line).
+reset; write_config -20 30 240; printf '{\n  "offset_x": %s,\n  "offset_x": -20,\n  "offset_y": 30\n}\n' "$PAYLOAD" > "$CONFIG"
+expect_rejected "duplicate key: payload line then a valid line (save)" save
+reset; write_config -20 30 240; printf '{\n  "offset_x": %s,\n  "offset_x": -20,\n  "offset_y": 30\n}\n' "$PAYLOAD" > "$CONFIG"
+expect_rejected "duplicate key: payload line then a valid line (test)" test
+# menu_offset_y present but unreadable must stop, not fall back to 240
+reset; write_config -20 30 " ";         expect_rejected "menu_offset_y present but empty" save
+reset; write_config -20 30 240; printf '{\n  "offset_x": -20,\n  "offset_y": 30,\n  "menu_offset_y":\n    300,\n  "description": "x"\n}\n' > "$CONFIG"
+expect_rejected "menu_offset_y value on the next line (grep cannot read it)" save
+
+# ---- values from osascript and cliclick reach $((…)) too ----
+reset; write_config -20 30 240
+export STUB_WINDOW="$PAYLOAD 100 800 600"; expect_rejected "window position from osascript is a payload" save; unset STUB_WINDOW
+
+# ---- messages: a bad config is not reported as "not calibrated" ----
+reset; write_config -20 30 "x+1"; run save
+if grep -q '整數' "$SCRATCH/out.log" && ! grep -q '尚未校準' "$SCRATCH/out.log"; then ok "invalid config: one message, not \"not calibrated\""
+else bad "invalid config message"; fi
+reset; run save
+if grep -q '尚未校準' "$SCRATCH/out.log"; then ok "missing config: \"not calibrated\""
+else bad "missing config message"; fi
+
 # ---- write side: calibrate stores only integers ----
 reset
 printf '\n%s\n' "$PAYLOAD" | run calibrate; rc=$?
 if [ "$rc" -ne 0 ] && [ ! -e "$CONFIG" ] && [ ! -e "$MARK" ]; then ok "calibrate refuses a non-integer menu offset and writes nothing"
 else bad "calibrate payload (exit $rc, config written: $([ -e "$CONFIG" ] && echo yes || echo no))"; fi
+reset
+export STUB_POS="$PAYLOAD,300"
+printf '\n250\n' | run calibrate; rc=$?
+unset STUB_POS
+if [ "$rc" -ne 0 ] && [ ! -e "$CONFIG" ] && [ ! -e "$MARK" ]; then ok "calibrate refuses a cursor position that is not an integer"
+else bad "calibrate cursor payload (exit $rc, config written: $([ -e "$CONFIG" ] && echo yes || echo no), payload ran: $([ -e "$MARK" ] && echo yes || echo no))"; fi
 reset
 printf '\n250\n' | run calibrate; rc=$?
 if [ "$rc" -eq 0 ] && grep -q '"menu_offset_y": 250,' "$CONFIG" && grep -q '"offset_x": -400,' "$CONFIG" && grep -q '"offset_y": 200,' "$CONFIG"

@@ -47,30 +47,48 @@ get_window_info() {
     end tell' 2>/dev/null
 }
 
-# 解析視窗資訊（空格分隔：x y w h）
+# 解析視窗資訊（空格分隔：x y w h）。這些值也會進 $((…))，所以同樣只接受整數。
 parse_window_info() {
     local info=$1
     WIN_X=$(echo "$info" | awk '{print $1}')
     WIN_Y=$(echo "$info" | awk '{print $2}')
     WIN_W=$(echo "$info" | awk '{print $3}')
     WIN_H=$(echo "$info" | awk '{print $4}')
+    if ! is_int "$WIN_X" || ! is_int "$WIN_Y" || ! is_int "$WIN_W" || ! is_int "$WIN_H"; then
+        echo -e "${RED}錯誤：無法取得 LINE 視窗位置（osascript 回傳的不是整數）${NC}"
+        exit 1
+    fi
 }
 
-# 讀取設定
+# 讀取設定。回傳 0 = 成功；1 = 沒有設定檔（尚未校準）；2 = 設定檔有值不是整數。
 load_config() {
-    if [ -f "$CONFIG_FILE" ]; then
-        OFFSET_X=$(cat "$CONFIG_FILE" | grep -o '"offset_x":[^,}]*' | cut -d':' -f2 | tr -d ' ')
-        OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
-        MENU_OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"menu_offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
-        MENU_OFFSET_Y=${MENU_OFFSET_Y:-240}
-
-        if ! is_int "$OFFSET_X" || ! is_int "$OFFSET_Y" || ! is_int "$MENU_OFFSET_Y"; then
-            echo -e "${RED}錯誤：設定檔格式不正確（偏移值必須是整數），請重新執行 calibrate${NC}"
-            return 1
-        fi
-        return 0
-    else
+    if [ ! -f "$CONFIG_FILE" ]; then
         return 1
+    fi
+    OFFSET_X=$(cat "$CONFIG_FILE" | grep -o '"offset_x":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+    OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+    MENU_OFFSET_Y=$(cat "$CONFIG_FILE" | grep -o '"menu_offset_y":[^,}]*' | cut -d':' -f2 | tr -d ' ')
+    # 只有完全沒有 menu_offset_y 這個 key 時才用預設值；key 在但讀不出值就停下來。
+    if ! grep -q '"menu_offset_y"' "$CONFIG_FILE"; then
+        MENU_OFFSET_Y=240
+    fi
+
+    if ! is_int "$OFFSET_X" || ! is_int "$OFFSET_Y" || ! is_int "$MENU_OFFSET_Y"; then
+        echo -e "${RED}錯誤：設定檔 $CONFIG_FILE 的偏移值必須是整數（不能有前導零），請重新執行 calibrate${NC}"
+        return 2
+    fi
+    return 0
+}
+
+# 讀取設定；失敗就說明原因並結束
+require_config() {
+    local rc=0
+    load_config || rc=$?
+    if [ "$rc" -eq 1 ]; then
+        echo -e "${RED}錯誤：尚未校準，請先執行 calibrate${NC}"
+    fi
+    if [ "$rc" -ne 0 ]; then
+        exit 1
     fi
 }
 
@@ -133,6 +151,10 @@ calibrate() {
     local mouse_x mouse_y
     mouse_x=$(echo "$pos" | cut -d',' -f1)
     mouse_y=$(echo "$pos" | cut -d',' -f2)
+    if ! is_int "$mouse_x" || ! is_int "$mouse_y"; then
+        echo -e "${RED}錯誤：無法取得滑鼠位置（cliclick 回傳的不是整數），設定檔沒有寫入${NC}"
+        exit 1
+    fi
 
     # 計算相對偏移（從視窗右上角）
     local offset_x offset_y
@@ -145,8 +167,8 @@ calibrate() {
     echo ""
 
     # 詢問「儲存聊天」在選單中的位置
-    echo "「儲存聊天」是選單中的第幾個項目？（預設第 8 項，每項約 30px）"
-    echo "按 Enter 使用預設值 (240px)，或輸入像素值："
+    echo "「儲存聊天」選項在「⋮」下方幾個像素？（選單每項約 30px，預設 240 = 第 8 項）"
+    echo "按 Enter 使用預設值 240，或輸入像素值（整數，例如 270）："
     read -r menu_input
     local menu_offset_y=${menu_input:-240}
     if ! is_int "$menu_offset_y"; then
@@ -169,10 +191,7 @@ calibrate() {
 
 # 測試點擊位置
 test_click() {
-    if ! load_config; then
-        echo -e "${RED}錯誤：尚未校準，請先執行 calibrate${NC}"
-        exit 1
-    fi
+    require_config
 
     echo "測試點擊「⋮」按鈕..."
 
@@ -204,10 +223,7 @@ test_click() {
 
 # 儲存聊天
 save_chat() {
-    if ! load_config; then
-        echo -e "${RED}錯誤：尚未校準，請先執行 calibrate${NC}"
-        exit 1
-    fi
+    require_config
 
     echo "自動儲存 LINE 聊天..."
 
