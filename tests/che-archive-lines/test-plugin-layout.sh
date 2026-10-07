@@ -2,7 +2,12 @@
 # Structural regression test for the che-archive-lines plugin layout (#139).
 #
 # Guards what `claude plugin validate` does not check:
-#   (a)  no commands/ — the entry point is skills/archive-lines/SKILL.md
+#   (a)  the plugin contains only the reviewed components: .claude-plugin/
+#        plugin.json (no hooks, mcpServers, lspServers, monitors or component
+#        paths in it), skills/archive-lines/SKILL.md, scripts/line-save-chat.sh,
+#        README.md and CHANGELOG.md. A hooks/ directory, .mcp.json, .lsp.json,
+#        commands/, agents/ or a second skill could run commands that no check
+#        below looks at (#139 verify round 3).
 #   (b)  EVERY mention of line-save-chat.sh in the skill body is the path
 #        ${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh, and that script exists
 #        and is executable. Claude Code substitutes ${CLAUDE_PLUGIN_ROOT} in skill
@@ -22,26 +27,38 @@
 #          Bash(${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh help)
 #        Claude Code matches a rule against each subcommand of a pipeline, so a
 #        trailing `*` (…line-save-chat.sh *) also pre-approved calibrate, even
-#        with `printf '\n\n' |` piped in front — verify round 2 (#139) probed
-#        that, and with #149 it chains into running any command. With exact
+#        with `printf '\n\n' |` piped in front (#139 verify round 2). With exact
 #        rules calibrate goes through the user's normal permission settings.
-#        Also: no `hooks:` in the frontmatter and no !`command` / ```! block in
-#        the body — both run commands outside allowed-tools.
+#        The frontmatter uses only the reviewed keys (name, description,
+#        argument-hint, disable-model-invocation, allowed-tools): `hooks` stay
+#        registered for the rest of the session, beyond the turn's grant, and
+#        keys such as context, agent, model or shell change how the skill runs.
+#        The body has no !`command` or ```! block: those run when the skill is
+#        invoked, before Claude reads it, and one that matches the rules above
+#        would click in LINE with no prompt as soon as the skill opens.
 #   (f)  disable-model-invocation is the literal, unquoted `true` — only the user
 #        starts GUI automation. Claude Code 2.1.218+ also accepts yes/on/1, but
 #        earlier versions recognise only true, so the test accepts only true.
 #   (n)  name: archive-lines — without a frontmatter name, a plugin skill has no
 #        bare /archive-lines alias, and the README promises one.
-#   (fm) the skill file has frontmatter Claude Code can read
+#   (fm) the skill has frontmatter Claude Code reads the same way this test does.
 #
-# The frontmatter boundary is found the way Claude Code finds it: the first
-# `---` after the opening line, anywhere — not only at the start of a line. A
-# `---` inside a value therefore ends the frontmatter early in Claude Code, and
-# the test sees the same truncated block (verify finding, #139 round 1). The
-# match uses JavaScript's \s (no Python-only NEL) on text read without newline
-# translation, so a lone CR does not end a line here either (round 2).
-# Frontmatter is then parsed with PyYAML after stripping a UTF-8 BOM. Every
-# check FAILS CLOSED: if the parser cannot run, the test fails instead of
+# How the frontmatter is read, and why:
+#   - The boundary is found the way Claude Code finds it: the first `---` after
+#     the opening line, anywhere — not only at the start of a line — so a `---`
+#     inside a value ends the frontmatter early here too (round 1). The match
+#     uses JavaScript's \s, not Python's (which also matches NEL and
+#     \x1c-\x1f), on text read without newline translation, so a lone CR does
+#     not end a line here either (round 2).
+#   - The block is parsed with PyYAML (YAML 1.1); Claude Code uses Bun.YAML
+#     (YAML 1.2). The two disagree outside plain block YAML: PyYAML treats NEL,
+#     U+2028 and U+2029 as line breaks where Bun rejects the whole block, and
+#     only PyYAML expands merge keys (round 3). So (fm) first requires the block
+#     to stay inside a plain subset both parsers read alike — no control or
+#     line-separator characters, and every line a `key: value`, a `key:`, a
+#     `  - item`, a comment or blank, with no anchor, alias, tag, block scalar,
+#     flow collection or explicit key — and fails otherwise.
+# Every check FAILS CLOSED: if the parser cannot run, the test fails instead of
 # passing.
 #
 # Usage:
@@ -68,7 +85,7 @@ fi
 echo "test-plugin-layout.sh (#139) — $PLUGIN_DIR"
 
 OUT=$(python3 - "$PLUGIN_DIR" <<'EOF'
-import os, re, sys
+import json, os, re, sys
 
 try:
     import yaml
@@ -81,14 +98,38 @@ def bad(tag, msg): problems.append(f"{tag} {msg}")
 
 SCRIPT_PATH = "${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 ALLOWED_RULES = {f"Bash({SCRIPT_PATH} {verb})" for verb in ("save", "test", "help")}
-# JavaScript's \s, which Claude Code's frontmatter regex uses (Python's \s also
-# matches NEL, U+0085).
-JS_WS = "[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
-FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
+FM_KEYS = {"name", "description", "argument-hint", "disable-model-invocation", "allowed-tools"}
 
-# ---------- (a) ----------
-if os.path.exists(os.path.join(root, "commands")):
-    bad("a", "commands/ exists: " + " ".join(sorted(os.listdir(os.path.join(root, "commands")))))
+# JavaScript's \s, which Claude Code's frontmatter regex uses.
+JS_WS = "[\t\n\v\f\r    -     　﻿]"
+FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
+# The plain-YAML subset PyYAML and Bun.YAML read alike (see the header).
+FM_BAD_CHAR = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f  ﻿]|\r(?!\n)")
+SCALAR = r"[^\s&*!|>%@`{\[?#][^\r]*"
+FM_LINE = re.compile(rf"(?:[A-Za-z][A-Za-z0-9-]*:(?: +{SCALAR})?| +- +{SCALAR}| *(?:#[^\r]*)?) *\r?")
+IGNORED = {".DS_Store"}
+
+def listing(path):
+    return sorted(set(os.listdir(path)) - IGNORED) if os.path.isdir(path) else None
+
+# ---------- (a) only the reviewed components ----------
+expected = {
+    "": [".claude-plugin", "CHANGELOG.md", "README.md", "scripts", "skills"],
+    ".claude-plugin": ["plugin.json"],
+    "skills": ["archive-lines"],
+    "skills/archive-lines": ["SKILL.md"],
+    "scripts": ["line-save-chat.sh"],
+}
+for rel, want in expected.items():
+    got = listing(os.path.join(root, rel))
+    if got != want:
+        bad("a", f"{rel or '.'}/ contains {got}, expected exactly {want}")
+manifest = os.path.join(root, ".claude-plugin", "plugin.json")
+if os.path.isfile(manifest):
+    extra = set(json.load(open(manifest))) - {"name", "version", "description", "author",
+                                              "homepage", "repository", "license", "keywords"}
+    if extra:
+        bad("a", f"plugin.json declares {sorted(extra)} (components or behaviour no check reviews)")
 
 # ---------- skill ----------
 # A missing skill must not make the checks that read it look clean: (fm) (c)
@@ -111,10 +152,17 @@ else:
             bad(tag, "no readable frontmatter — cannot check")
         body = text
     else:
-        fm = yaml.safe_load(m.group(1)) or {}
+        block = m.group(1)
+        if FM_BAD_CHAR.search(block):
+            bad("fm", "frontmatter contains a control or line-separator character that "
+                      "PyYAML and Claude Code (Bun.YAML) read differently")
+        for n, line in enumerate(block.split("\n"), 1):
+            if not FM_LINE.fullmatch(line):
+                bad("fm", f"frontmatter line {n} is outside the plain YAML both parsers read alike: {line.strip()[:60]}")
+        fm = yaml.safe_load(block) or {}
         # BaseLoader builds no Python objects: every scalar stays a string, so
         # (f) can tell a literal true from yes/on/1/"true".
-        fm_raw = yaml.load(m.group(1), Loader=yaml.BaseLoader) or {}
+        fm_raw = yaml.load(block, Loader=yaml.BaseLoader) or {}
         if not isinstance(fm, dict) or not isinstance(fm_raw, dict):
             raise SystemExit("frontmatter is not a mapping")
         body = text[m.end():]
@@ -181,10 +229,12 @@ if fm is not None:
         raise SystemExit(f"allowed-tools has unsupported type {type(raw).__name__}")
     if sorted(tools) != sorted(ALLOWED_RULES):
         bad("e", f"allowed-tools must be exactly {sorted(ALLOWED_RULES)}; found {tools}")
-    if "hooks" in fm:
-        bad("e", "frontmatter sets hooks (they run without a permission prompt)")
+    extra_keys = set(fm) | set(fm_raw)
+    extra_keys = {str(k) for k in extra_keys} - FM_KEYS
+    if extra_keys:
+        bad("e", f"frontmatter sets keys outside the reviewed set: {sorted(extra_keys)}")
 if body is not None and re.search(r"!`|```!", body):
-    bad("e", "skill body has a !`command` or ```! block (runs before Claude sees the skill)")
+    bad("e", "skill body has a !`command` or ```! block (runs when the skill is invoked)")
 
 if fm is not None:
     # ---------- (f) ----------
@@ -217,12 +267,12 @@ report() {  # $1 = tag, $2 = description when clean
     fi
 }
 
-report a  "no commands/"
-report fm "the skill has readable frontmatter"
+report a  "only the reviewed components (no hooks, MCP/LSP servers, commands, agents, other skills)"
+report fm "the skill has frontmatter Claude Code reads the same way"
 report b  "every script path in the skill is \${CLAUDE_PLUGIN_ROOT}/scripts/line-save-chat.sh"
 report c  "no \$0, \$(dirname) or unbraced \$CLAUDE_PLUGIN_ROOT"
 report d  "no hard-coded per-machine path in the plugin"
-report e  "allowed-tools pre-approves only save/test/help of the bundled script"
+report e  "pre-approves only save/test/help; no other keys, hooks or !\`command\` blocks"
 report f  "disable-model-invocation: true"
 report n  "name: archive-lines"
 

@@ -33,7 +33,7 @@ brew install cliclick
 
 指令的完整名稱是 `/che-archive-lines:archive-lines`；skill 設了 `name: archive-lines`，所以沒有其他指令使用 `/archive-lines` 這個名字時，短名也能叫用。
 
-這個 skill 只在你主動輸入時執行，Claude 不會自己觸發，因為腳本會依座標點擊 LINE 視窗、移動滑鼠。它只預先放行三句指令：這支腳本加上 `save`、`test` 或 `help`。叫用 skill 的那一輪，這三句直接執行、不詢問，除非你的設定裡有符合的 deny／ask 規則，或受管設定（managed settings）另有規定。`calibrate` 和其他任何指令都不在預先放行的範圍內，照你平常的權限設定處理。你送出下一則訊息後，放行就失效。
+這個 skill 只在你主動輸入時執行，Claude 不會自己觸發，因為腳本會依座標點擊 LINE 視窗、移動滑鼠。它只預先放行三句指令：這支腳本加上 `save`、`test` 或 `help`。叫用 skill 的那一輪，不論你輸入的是哪個操作，這三句都直接執行、不詢問，除非你的設定裡有符合的 deny／ask 規則，或受管設定（managed settings）另有規定。`calibrate` 和其他任何指令都不在預先放行的範圍內，照你平常的權限設定處理。你送出下一則訊息後放行就失效：之後 Claude 若再執行這支腳本（例如你說「再存一次」），照你平常的權限設定處理，auto 模式下由 classifier 判斷，不一定會詢問。
 
 ### 第一次使用
 
@@ -68,7 +68,7 @@ brew install cliclick
 
 ## 設定檔
 
-校準資訊儲存在 `~/.config/che-archive-lines/config.json`：
+校準資訊儲存在 `~/.config/che-archive-lines/config.json`。手動修改時，三個偏移值都只能是整數（不能有前導零）；腳本讀到其他值會停下來，要求重新校準（[#149](https://github.com/PsychQuant/psychquant-claude-plugins/issues/149)）。
 
 ```json
 {

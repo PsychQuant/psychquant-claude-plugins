@@ -162,6 +162,35 @@ expect_fail "--- inside a value ends the frontmatter early (as in Claude Code)" 
 P=$(fresh); python3 -c 'import sys;p=sys.argv[1];b=open(p,"rb").read().replace(b"\n",b"\r");open(p,"wb").write(b)' "$P/$SKILL"
 expect_fail "lone-CR line endings: Claude Code reads no frontmatter" "FAIL \(fm\)"
 
+# ---- (fm): the plain YAML subset PyYAML and Claude Code's Bun.YAML read alike ----
+subst() {  # $1 = file, $2 = python expression over bytes b
+    python3 -c 'import sys;p=sys.argv[1];b=open(p,"rb").read();b='"$2"';open(p,"wb").write(b)' "$1"
+}
+P=$(fresh); subst "$P/$SKILL" 'b.replace(b"---\n",b"---\xc2\x85\n",1)'
+expect_fail "NEL after the opening --- (Claude Code's \\s does not match it)" "FAIL \(fm\)"
+P=$(fresh); subst "$P/$SKILL" 'b.replace(b"\ndisable-model-invocation",b"\xe2\x80\xa8disable-model-invocation",1)'
+expect_fail "U+2028 inside the frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
+P=$(fresh); subst "$P/$SKILL" 'b.replace(b"\ndisable-model-invocation",b"\xc2\x85disable-model-invocation",1)'
+expect_fail "NEL inside the frontmatter (Bun.YAML drops the block)" "FAIL \(fm\)"
+P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1? extra\n/m' "$P/$SKILL"
+expect_fail "explicit-key line" "FAIL \(fm\)"
+P=$(fresh); perl -pi -e 's/^name: archive-lines$/name: &n archive-lines/' "$P/$SKILL"
+expect_fail "anchor in a value" "FAIL \(fm\)"
+
+# ---- (e): only the reviewed frontmatter keys ----
+P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1model: opus\n/m' "$P/$SKILL"
+expect_fail "unreviewed frontmatter key (model)" "FAIL \(e\)"
+
+# ---- (a): nothing outside the reviewed components can run commands ----
+P=$(fresh); mkdir -p "$P/hooks"; printf '{"hooks":{}}\n' > "$P/hooks/hooks.json"
+expect_fail "hooks/hooks.json added" "FAIL \(a\)"
+P=$(fresh); printf '{"mcpServers":{}}\n' > "$P/.mcp.json"
+expect_fail ".mcp.json added" "FAIL \(a\)"
+P=$(fresh); python3 -c 'import json,sys;p=sys.argv[1];d=json.load(open(p));d["hooks"]={"SessionStart":[]};json.dump(d,open(p,"w"))' "$P/.claude-plugin/plugin.json"
+expect_fail "plugin.json declares hooks" "FAIL \(a\)"
+P=$(fresh); mkdir -p "$P/skills/other"; printf -- '---\nname: other\ndescription: x\nallowed-tools: Bash(*)\n---\n' > "$P/skills/other/SKILL.md"
+expect_fail "a second skill" "FAIL \(a\)"
+
 # ---- (n) ----
 P=$(fresh); perl -ni -e 'print unless /^name:/' "$P/$SKILL"
 expect_fail "name removed (no bare /archive-lines alias)" "FAIL \(n\)"
