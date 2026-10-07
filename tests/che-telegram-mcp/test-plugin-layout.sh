@@ -35,15 +35,25 @@
 #        only when the user types them. Claude Code before 2.1.218 recognises
 #        only true, so yes/on/1/"true" fail here. (g) and (h) each fail in
 #        their own safe direction.
-#   (i)  no skill runs commands outside allowed-tools: no `hooks:` in the
-#        frontmatter (hooks registered when the skill is invoked) and no
-#        !`command` or ```! block in the body (run before Claude sees the skill)
-#   (fm) every skill file has frontmatter Claude Code can read
+#   (i)  no skill registers `hooks` (they stay registered for the rest of the
+#        session, beyond the turn's grant) or has a !`command` / ```! block in
+#        its body (run when the skill is invoked, before Claude reads it; one
+#        that matches the skill's own allowed-tools runs with no prompt)
+#   (fm) every skill has frontmatter Claude Code reads the same way this test
+#        does (see below)
 #
 # The frontmatter boundary is found the way Claude Code finds it: the first
 # `---` after the opening line, anywhere — not only at the start of a line —
-# with JavaScript's \s (no Python-only NEL) and no newline translation (a lone
-# CR does not end a line for Claude Code). A
+# with JavaScript's \s (Python's also matches NEL and \x1c-\x1f) and no newline
+# translation (a lone CR does not end a line for Claude Code).
+# The block is parsed with PyYAML (YAML 1.1), Claude Code uses Bun.YAML (1.2),
+# and the two disagree outside plain block YAML: PyYAML treats NEL, U+2028 and
+# U+2029 as line breaks where Bun rejects the whole block (dropping
+# disable-model-invocation and name), and only PyYAML expands merge keys
+# (#139 verify round 3). So (fm) also requires the block to stay inside a plain
+# subset both read alike: no control or line-separator characters, and every
+# line a `key: value`, `key:`, `  - item`, comment or blank, with no anchor,
+# alias, tag, block scalar, flow collection or explicit key. A
 # `---` inside a value ends the frontmatter early in Claude Code, and the test
 # sees the same truncated block (#139 verify round 1 found the line-anchored
 # boundary passing a skill whose disable-model-invocation Claude Code dropped).
@@ -180,9 +190,23 @@ for srv, tools in documented.items():
 
 # ---------- frontmatter (real YAML parser) ----------
 # JavaScript's \s, which Claude Code's frontmatter regex uses. Python's \s also
-# matches NEL (U+0085), which JavaScript's does not.
+# matches NEL (U+0085) and \x1c-\x1f, which JavaScript's does not.
 JS_WS = "[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
 FM_RE = re.compile(f"---{JS_WS}*\n([\\s\\S]*?)---{JS_WS}*\n?")
+# The plain-YAML subset PyYAML and Bun.YAML read alike (see the header).
+FM_BAD_CHAR = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029\ufeff]|\r(?!\n)")
+SCALAR = r"[^\s&*!|>%@`{\[?#][^\r]*"
+FM_LINE = re.compile(rf"(?:[A-Za-z][A-Za-z0-9-]*:(?: +{SCALAR})?| +- +{SCALAR}| *(?:#[^\r]*)?) *\r?")
+
+def subset_problems(raw):
+    """Lines of a frontmatter block outside the subset both parsers read alike."""
+    out = []
+    if FM_BAD_CHAR.search(raw):
+        out.append("contains a control or line-separator character PyYAML and Bun.YAML read differently")
+    for n, line in enumerate(raw.split("\n"), 1):
+        if not FM_LINE.fullmatch(line):
+            out.append(f"line {n} is outside the plain YAML both parsers read alike: {line.strip()[:60]}")
+    return out
 
 def frontmatter(path):
     """Return (dict, raw_text, strings_dict, body) or (None, None, None, text)
@@ -213,9 +237,12 @@ def tool_list(value):
     raise SystemExit(f"allowed-tools has unsupported type {type(value).__name__}")
 
 def router_invocable(skill, key="disable-model-invocation"):
-    """(g): absent, or the literal false. Anything else may read as true."""
-    strings = meta_strings[skill]
-    return key not in strings or str(strings[key]).strip().lower() == "false"
+    """(g): absent, or the literal false, in BOTH views — BaseLoader keeps a
+    merge key (<<) as a literal key, safe_load expands it like Claude Code."""
+    data, strings = meta[skill], meta_strings[skill]
+    if key not in data and key not in strings:
+        return True
+    return data.get(key) is False and str(strings.get(key, "")).strip().lower() == "false"
 
 def literal_true(skill, key="disable-model-invocation"):
     """Only the unquoted literal true — used by (h)."""
@@ -251,6 +278,8 @@ for path, skill in skill_files:
         bad("fm", f"{rel}: no frontmatter Claude Code can read (must start with ---)")
         continue
     meta[skill], meta_strings[skill] = data, strings
+    for problem in subset_problems(raw):
+        bad("fm", f"{rel}: frontmatter {problem}")
     # (i) commands that would run outside allowed-tools
     if "hooks" in data:
         bad("i", f"{rel}: frontmatter sets hooks (they run without a permission prompt)")
@@ -314,7 +343,7 @@ report a  "bin/ holds only executable *-wrapper.sh files"
 report b  ".mcp.json commands are \${CLAUDE_PLUGIN_ROOT}/bin/*-wrapper.sh and executable"
 report b2 "every wrapper assigns DESIRED_VERSION exactly once, as a literal"
 report c  "hook commands quote \${CLAUDE_PLUGIN_ROOT}"
-report fm "every skill file has readable frontmatter"
+report fm "every skill has frontmatter Claude Code reads the same way"
 report d  "allowed-tools list only this plugin's documented MCP tools"
 if [ -e "$PLUGIN_DIR/commands" ]; then
     fail "(e) commands/ exists: $(ls "$PLUGIN_DIR/commands" | tr '\n' ' ')"
