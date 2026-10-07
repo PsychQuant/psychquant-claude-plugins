@@ -55,7 +55,7 @@ parse_window_info() {
     WIN_W=$(echo "$info" | awk '{print $3}')
     WIN_H=$(echo "$info" | awk '{print $4}')
     if ! is_int "$WIN_X" || ! is_int "$WIN_Y" || ! is_int "$WIN_W" || ! is_int "$WIN_H"; then
-        echo -e "${RED}錯誤：無法取得 LINE 視窗位置（osascript 回傳的不是整數）${NC}"
+        echo -e "${RED}錯誤：無法取得 LINE 視窗位置（LINE 沒開、沒有聊天視窗，或 osascript 回傳的不是整數）${NC}"
         exit 1
     fi
 }
@@ -74,7 +74,7 @@ load_config() {
     fi
 
     if ! is_int "$OFFSET_X" || ! is_int "$OFFSET_Y" || ! is_int "$MENU_OFFSET_Y"; then
-        echo -e "${RED}錯誤：設定檔 $CONFIG_FILE 的偏移值必須是整數（不能有前導零），請重新執行 calibrate${NC}"
+        echo -e "${RED}錯誤：設定檔 $CONFIG_FILE 的偏移值必須是整數（最多六位數，不能有前導零或正號），請重新執行 calibrate${NC}"
         return 2
     fi
     return 0
@@ -172,7 +172,7 @@ calibrate() {
     read -r menu_input
     local menu_offset_y=${menu_input:-240}
     if ! is_int "$menu_offset_y"; then
-        echo -e "${RED}錯誤：請輸入整數像素值（例如 240），設定檔沒有寫入${NC}"
+        echo -e "${RED}錯誤：請輸入整數像素值（例如 240；不能有前導零或正號），設定檔沒有寫入${NC}"
         exit 1
     fi
 

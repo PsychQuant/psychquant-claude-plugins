@@ -82,9 +82,17 @@ expect_rejected() {  # $1 name, then script args; the run must fail, run no payl
 # payload uses an unbraced $IFS for the space. (A ${IFS} payload is cut off at
 # its } by that grep, which hides the bug instead of testing it.)
 PAYLOAD="a[\$(touch\$IFS$MARK)]"
-case "$MARK" in
-    *[[:space:],:}]*) echo "✗ scratch path $MARK contains a space, comma, colon or } — the payload would be cut off and every payload case would pass vacuously"; exit 1 ;;
-esac
+# Positive control: the payload must really run a command when bash does
+# arithmetic on it here, or every payload case below would pass vacuously
+# (e.g. a scratch path with a character that cuts the payload short).
+# Run it in a fresh shell with the script's own interpreter (its shebang), as
+# the script runs: this file uses `set -u`, under which bash stops at the unset
+# array `a` before it evaluates the subscript, so an in-process check would
+# report a live payload as dead.
+SHEBANG_BASH=$(head -1 "$TARGET" | sed 's/^#! *//')
+"$SHEBANG_BASH" -c 'v="$1"; : $((v))' _ "$PAYLOAD" 2>/dev/null
+if [ -e "$MARK" ]; then rm -f "$MARK"
+else echo "✗ positive control: the payload does not run in this environment ($MARK) — payload cases would be vacuous"; exit 1; fi
 [ -x "$TARGET" ] || { echo "✗ $TARGET is not executable"; exit 1; }
 
 echo "test-config-validation.sh (#149)"
@@ -126,7 +134,13 @@ expect_rejected "menu_offset_y value on the next line (grep cannot read it)" sav
 
 # ---- values from osascript and cliclick reach $((…)) too ----
 reset; write_config -20 30 240
-export STUB_WINDOW="$PAYLOAD 100 800 600"; expect_rejected "window position from osascript is a payload" save; unset STUB_WINDOW
+export STUB_WINDOW="$PAYLOAD 100 800 600"; expect_rejected "window x from osascript is a payload" save; unset STUB_WINDOW
+reset; write_config -20 30 240
+export STUB_WINDOW="100 $PAYLOAD 800 600"; expect_rejected "window y from osascript is a payload" test; unset STUB_WINDOW
+reset; write_config -20 30 240
+export STUB_WINDOW="100 100 $PAYLOAD 600"; expect_rejected "window width from osascript is a payload" save; unset STUB_WINDOW
+reset; write_config -20 30 240
+export STUB_WINDOW=" "; expect_rejected "no LINE window (test)" test; unset STUB_WINDOW
 
 # ---- messages: a bad config is not reported as "not calibrated" ----
 reset; write_config -20 30 "x+1"; run save
@@ -141,6 +155,12 @@ reset
 printf '\n%s\n' "$PAYLOAD" | run calibrate; rc=$?
 if [ "$rc" -ne 0 ] && [ ! -e "$CONFIG" ] && [ ! -e "$MARK" ]; then ok "calibrate refuses a non-integer menu offset and writes nothing"
 else bad "calibrate payload (exit $rc, config written: $([ -e "$CONFIG" ] && echo yes || echo no))"; fi
+reset
+export STUB_POS="500,$PAYLOAD"
+printf '\n250\n' | run calibrate; rc=$?
+unset STUB_POS
+if [ "$rc" -ne 0 ] && [ ! -e "$CONFIG" ] && [ ! -e "$MARK" ]; then ok "calibrate refuses a cursor y that is not an integer"
+else bad "calibrate cursor-y payload (exit $rc)"; fi
 reset
 export STUB_POS="$PAYLOAD,300"
 printf '\n250\n' | run calibrate; rc=$?
