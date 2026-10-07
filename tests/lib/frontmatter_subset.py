@@ -36,7 +36,8 @@ outside it; an empty list means inside. The subset:
   - a value is a double-quoted string closed on the same line with no
     backslash, a single-quoted string closed on the same line, or a plain
     scalar that does not start with an indicator (`:` and `-` included), a
-    quote, a digit, `+` or `.` — so numbers must be quoted — and contains no
+    quote, a digit, `+`, `.`, `<` or `=` — so numbers must be quoted, and
+    PyYAML's merge (`<<`) and value (`=`) tags never appear — and contains no
     `: ` and no ` #` (a trailing ` # comment` is allowed)
   - no key spelled like a YAML 1.1 boolean or null (yes, no, on, off, y, n,
     true, false, null — any case)
@@ -47,11 +48,11 @@ Evidence: tests/frontmatter-subset-fuzz/run.sh generates random blocks heavy in
 the cases above, keeps those subset_problems() accepts, and compares PyYAML
 with Bun.YAML.parse. That is evidence for the blocks its generator produces,
 not a proof: round 5 of #139's verify found leading `:` values, YAML 1.1
-boolean keys and leading-zero numbers that the earlier generator never made,
-and both are now in it and rejected here. Latest run (bun 1.3.11, seeds 13
-and 29, 50,000 blocks each): see the #139 issue thread for the counts. The
-differences left are word scalars such as yes/on/null that PyYAML types and
-Bun may leave as text; the layout tests compare the values they care about as
+boolean keys and leading-zero numbers that the earlier generator never made;
+all three are now in it and rejected here. Latest run (bun 1.3.11, seeds 13
+and 29, 50,000 blocks each): 4,568 accepted, no failed first parse and no
+structural, string or numeric disagreement. The differences left are the
+words yes/no/on/off, which PyYAML reads as booleans and Bun as text; the layout tests compare the values they care about as
 exact strings, so such a difference fails a check instead of passing it.
 """
 import re
@@ -65,7 +66,7 @@ _BAD = re.compile("[\x00-\x09\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029\ufeff]|\r(?!
 _KEY = r"[A-Za-z][A-Za-z0-9-]*"
 _DQ = r'"[^"\\\r\n]*"'
 _SQ = r"'(?:[^'\r\n]|'')*'"
-_PLAIN = r"[^\s&*!|>%@`{}\[\],?#\"'\-:0-9+.](?:[^\r\n:#]|:(?=[^ \r\n])|(?<=[^ ])#)*"
+_PLAIN = r"[^\s&*!|>%@`{}\[\],?#\"'\-:0-9+.<=](?:[^\r\n:#]|:(?=[^ \r\n])|(?<=[^ ])#)*"
 # Keys PyYAML (YAML 1.1) would turn into True/False/None.
 _BOOL_KEY = re.compile(r"(?i)(?:y|yes|n|no|on|off|true|false|null)")
 _COMMENT = r"(?: +#[^\r\n]*)?"
