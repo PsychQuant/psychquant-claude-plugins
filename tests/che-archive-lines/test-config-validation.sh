@@ -35,9 +35,14 @@ echo "\$*" >> "$SCRATCH/clicks.log"
 [ "\$1" = p ] && echo "\${STUB_POS:-500,300}"
 exit 0
 EOF
+# STUB_OSA_FAIL=1 makes the window query fail the way real osascript does when
+# LINE is not running or has no window (an AppleScript error, exit status 1).
 cat > "$STUB/osascript" <<'EOF'
 #!/bin/bash
-case "$*" in *"System Events"*) echo "${STUB_WINDOW:-100 100 800 600}" ;; esac
+case "$*" in *"System Events"*)
+    if [ -n "${STUB_OSA_FAIL:-}" ]; then echo "execution error: Can't get window 1 of process \"LINE\". (-1719)" >&2; exit 1; fi
+    echo "${STUB_WINDOW:-100 100 800 600}" ;;
+esac
 exit 0
 EOF
 chmod +x "$STUB/cliclick" "$STUB/osascript"
@@ -140,7 +145,19 @@ export STUB_WINDOW="100 $PAYLOAD 800 600"; expect_rejected "window y from osascr
 reset; write_config -20 30 240
 export STUB_WINDOW="100 100 $PAYLOAD 600"; expect_rejected "window width from osascript is a payload" save; unset STUB_WINDOW
 reset; write_config -20 30 240
-export STUB_WINDOW=" "; expect_rejected "no LINE window (test)" test; unset STUB_WINDOW
+export STUB_WINDOW=" "; expect_rejected "blank window info (test)" test; unset STUB_WINDOW
+# Real osascript exits 1 when LINE has no window: each command must say so,
+# not end silently under set -e.
+for cmd in save test; do
+    reset; write_config -20 30 240
+    export STUB_OSA_FAIL=1; run "$cmd"; rc=$?; unset STUB_OSA_FAIL
+    if [ "$rc" -ne 0 ] && [ -z "$(clicks)" ] && grep -q '無法取得 LINE 視窗資訊' "$SCRATCH/out.log"; then ok "no LINE window ($cmd): reports it, clicks nothing"
+    else bad "no LINE window ($cmd) (exit $rc, clicks: $(clicks | tr '\n' ' '))"; fi
+done
+reset
+export STUB_OSA_FAIL=1; printf '\n\n' | run calibrate; rc=$?; unset STUB_OSA_FAIL
+if [ "$rc" -ne 0 ] && [ ! -e "$CONFIG" ] && grep -q '無法取得 LINE 視窗資訊' "$SCRATCH/out.log"; then ok "no LINE window (calibrate): reports it, writes nothing"
+else bad "no LINE window (calibrate) (exit $rc)"; fi
 
 # ---- messages: a bad config is not reported as "not calibrated" ----
 reset; write_config -20 30 "x+1"; run save

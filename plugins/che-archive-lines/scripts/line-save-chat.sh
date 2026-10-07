@@ -55,7 +55,7 @@ parse_window_info() {
     WIN_W=$(echo "$info" | awk '{print $3}')
     WIN_H=$(echo "$info" | awk '{print $4}')
     if ! is_int "$WIN_X" || ! is_int "$WIN_Y" || ! is_int "$WIN_W" || ! is_int "$WIN_H"; then
-        echo -e "${RED}錯誤：無法取得 LINE 視窗位置（LINE 沒開、沒有聊天視窗，或 osascript 回傳的不是整數）${NC}"
+        echo -e "${RED}錯誤：LINE 視窗的位置或大小不是整數（osascript 回傳了非預期的值）${NC}"
         exit 1
     fi
 }
@@ -126,12 +126,13 @@ calibrate() {
 
     # 啟動 LINE
     echo "啟動 LINE..."
-    osascript -e 'tell application "LINE" to activate' 2>/dev/null
+    osascript -e 'tell application "LINE" to activate' 2>/dev/null || true
     sleep 0.5
 
     # 取得視窗資訊
     local info
-    info=$(get_window_info)
+    # LINE 沒開或沒有視窗時 osascript 會失敗；不讓 set -e 在這裡安靜結束，改由下面說明原因。
+    info=$(get_window_info) || info=""
     if [ -z "$info" ]; then
         echo -e "${RED}錯誤：無法取得 LINE 視窗資訊${NC}"
         echo "請確認 LINE 已開啟並有聊天視窗"
@@ -172,7 +173,7 @@ calibrate() {
     read -r menu_input
     local menu_offset_y=${menu_input:-240}
     if ! is_int "$menu_offset_y"; then
-        echo -e "${RED}錯誤：請輸入整數像素值（例如 240；不能有前導零或正號），設定檔沒有寫入${NC}"
+        echo -e "${RED}錯誤：請輸入整數像素值（例如 240；最多六位數，不能有前導零或正號），設定檔沒有寫入${NC}"
         exit 1
     fi
 
@@ -196,12 +197,18 @@ test_click() {
     echo "測試點擊「⋮」按鈕..."
 
     # 啟動 LINE
-    osascript -e 'tell application "LINE" to activate' 2>/dev/null
+    osascript -e 'tell application "LINE" to activate' 2>/dev/null || true
     sleep 0.3
 
     # 取得視窗資訊
     local info
-    info=$(get_window_info)
+    # LINE 沒開或沒有視窗時 osascript 會失敗；不讓 set -e 在這裡安靜結束，改由下面說明原因。
+    info=$(get_window_info) || info=""
+    if [ -z "$info" ]; then
+        echo -e "${RED}錯誤：無法取得 LINE 視窗資訊${NC}"
+        echo "請確認 LINE 已開啟並有聊天視窗"
+        exit 1
+    fi
     parse_window_info "$info"
 
     # 計算絕對座標
@@ -228,12 +235,13 @@ save_chat() {
     echo "自動儲存 LINE 聊天..."
 
     # 啟動 LINE
-    osascript -e 'tell application "LINE" to activate' 2>/dev/null
+    osascript -e 'tell application "LINE" to activate' 2>/dev/null || true
     sleep 0.3
 
     # 取得視窗資訊
     local info
-    info=$(get_window_info)
+    # LINE 沒開或沒有視窗時 osascript 會失敗；不讓 set -e 在這裡安靜結束，改由下面說明原因。
+    info=$(get_window_info) || info=""
     if [ -z "$info" ]; then
         echo -e "${RED}錯誤：無法取得 LINE 視窗資訊${NC}"
         exit 1
