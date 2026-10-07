@@ -184,7 +184,7 @@ for v in '1.0' '1e0'; do
 done
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1disable-model-invocation: false\n/m' "$P/skills/telegram-messaging/SKILL.md"
 expect_pass "router with disable-model-invocation: false is accepted"
-# (i): no commands outside allowed-tools
+# (i): no hooks and no !`command` / ```! blocks (they run when the skill is invoked)
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1hooks:\n  PreToolUse:\n    - hooks:\n        - type: command\n          command: "true"\n/m' "$P/skills/chats/SKILL.md"
 expect_fail "skill registers hooks" "FAIL \(i\)"
 P=$(fresh); printf '\nCurrent date: !`date`\n' >> "$P/skills/chats/SKILL.md"
@@ -207,13 +207,13 @@ expect_fail "NEL inside send's frontmatter (Bun.YAML drops the block)" "FAIL \(f
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1? extra\n/m' "$P/skills/chats/SKILL.md"
 expect_fail "explicit-key line" "FAIL \(fm\)"
 P=$(fresh); perl -0pi -e 's/^(description: [^\n]*\n)/$1_base: &b\n  disable-model-invocation: true\n<<: *b\n/m' "$P/skills/telegram-messaging/SKILL.md"
-expect_fail "merge key disables the router (BaseLoader keeps << literal)" "FAIL \(g\)"
+expect_fail "merge key on the router (outside the subset, so (g) cannot pass)" "FAIL \(g\)"
 P=$(fresh); subst "$P/skills/send/SKILL.md" 'b.replace(b"\r\ndisable-model-invocation",b"\xe2\x80\xa9disable-model-invocation",1)'
 expect_fail "U+2029 inside send's frontmatter" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^description: [^\r]*/description: "Send a Telegram message\r\nvia: the personal account"/' "$P/skills/send/SKILL.md"
 expect_fail "quoted value left open, next line looks like a key (PyYAML joins, Bun rejects)" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^(description: [^\r]*)/$1 .../' "$P/skills/send/SKILL.md"
-expect_fail "... inside a value (Bun.YAML ends the document there)" "FAIL \(fm\)"
+expect_fail "... inside a value (bun 1.3.11 ends the document there)" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^(description: [^\r]*)/$1 .../' "$P/skills/send/SKILL.md"
 expect_fail "unreadable frontmatter makes (h) unverifiable, not passed" "FAIL \(h\)"
 P=$(fresh); perl -pi -e 's/^(description: [^\n]*)/$1 .../' "$P/skills/telegram-messaging/SKILL.md"
