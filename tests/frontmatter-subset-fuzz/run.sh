@@ -20,6 +20,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB="$(cd "$HERE/../lib" && pwd)"
 command -v bun >/dev/null 2>&1 || { echo "✗ bun not found — install from https://bun.sh"; exit 1; }
+python3 -c "import yaml" 2>/dev/null || { echo "✗ PyYAML not found for $(command -v python3) — pip install pyyaml"; exit 1; }
 N="${1:-50000}"; shift || true
 SEEDS=("$@"); [ "${#SEEDS[@]}" -gt 0 ] || SEEDS=(13 29)
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/fm-fuzz-XXXXXX") || exit 1

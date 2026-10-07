@@ -130,6 +130,8 @@ else:
         extra = set(entries[0]) - {"name", "version", "description", "author", "source", "category"}
         if extra:
             bad("a", f"marketplace entry declares {sorted(extra)} (Claude Code merges them into the plugin)")
+        if entries[0].get("source") != "./plugins/che-archive-lines":
+            bad("a", f"marketplace entry source is {entries[0].get('source')!r}, not ./plugins/che-archive-lines (the directory this test checks)")
 manifest = os.path.join(root, ".claude-plugin", "plugin.json")
 if os.path.isfile(manifest):
     extra = set(json.load(open(manifest))) - {"name", "version", "description", "author",

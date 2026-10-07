@@ -186,7 +186,7 @@ expect_fail "quoted value left open, next line looks like a key (PyYAML joins, B
 P=$(fresh); perl -pi -e 's/^(disable-model-invocation: true)$/$1\ndescription: "Save the LINE chat #x\ndisable-model-invocation: false\n#"/' "$P/$SKILL"; perl -ni -e 'print unless /^description: [^"]/' "$P/$SKILL"
 expect_fail "open quote that Claude Code's re-parse turns into disable-model-invocation: false" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^(description: .*)$/$1 .../' "$P/$SKILL"
-expect_fail "... inside a value (Bun.YAML ends the document there)" "FAIL \(fm\)"
+expect_fail "... inside a value (bun 1.3.11 ends the document there)" "FAIL \(fm\)"
 P=$(fresh); perl -pi -e 's/^name: archive-lines$/name:\tarchive-lines/' "$P/$SKILL"
 expect_fail "tab in the frontmatter" "FAIL \(fm\)"
 P=$(fresh); perl -0pi -e 's/^(name: archive-lines\n)/$1name: other\n/m' "$P/$SKILL"
@@ -212,6 +212,8 @@ P=$(fresh); mkdir -p "$P/bin"; printf '#!/bin/bash\n' > "$P/bin/line-save-chat.s
 expect_fail "bin/ added" "FAIL \(a\)"
 P=$(fresh); python3 -c 'import json,sys;p=sys.argv[1];d=json.load(open(p));[e.update(hooks={"SessionStart":[]}) for e in d["plugins"] if e["name"]=="che-archive-lines"];json.dump(d,open(p,"w"))' "$SCRATCH/tree/.claude-plugin/marketplace.json"
 expect_fail "marketplace entry declares hooks" "FAIL \(a\)"
+P=$(fresh); python3 -c 'import json,sys;p=sys.argv[1];d=json.load(open(p));[e.update(source={"source":"github","repo":"someone/else"}) for e in d["plugins"] if e["name"]=="che-archive-lines"];json.dump(d,open(p,"w"))' "$SCRATCH/tree/.claude-plugin/marketplace.json"
+expect_fail "marketplace entry source points elsewhere" "FAIL \(a\)"
 
 # ---- (n) ----
 P=$(fresh); perl -ni -e 'print unless /^name:/' "$P/$SKILL"

@@ -17,8 +17,12 @@ rounds 1–4 and in the fuzz run below:
     it; Bun rejects the block, and Claude Code's rewrite can then read the
     following lines as keys (e.g. disable-model-invocation: false) while the
     test still sees one long description.
-  - Bun treats `---` and `...` as document markers even inside a value
-    (`description: x ...` reads as `x`).
+  - Bun 1.3.11 (the fuzz host's) treats `---` and `...` as document markers
+    even inside a value (`description: x ...` reads as `x`). The Bun 1.4.x
+    inside current Claude Code (2.1.293 embeds 1.4.3) reads them literally; the
+    ban below stays because it only rejects more and Bun versions differ.
+  - PyYAML reads unquoted 010 as octal 8, 1:30 as 90 and yes/on/no/off/null as
+    booleans or None — also as keys; Bun reads 010 as 10, 1:30 and on as text.
 
 So a test may only trust PyYAML on frontmatter inside a plain subset where both
 agree and Bun's first parse succeeds. subset_problems() returns why a block is
@@ -30,18 +34,24 @@ outside it; an empty list means inside. The subset:
     `# comment` | blank, optionally ending in CR (CRLF files)
   - a value is a double-quoted string closed on the same line with no
     backslash, a single-quoted string closed on the same line, or a plain
-    scalar that does not start with an indicator or a quote and contains no
+    scalar that does not start with an indicator (`:` and `-` included), a
+    quote, a digit, `+` or `.` — so numbers must be quoted — and contains no
     `: ` and no ` #` (a trailing ` # comment` is allowed)
+  - no key spelled like a YAML 1.1 boolean or null (yes, no, on, off, y, n,
+    true, false, null — any case)
   - list items only under a `key:` with no value, all at one indentation
   - no key twice
 
 Evidence: tests/frontmatter-subset-fuzz/run.sh generates random blocks heavy in
 the cases above, keeps those subset_problems() accepts, and compares PyYAML
-with Bun.YAML.parse. Two seeds × 50,000 blocks (11,433 accepted) on bun 1.3.11:
-Bun's first parse never failed, and structure and string values always agreed.
-The only differences left are scalar types (yes/on/1e0 are booleans or strings
-depending on the reader); the layout tests compare the values they care about
-as exact strings, so a type difference fails a check instead of passing it.
+with Bun.YAML.parse. That is evidence for the blocks its generator produces,
+not a proof: round 5 of #139's verify found leading `:` values, YAML 1.1
+boolean keys and leading-zero numbers that the earlier generator never made,
+and both are now in it and rejected here. Latest run (bun 1.3.11, seeds 13
+and 29, 50,000 blocks each): see the #139 issue thread for the counts. The
+differences left are word scalars such as yes/on/null that PyYAML types and
+Bun may leave as text; the layout tests compare the values they care about as
+exact strings, so such a difference fails a check instead of passing it.
 """
 import re
 
@@ -54,7 +64,9 @@ _BAD = re.compile("[\x00-\x09\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029\ufeff]|\r(?!
 _KEY = r"[A-Za-z][A-Za-z0-9-]*"
 _DQ = r'"[^"\\\r\n]*"'
 _SQ = r"'(?:[^'\r\n]|'')*'"
-_PLAIN = r"[^\s&*!|>%@`{}\[\],?#\"'-](?:[^\r\n:#]|:(?=[^ \r\n])|(?<=[^ ])#)*"
+_PLAIN = r"[^\s&*!|>%@`{}\[\],?#\"'\-:0-9+.](?:[^\r\n:#]|:(?=[^ \r\n])|(?<=[^ ])#)*"
+# Keys PyYAML (YAML 1.1) would turn into True/False/None.
+_BOOL_KEY = re.compile(r"(?i)(?:y|yes|n|no|on|off|true|false|null)")
 _COMMENT = r"(?: +#[^\r\n]*)?"
 _VALUE = rf"(?:{_DQ}|{_SQ}|{_PLAIN})"
 _KEY_ONLY = re.compile(rf"({_KEY}):{_COMMENT} *\r?")
@@ -81,6 +93,8 @@ def subset_problems(block):
     for n, line in enumerate(block.split("\n"), 1):
         m = _KEY_ONLY.fullmatch(line) or _KEY_VALUE.fullmatch(line)
         if m:
+            if _BOOL_KEY.fullmatch(m.group(1)):
+                out.append(f"line {n}: key {m.group(1)} reads as a boolean or null in PyYAML (YAML 1.1)")
             if m.group(1) in seen:
                 out.append(f"line {n}: duplicate key {m.group(1)}")
             seen.add(m.group(1))
