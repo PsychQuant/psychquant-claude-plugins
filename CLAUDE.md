@@ -18,7 +18,6 @@ psychquant-claude-plugins/
 │   ├── ai-docs-guide/           # Claude Code + OpenAI + Gemini 文檔查詢
 │   ├── archive-first/           # 防止 AI 刪除 archived/ 目錄
 │   ├── che-apple-mail-mcp/      # Apple Mail MCP + 歸檔
-│   ├── che-archive-lines/       # LINE 聊天記錄歸檔
 │   ├── che-bot-toolkit/         # Bot 開發工具集
 │   ├── che-creative-suite/      # 圖形處理工作流協調器
 │   ├── che-dropbox-ignore/      # Dropbox 同步排除管理
@@ -26,7 +25,6 @@ psychquant-claude-plugins/
 │   ├── che-ical-mcp/            # macOS 行事曆 & 提醒事項
 │   ├── che-pixel-mcp/           # 點陣圖形 MCP Server (Core Image)
 │   ├── che-svg-mcp/             # SVG 向量圖形 MCP Server
-│   ├── che-telegram-mcp/        # Telegram Bot + 個人帳號 MCP
 │   ├── che-things-mcp/          # Things 3 任務管理
 │   ├── che-word-mcp/            # Word 文件處理
 │   ├── che-xcode-mcp/           # Xcode / App Store Connect
@@ -81,31 +79,6 @@ psychquant-claude-plugins/
 - 支援口頭描述的功能測試
 - 支援 `.shiny-tests.yaml` 定義測試案例
 - 同時觀察前端 UI 變化和後端 R 輸出
-
-### che-archive-lines (v1.1.0)
-
-**用途**: 自動化 LINE macOS 聊天記錄的歸檔
-
-**依賴**:
-- `cliclick` CLI 工具（`brew install cliclick`）
-- LINE macOS 已安裝並登入
-- Accessibility 權限
-
-**使用**（沒有其他指令同名時，短名 `/archive-lines` 也可以）:
-```bash
-/che-archive-lines:archive-lines calibrate   # 第一次使用：Claude 顯示指令，在自己的終端機執行
-/che-archive-lines:archive-lines save        # 自動儲存當前聊天
-/che-archive-lines:archive-lines test        # 測試點擊位置
-```
-
-**功能**:
-- 自動化 LINE 的「儲存聊天」功能
-- 使用相對座標，視窗移動時自動調整
-- 設定儲存在 `~/.config/che-archive-lines/config.json`
-
-**技術說明**:
-- LINE 使用 Qt 框架，不支援 macOS Accessibility API
-- 使用 cliclick 進行座標點擊自動化
 
 ### ai-docs-guide (v1.0.0)
 
