@@ -230,7 +230,7 @@
     },
     {
       "name": "mcp-tcc",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "MCP 開發時的 macOS TCC 授權：診斷 Apple Events／EventKit 授權卡住，並把 Info.plist、entitlements 與可行動的授權錯誤訊息做進 Swift MCP。取自 che-ical-mcp，補上 Apple Events。",
       "author": {
         "name": "Che Cheng"
