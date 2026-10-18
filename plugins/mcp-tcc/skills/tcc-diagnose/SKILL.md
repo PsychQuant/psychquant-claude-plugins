@@ -101,7 +101,7 @@ otool -s __TEXT __info_plist <binary 路徑> | grep -c "Contents of"            
 | `Signature=adhoc`、`TeamIdentifier=not set` | ad-hoc。他人實測 macOS 26 上無法新建授權 [E6]（既有授權可能仍有效）。專案明明簽過、`~/bin` 的卻是 ad-hoc，要查是怎麼裝上去的：ical 的 `make install` 就是把新 build 簽成 ad-hoc（要裝 Developer ID 簽的開發版用 `make install-signed`，未公證；公證散布走 `release-signed`）[E23]；`mcp-sign-pipeline` 範本新建的 `install:` 同樣如此 [E21]；`mcp-debug` 的重建同步也是 [E18]。另外，對**已簽章**的 binary 再執行 `codesign --force --sign -` 會抹掉簽章與 entitlements [E17] |
 | `flags=...(runtime)` 且 entitlements 空 | **高風險組合**。hardened runtime 缺對應 entitlement 時，tccd 可能直接不彈窗：Calendar 在 macOS 26.5.1 有一次日誌樣本 [E4]；Apple Events 是類推 [E5] |
 | `otool` 計數為 0 | 沒嵌 Info.plist，沒有 usage description；`NSAppleEventsUsageDescription` 在使用 Apple Events API 時為必要 [E3] |
-| `Identifier=` 是 `<名稱>-<一串 hash>` | 沒有 Info.plist 時的預設 identifier。嵌入 Info.plist 後**推測**會變成 `CFBundleIdentifier`，既有授權可能因此對不上（類推）[E30] |
+| `Identifier=` 是 `<名稱>-<一串 hash>` | 沒有 Info.plist、又被 `codesign --force --sign -` 重簽的結果；linker 自簽與 Developer ID 簽的沒有 plist 時是純檔名。**嵌入 Info.plist 後，不論 ad-hoc 或 Developer ID 一律變成 `CFBundleIdentifier`** [E30]；以舊 identifier 取得的授權因此會對不上（類推）[E36] |
 
 各服務該有的 key：
 

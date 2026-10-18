@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.1 — 2026-10-18
+
+第一次拿 `tcc-instrument` 實際套用到一個專案（che-things-mcp 1.7.0，簽章、公證、發布）之後的更正。新增的主張都有一手輸出，沒有升級任何既有的類推。
+
+### Changed
+
+- **E30（identifier 規則）**：原本寫「沒有 Info.plist 時是 `CheThingsMCP-<hash>`」，實測是：有嵌 Info.plist 時不論 ad-hoc 或 Developer ID 一律是 `CFBundleIdentifier`；沒有時 linker 自簽與 Developer ID 簽的是檔名，`codesign --sign -` 重簽的才是「檔名-hash」。依一列一種狀態的規則，「既有授權會對不上」拆成新的 E36，維持類推。
+- **E7（`exclude`）**：原本只提 `Info.plist`，「為什麼要排除沒有查證」。實跑：`Entitlements.plist` 放在同一 target 目錄時，不排除會有 unhandled file 警告。`tcc-instrument` 的 `Package.swift` 範例改成兩個都列。
+- `tcc-instrument` 的「Apple Events 版（設計，非已出貨）」改為有參考實作（che-things-mcp 1.7.0），但明說授權對話框與授權持久性**沒有實機驗證**。錯誤訊息的修復順序改成 System Settings 在前、`--setup` 在後，路徑要加引號，不再假設使用者的終端機是 Terminal.app。
+
+### Added
+
+- 證據表 E36–E40（共 40 條）：授權對不上（類推）；`swiftbuild` 下 `--arch` 都寫同一個目錄；`mcpb pack` 的輸出檔名；公證的驗證指令（`spctl -t install`，`-t execute` 對裸 CLI binary 一律 rejected）；`NSAppleScript` 的錯誤字典 key。
+- `tcc-instrument` 新增「簽章前先確認被簽的是新 binary」與公證驗證的說明。
+- 「還沒有證據的地方」新增兩項：被明確拒絕後是否還會彈窗；已簽章的 Apple Events binary 上對話框是否出現、授權是否持久。
+
 ## 0.1.0 — 2026-10-18
 
 初版。
