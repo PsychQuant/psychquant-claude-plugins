@@ -23,7 +23,13 @@ chmod +x ~/bin/CheThingsMCP
 
 Or download `.mcpb` from [Releases](https://github.com/kiki830621/che-things-mcp/releases) for one-click install.
 
-On first use, macOS will prompt for **Accessibility** permission for AppleScript - click "Allow".
+Things 3 is controlled through Apple Events, so macOS asks for the **Automation** permission (not Accessibility). If a tool call fails with `Not authorized to send Apple events`:
+
+1. Open System Settings > Privacy & Security > Automation, find the app that launches the server (Claude Desktop, Claude Code, your terminal app or your editor) and turn on **Things 3** under it.
+2. If that app has no entry: open Things 3 and run `~/bin/CheThingsMCP --setup` in the terminal app you use, and click Allow. That grants the terminal app only; an app that starts the server by itself still needs its own entry from step 1.
+3. `~/bin/CheThingsMCP --print-tcc-path` shows the current status without a dialog.
+
+To update an installed binary, remove it first (`rm -f ~/bin/CheThingsMCP`) and download again; overwriting a binary that a running process holds open can leave a stale code-signature cache and macOS then kills the new one.
 
 ### Step 2: Install Plugin
 
@@ -161,14 +167,15 @@ Or just ask naturally:
 ## Permissions
 
 This plugin requires macOS permissions:
-- **Accessibility**: Required for AppleScript to control Things 3
+- **Automation** (Apple Events): Required to control Things 3. This is not the Accessibility permission. See the Installation section above for what to do when a call is refused.
 
 ## Version
 
-Plugin version: 1.6.2 (matches MCP server version)
+Plugin version: 1.7.0 (matches MCP server version)
 
 ### Changelog
 
+- **1.7.0** (2026-10-18) — Binary is Developer ID signed and notarized; Automation permission diagnostics (`--setup`, `--print-tcc-path`, actionable error instead of the raw `-1743`); the update hint removes the old binary first. Details in the [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
 - **1.6.2** (2026-04-22) — Wrapper auto-download now version-aware (re-downloads when `~/bin/CheThingsMCP` lags upstream)
 - **1.6.1** — Earlier patch releases tracked in [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
 

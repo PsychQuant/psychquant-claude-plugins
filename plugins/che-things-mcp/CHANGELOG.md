@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-18
+
+### Changed
+- Binary 1.7.0 is Developer ID signed and notarized, and reports a refused Apple Events call (`-1743`) with an actionable message; new `--setup` and `--print-tcc-path` flags.
+- `hooks/check-mcp.sh`: the printed update command removes the old binary before downloading.
+- README: the permission is Automation, not Accessibility.
+
 ## [1.6.2] - (date unknown — please fill in)
 
 ### Changed
