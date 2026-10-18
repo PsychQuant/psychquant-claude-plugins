@@ -184,13 +184,13 @@ Apple 文件明說：Apple Events 的 entitlement 在只傳給自己或同 team 
 
 ### Apple Events 版
 
-ical 用 EventKit。Apple Events 的參考實作是 che-things-mcp 1.7.0：`Sources/CheThingsMCPCore/Authorization/AutomationAuthorization.swift`（分類、報告格式、`--setup` 的步驟選擇）與 `Things/ThingsManager.swift` 的 `ThingsError.automationNotAuthorized`。它依 SDK 標頭語意 [E1] 寫成，分類、格式、`--setup` 的步驟選擇有單元測試；**但授權對話框與授權在已簽章 binary 上的實際行為沒有在實機驗證**（該專案的 #1、#4 因此維持開啟）。所以下面是有參考實作的設計，不是已驗證的做法：
+ical 用 EventKit。Apple Events 的參考實作是 che-things-mcp 1.7.0：`Sources/CheThingsMCPCore/Authorization/AutomationAuthorization.swift`（分類、報告格式、`--setup` 的步驟選擇）與 `Things/ThingsManager.swift` 的 `ThingsError.automationNotAuthorized`。它依 SDK 標頭語意 [E1] 寫成，分類、格式、`--setup` 的步驟選擇有單元測試；2026-10-18 在 macOS 27.2 實機上觀察到：從未被問過的 host 跑 `--setup` 會跳出對話框、允許後持續有效 [E43]；已授權的 host 換上新簽章的 binary 後仍有效 [E42]；授權記在 host 身上 [E41]。**macOS 26、缺 entitlement 的情況、對話框上的文字來源都沒有測**，所以下面是有參考實作與單次實機觀察的設計，不是全面驗證過的做法：
 
 - **`--print-tcc-path`**：對 Step 1 清單中的每個目標 app 呼叫 `AEDeterminePermissionToAutomateTarget(target, typeWildCard, typeWildCard, false)`，把回傳對成人話：`noErr`＝已授權、`errAEEventNotPermitted`（-1743）＝被拒、`errAEEventWouldRequireUserConsent`（-1744）＝還沒問過、`procNotFound`＝目標 app 沒開（**不是授權問題**）。**其他 OSStatus 原樣印出數值**，不要硬翻譯。這個查詢在 code requirement 不符時是否準確未驗證 [E27]。
 - **`--setup`**：同一個函式但 `askUserIfNeeded=true`。目標 app 必須已在執行，所以先檢查，沒開就請使用者先開；不要在主執行緒呼叫 [E1]。1.7.0 在狀態已是「被拒」時不再詢問，改指向 System Settings；「拒絕後不會再彈窗」是假設，沒有一手資料。把「這次該做什麼」抽成純函式（1.7.0 的 `AutomationSetup.plan`）才測得到，對話框本身測不到。
 - **工具執行失敗時**：把 -1743 轉成可行動的訊息。判斷以錯誤字典的數值 `NSAppleScript.errorNumber` 為主，英文訊息只當後備 [E40]（這句文字與 -1743 的對應是類推 [E28]）。訊息至少包含：**目標 app**、**binary 的實際路徑**、**失敗發生在哪個 host**，以及修法的順序：
   1. 先看 System Settings → 隱私權與安全性 → 自動化，有沒有這個 binary 或 host 的條目、是不是關閉的；
-  2. 沒有條目時，若有 `--setup`，在實際使用的終端機 app 跑 `'<Binary>' --setup`（路徑要加引號：.mcpb 的安裝路徑含空白；也不要假設是 Terminal.app）。**這可能只取得該終端機 app 歸屬的授權**，不一定涵蓋實際的 host（EventKit 已觀察到 [E9]，Apple Events 是類推 [E26]）。沒有 `--setup` 的話，改在實際的 host 內呼叫一個讀取型工具，讓對話框出現在那個 context；
+  2. 沒有條目時，若有 `--setup`，在實際使用的終端機 app 跑 `'<Binary>' --setup`（路徑要加引號：.mcpb 的安裝路徑含空白；也不要假設是 Terminal.app）。**這可能只取得該終端機 app 歸屬的授權**，不一定涵蓋實際的 host（EventKit [E9] 與 Apple Events [E41] 都已觀察到）。沒有 `--setup` 的話，改在實際的 host 內呼叫一個讀取型工具，讓對話框出現在那個 context；
   3. 完成後回到實際的 host 內再試一次，仍失敗就用 `tcc-diagnose` 查。
 
   不要丟出原始的 `Not authorized to send Apple events to Things3.`，che-things-mcp#1 的使用者看到的就是那一句。
@@ -262,7 +262,7 @@ ical 用 EventKit。Apple Events 的參考實作是 che-things-mcp 1.7.0：`Sour
 1. `otool`、`codesign`、`plutil` 都對（Step 2、5）。
 2. 請使用者觸發授權：binary 有 `--setup` 就在 **Terminal.app** 跑 `<Binary> --setup`，對話框按 Allow；沒有 `--setup` 就在實際 host 內呼叫一個讀取型工具，讓對話框出現。
 3. 再從實際的 host（Claude Code 或 Claude Desktop）內，用**讀取型**工具呼叫一次。Terminal 授權的 responsible process 是 Terminal，不一定涵蓋 host（EventKit 已觀察到 [E9]）。
-4. **換簽章身分後**（ad-hoc → Developer ID），舊的授權 row 可能綁在舊簽章上。這在 EventKit 已觀察到：entitlement 缺時，`--setup` 不彈窗，日誌出現 `Failed to match existing code requirement` [E4]；而且 code requirement 不符時，只在 Terminal 跑 `--setup` 會 no-op [E24]。entitlement 到位後預期會重新彈窗，但未驗證 [E13]。Apple Events 沒有證據 [E31]。發生時轉介 `tcc-diagnose` 的 Step 4、5（受上面的往返上限限制）。
+4. **換簽章身分後**（ad-hoc → Developer ID），舊的授權 row 可能綁在舊簽章上。這在 EventKit 已觀察到：entitlement 缺時，`--setup` 不彈窗，日誌出現 `Failed to match existing code requirement` [E4]；而且 code requirement 不符時，只在 Terminal 跑 `--setup` 會 no-op [E24]。entitlement 到位後預期會重新彈窗，但未驗證 [E13]。Apple Events 的 host 層授權在換簽章後仍有效 [E42]，binary 層沒有證據 [E31]。發生時轉介 `tcc-diagnose` 的 Step 4、5（受上面的往返上限限制）。
 5. 若觀察到新證據，例如 Apple Events 的 tccd 日誌或 healing 結果，把原文貼給使用者，請他在 `psychquant-claude-plugins/plugins/mcp-tcc/references/evidence.md` 回填 E5 或 E13。**不要改 plugin cache 內的檔案**，也不要自己升級證據狀態。
 
 ## 不做的事

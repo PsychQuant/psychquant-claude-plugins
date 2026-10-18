@@ -50,7 +50,7 @@ allowed-tools:
 | `procNotFound`、目標 app 沒開 | **不是授權問題** [E1] |
 | 「access denied」類錯誤，且確認用的是 EventKit | Calendar／Reminders。ical 的字串是 `accessDenied`／`insufficientAccess`／`unknownAuthState`，那是 ical **自己的** enum，別的 MCP 字串不同 [E22] |
 | 授權對話框從頭到尾不彈出 | 確認服務之後直接 Step 3、4 |
-| 換簽章或升級之後突然失效 | Step 3、4。EventKit 已觀察到 [E4]；Apple Events 沒有證據 [E31] |
+| 換簽章或升級之後突然失效 | Step 3、4。EventKit 已觀察到 [E4]。Apple Events 的 host 層授權在換簽章後**仍有效**（已實測 [E42]），binary 層沒有證據 [E31]：Apple Events 換版後失效，先查是不是換了 host，而不是換了簽章 |
 | status 或 `--print-tcc-path` 顯示已授權，工具卻被拒 | EventKit 已觀察到，且**取決於讀取時的 context** [E10]；Apple Events 有沒有同樣盲點未驗證 [E27]；到 Step 4 |
 
 Automation 的 TCC 服務鍵一般稱 `kTCCServiceAppleEvents`，但本機沒有看到過，未驗證 [E32]；`tccutil` 的短名 `AppleEvents` 是否有效也沒驗證 [E19]，所以本 skill 不使用它。
@@ -67,7 +67,7 @@ ls -d ~/Library/Application\ Support/Claude/Claude\ Extensions/*/server/<Binary>
 
 **要在失敗的 host 內重現與取證。** 你目前所在的 session 若不是那個 host（例如失敗的是 Claude Desktop，而你在 Claude Code），請使用者在那個 host 內操作並把結果貼回來，不要在這裡替代。在別的 context 讀到的狀態不能用來判斷失敗的 host [E10]。
 
-授權可能有**兩層**：binary 自己，以及實際發出請求的 responsible process。這是 EventKit 的實測 [E9]；Apple Events 是否同樣適用屬類推 [E26]。Claude Desktop 是例外，它的 binary 自己就是 responsible process [E9]，這個例外同樣只有 EventKit 的證據。
+授權可能有**兩層**：binary 自己，以及實際發出請求的 responsible process。這是 EventKit 的實測 [E9]。Apple Events 的 host 層已實測：同一個 binary 在 Ghostty 下已授權、在 Terminal 下是 -1744 [E41]；Apple Events 有沒有 binary 層屬類推 [E26]。Claude Desktop 是例外，它的 binary 自己就是 responsible process [E9]，這個例外同樣只有 EventKit 的證據。
 
 追 host 身分。`<pid>` 取 `pgrep` 結果中祖先鏈與失敗 host 吻合的那一個，有多個又分不出來就問使用者。下面這個迴圈是複合指令，不在預先核准範圍內，會跳權限提示：
 

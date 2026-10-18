@@ -1,6 +1,6 @@
 {
   "name": "mcp-tcc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "MCP 開發時的 macOS TCC 授權：診斷「授權卡住」（Not authorized to send Apple events、Calendar access denied、對話框不彈出），並把 Info.plist、entitlements、可行動的授權錯誤訊息做進 Swift MCP。做法取自 che-ical-mcp，補上 Apple Events。",
   "author": {
     "name": "Che Cheng"

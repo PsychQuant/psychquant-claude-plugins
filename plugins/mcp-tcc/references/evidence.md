@@ -3,7 +3,7 @@
 兩個 skill 用 `[E#]` 引用這張表。**修改 skill 裡的主張時，先改這裡的狀態。**
 
 - 驗證日：2026-10-18
-- 驗證機器：macOS 27.2（26B5112a）。**macOS 27.x 的 TCC 行為沒有任何實測。** 本機實跑的 E8、E14、E15、E17、E30、E34、E37、E38、E39、E40 是指令輸出，不是 TCC 行為的觀察。下表所有「他人實測」都不是在這個版本上觀察的。
+- 驗證機器：macOS 27.2（26B5112a）。**macOS 27.x 的 TCC 行為沒有任何實測。** 本機實跑的 E8、E14、E15、E17、E30、E34、E37、E38、E39、E40 是指令輸出；E41–E43 是本機上 Apple Events 授權行為的直接觀察（macOS 27.2，僅限 Apple Events），不是 TCC 行為的觀察。下表所有「他人實測」都不是在這個版本上觀察的。
 
 狀態只有四種，**封閉列舉，不要自己發明第五種**，也不要用括號補充改變狀態（要補充寫在「依據」欄）。一個主張如果一部分是實測、一部分是類推，就拆成兩列：
 
@@ -43,21 +43,24 @@
 | E23 | ical 的 `Makefile` 有三條路徑：`install` 用 `codesign --force --sign -`（ad-hoc，開發迭代）；`install-signed` 用 Developer ID 加 `--options runtime` 加 `--entitlements`，**未公證、僅供開發**；`release-signed` 才是公證、可散布的流程 | 已驗證 | `mcps/che-ical-mcp/Makefile` 約第 86–90 行（`install`）與第 91–140 行（`install-signed`）。「未公證、僅供開發」在 `install-signed` 前的註解（「NOT notarized」「dev only」）與 recipe 結尾的 `echo`（「Developer ID signed, NOT notarized — dev only」）都有寫 |
 | E24 | code requirement 不符時，在 Terminal 單獨跑 `--setup` 會看到說謊的 `.fullAccess` 然後什麼都不做，所以只建議「跑 `--setup`」是死路。只有 EventKit | 他人實測 | ical `EventKitManager.swift` 的註解，引用 #158 與 #154。環境版本未記載 |
 | E25 | Apple 文件有 `com.apple.security.personal-information.calendars`（read-write access to the user's calendar）與 `…addressbook`，**沒有** `com.apple.security.personal-information.reminders`：該文件端點回 HTTP 404 | 已驗證 | 2026-10-18 對 `developer.apple.com/tutorials/data/documentation/bundleresources/entitlements/<key>.json` 取得 200／404。**404 不等於該 key 不存在**，只表示 Apple 沒有為它寫文件頁 |
-| E26 | 兩層授權模型也適用 Apple Events（binary 層加 host 層） | 類推 | 由 E9 推得，E9 只有 EventKit 的證據 |
+| E26 | Apple Events 除了 host 層（E41，已實測）之外，**binary 本身**也有一層授權條目 | 類推 | 由 E9（EventKit 的兩層）推得。Apple Events 的 host 層已在 E41 直接觀察到；binary 層沒有任何觀察 |
 | E27 | Apple Events 的狀態查詢（`AEDeterminePermissionToAutomateTarget(..., false)`）在 code requirement 不符時是準確的，沒有 E10 那種依 context 而異的盲點 | 未驗證 | 沒有任何證據 |
 | E28 | `NSAppleScript` 回傳的文字 `Not authorized to send Apple events to <App>` 對應 `errAEEventNotPermitted`（-1743） | 類推 | che-things-mcp#1 只給文字、沒有數值；E1 的標頭註解說明 -1743 的語意與這句話相符 |
 | E29 | `tccutil reset <服務>` 不帶 bundle id 時，對該服務下**所有** app 重置；帶 bundle id 時只重置該 bundle | 已驗證 | 本機 `man tccutil`：「Reset all decisions for the specified service… If a bundle identifier is specified, the service will be reset for that bundle only」 |
 | E30 | binary 的簽章 identifier 由是否嵌入 Info.plist 決定：**有嵌 Info.plist 時，不論 ad-hoc 或 Developer ID，一律是 `CFBundleIdentifier`**；沒有 Info.plist 時，linker 自簽與 Developer ID 簽的是檔名，`codesign --force --sign -` 重簽的是「檔名-<40 個十六進位字元>」 | 已驗證 | 2026-10-18 對 che-things-mcp 實跑 `codesign -dvv`：3 月無 plist 的 build（`flags=0x20002(adhoc,linker-signed)`、`Info.plist=not bound`）`Identifier=CheThingsMCP`；同一檔 `codesign --force --sign -` 後 `Identifier=<檔名>-55554944784402f87eef3c1ca845539f06f45f41`；同一檔用 Developer ID 加 `--options runtime` 簽後 `Identifier=<檔名>`；有嵌 plist 的 1.7.0 用 ad-hoc 重簽與用 Developer ID 簽，結果都是 `Identifier=com.checheng.CheThingsMCP`。後綴那串 hash 的算法沒有查證 |
-| E31 | 換簽章身分（ad-hoc → Developer ID）後，Apple Events 的舊授權 row 也會因 code requirement 不符而失效 | 未驗證 | EventKit 有（E4），Apple Events 沒有任何觀察 |
+| E31 | 換簽章身分（ad-hoc → Developer ID）後，**binary 層**的 Apple Events 舊授權會因 code requirement 不符而失效 | 未驗證 | EventKit 有（E4）。Apple Events 的 host 層在同樣的換版下**沒有**失效（E42）；binary 層是否存在本身都還沒觀察到（E26） |
 | E32 | Automation 的 TCC 服務鍵是 `kTCCServiceAppleEvents` | 未驗證 | 沒有在本機日誌或資料庫看到。E12 只證明 `tccutil` 以 `kTCCService%s` 組字串 |
 | E33 | `mcp-sign-pipeline` 本身只安裝檔案，不簽章。簽章與公證由 `make release-signed` → build 腳本的 `[3.5/N]` 步驟 → `scripts/sign-and-notarize.sh` 一條鏈完成：`release-signed` 需要 `DEVELOPER_ID` 與 `NOTARY_PROFILE`，`ENTITLEMENTS` 由 sign 腳本讀取。模板的簽章與公證在同一支腳本，中間沒有檢查點；ical 自訂的版本在簽章後、公證前有 `[2.5/5]` 閘門，驗證**簽好的 binary** 兩個 key 皆為 `<true/>`（避免來源檔帶著 `<false/>` 卻通過） | 已驗證 | harness-devtools 2.5.0 的 `templates/Makefile-release-signed.snippet` 第 11–17 行、`templates/build-script-step-3.5.sh` 第 8–46 行；ical 的 `scripts/sign-and-notarize.sh` 約第 122–153 行；模板無 `[2.5/5]` |
 | E34 | `plutil -p` 把布林印成 `=> true`／`=> false` | 已驗證 | 2026-10-18 對 ical 的 `Entitlements.plist` 實跑，兩個 key 都是 `=> true` |
 | E35 | Claude Code 的 `allowed-tools`：(1) 讓列出的工具在該回合免詢問，裸 `Bash` 等於所有 shell 指令都免詢問；(2) `Bash(ls *)` 的空格是規則的一部分，`ls -la` 與 `ls` 匹配、`lsof` 不匹配，所以 `Bash(codesign -d *)` **不會**匹配 `codesign -dv …`；(3) 複合指令（`&&`、`\|\|`、`;`、`\|`、`&`、換行）的每個子指令都要各自匹配規則；(4) 在 plugin skill 內文與 allowed-tools 中，`${CLAUDE_PLUGIN_ROOT}` 會被展開 | 已驗證 | 官方文件 `code.claude.com/docs/en/skills.md` 與 `…/permissions.md`，2026-10-18 取得 |
-| E36 | TCC 的 code requirement 含 identifier，所以 identifier 改變（例如專案原本沒有 Info.plist、之後嵌入，見 E30）後，以舊 identifier 取得的授權會對不上、需要重新授權 | 類推 | E4 的日誌顯示 requirement 含 `identifier "com.checheng.CheICalMCP"`；E30 證明 identifier 會變。沒有對「嵌入前後」做過同一個 binary 的授權對照；Apple Events 沒有任何觀察 |
+| E36 | TCC 的 code requirement 含 identifier，所以 identifier 改變（例如專案原本沒有 Info.plist、之後嵌入，見 E30）後，以舊 identifier 取得的授權會對不上、需要重新授權 | 類推 | E4 的日誌顯示 requirement 含 `identifier "com.checheng.CheICalMCP"`；E30 證明 identifier 會變。沒有對「嵌入前後」做過同一個 binary 的授權對照；Apple Events 沒有任何觀察。Apple Events 記在 host 層的授權不受 identifier 改變影響（E42） |
 | E37 | 本機 Swift 工具鏈的預設 build system 是 `swiftbuild`：`swift build -c release --arch arm64`、`--arch x86_64`、不帶 `--arch`，`--show-bin-path` 全都印同一個目錄 `.build/out/Products/Release`，所以逐個 `--arch` 各 build 一次，後一次覆蓋前一次；`--arch arm64 --arch x86_64` 在**一次**呼叫裡產出 universal binary。舊路徑 `.build/<arch>-apple-macosx/release` 不再被寫入，會留著舊工具鏈的 binary | 已驗證 | 2026-10-18 在 che-things-mcp 實跑：`.build/.buildSystem_release` 內容為 `swiftbuild`；三種 `--show-bin-path` 輸出相同；兩個 `--arch` 的一次 build 後 `lipo -info` 顯示 `x86_64 arm64`；舊路徑的兩個 binary 時間戳是 2026-03-16，且 `strings` 找不到 `--print-tcc-path`、版本字面是舊版（拿它們 `lipo -create` 組成的假 universal 餵給檢查腳本，腳本以 `does not contain version 1.7.0` 拒絕） |
 | E38 | `mcpb pack` 不給輸出路徑時，輸出檔以 `mcpb` 資料夾名命名（`mcpb/mcpb.mcpb`）；用 `mcpb pack <目錄> <輸出檔>` 指定 | 已驗證 | 2026-10-18 實跑：`mcpb pack --help` 顯示 `Usage: mcpb pack [options] [directory] [output]`；不帶輸出時印 `Output: mcpb/mcpb.mcpb`；改用 `mcpb pack . <路徑>` 後檔案落在指定路徑。che-things-mcp 的舊 build 腳本因此回報 `che-things-mcp.mcpb`，而那個（被 git 追蹤的）檔案仍是 3 月的舊版 |
 | E39 | 對公證過、Developer ID 簽的裸 Mach-O（CLI binary）：`spctl --assess --type install` 回 `accepted`、`source=Notarized Developer ID`；`--type execute` 回 `rejected (the code is valid but does not seem to be an app)`（`execute` 評估的是 app，不代表公證失敗）；`codesign --verify --strict -R="notarized" --check-notarization` 通過，對 ad-hoc 簽的對照 binary 則回 `code failed to satisfy specified code requirement(s)`；`xcrun notarytool info <submission-id> --keychain-profile <profile>` 回 `status: Accepted` | 已驗證 | 2026-10-18 對 che-things-mcp v1.7.0 的 GitHub release 資產（以 curl 下載到新目錄）實跑，對照組是 `cp /bin/echo` 後 ad-hoc 簽。下載後的檔案沒有 quarantine 屬性（`xattr -l` 無輸出） |
 | E40 | `NSAppleScript` 執行失敗時的錯誤字典用 `NSAppleScriptErrorNumber`（NSNumber）與 `NSAppleScriptErrorMessage`（NSString）；Swift 寫成 `NSAppleScript.errorNumber`。用數值判斷 -1743 比比對英文訊息穩（訊息會本地化，E28 只證明文字與語意相符，沒有觀察到實際的 -1743 字典） | 已驗證 | 本機 Xcode SDK 的 `Foundation.framework/Headers/NSAppleScript.h` 第 16、19 行；`error[NSAppleScript.errorNumber]` 在 che-things-mcp 編譯並使用。字典在真實的 -1743 失敗時是否帶這個 key 沒有觀察過（這台機器上 Things 沒在執行） |
+| E41 | Apple Events（Automation）的授權記在**發出請求的 host app**（responsible process）身上：同一個 binary、同一個目標（Things 3），在 Ghostty 底下 `AEDeterminePermissionToAutomateTarget(…, false)` 回 authorized，在 Terminal.app 底下回 `errAEEventWouldRequireUserConsent`（-1744）。`--setup` 只取得「執行它的那個 host」的授權 | 已驗證 | 2026-10-18，macOS 27.2，che-things-mcp 1.7.0（Developer ID、Hardened Runtime、帶 `automation.apple-events`）。Ghostty 的 Bash 行程祖先鏈為 zsh → claude → login → Ghostty；Terminal 是用 `open -a Terminal <script>.command` 啟動。TCC.db 在該 context 讀不到（無 Full Disk Access），所以 client 的辨識是從行為推得，不是從資料庫讀到 |
+| E42 | 同一路徑把 binary 從 1.6.1（ad-hoc、identifier `CheThingsMCP`、無 Info.plist）換成 1.7.0（Developer ID、identifier `com.checheng.CheThingsMCP`）之後，host（Ghostty）原有的 Apple Events 授權**仍然有效**：狀態 authorized，經 MCP stdio 的讀取型呼叫（`get_areas`）成功，沒有 -1743 | 已驗證 | 2026-10-18，macOS 27.2，安裝方式為 `rm -f` 後 `curl` 下載 release 資產（sha256 與 release 相同）。這與 E41 一致：授權記在 host，不在 binary。不代表 EventKit 或 binary 層的授權也如此（E4、E31） |
+| E43 | Developer ID 簽章、Hardened Runtime、帶 `com.apple.security.automation.apple-events`、內嵌 Info.plist（含 `NSAppleEventsUsageDescription`）的 CLI binary：在從未被問過的 host（狀態 -1744）以背景 thread 呼叫 `AEDeterminePermissionToAutomateTarget(…, askUserIfNeeded=true)`，**跳出 Automation 對話框**；按允許後回 authorized，之後新開的行程也讀到 authorized | 已驗證 | 2026-10-18，macOS 27.2，**單一樣本**，host 為 Terminal.app。對話框是使用者本人按的，**對話框上的文字沒有記錄**（顯示的是 binary 的 usage description 還是 Terminal 的，不知道）。macOS 26 沒有測 |
 
 ## 還沒有證據的地方（寫在這裡，免得被當成已知）
 
@@ -65,6 +68,8 @@
 - **Reminders 實際需要哪個 entitlement。** Apple 文件只列 `calendars`（E25）；ical 另外放了 `reminders`，不清楚是否必要。以 tccd 日誌 `requires entitlement …` 裡的名稱為準。
 - Apple Events 缺 entitlement 時的實際失敗樣子（E5）。
 - **被明確拒絕（`errAEEventNotPermitted`）之後，`AEDeterminePermissionToAutomateTarget(…, askUserIfNeeded=true)` 是否還會彈窗。** che-things-mcp 1.7.0 的 `--setup` 假設不會，所以在這種情況下改指向 System Settings；這個假設沒有一手資料。
-- **已簽章的 Apple Events binary 上，授權對話框是否出現、授權是否持久。** 1.7.0 已出貨但沒有實機驗證，該專案的 #1、#4 因此維持開啟。
+- **Automation 對話框上的說明文字從哪裡來**：CLI binary 自己內嵌的 `NSAppleEventsUsageDescription`，還是 host app（終端機）的。E43 時沒有記錄對話框內容。
+- **macOS 26 上的同一流程。** E41–E43 只在 macOS 27.2 觀察過。
+- **Apple Events 有沒有 binary 層的條目**（E26），以及它在換簽章後會不會失效（E31）。
 - 用 `Process` 呼叫 `osascript` 時，TCC 把授權算在哪個 client（osascript 還是你的 binary）。
 - Automation、Calendar、Reminders 這些窗格（System Settings → 隱私權與安全性）能不能單獨移除某個條目。

@@ -4,7 +4,7 @@ MCP 開發時的 macOS TCC 授權。出問題時一層一層查；開發時把�
 
 做法取自 [`che-ical-mcp`](https://github.com/PsychQuant/che-ical-mcp) 的實戰經驗，並補上 Apple Events（Automation）。
 
-> **狀態：v0.1.1。** 每個主張都在 [`references/evidence.md`](references/evidence.md) 標了「已驗證／他人實測／類推／未驗證」。他人實測的證據各有各的環境（見證據表每一列，有些沒記載版本）；**macOS 27.x 的 TCC 行為沒有任何實測**。Apple Events 缺 entitlement 時的實際失敗樣子目前是**類推**。
+> **狀態：v0.1.2。** 每個主張都在 [`references/evidence.md`](references/evidence.md) 標了「已驗證／他人實測／類推／未驗證」。他人實測的證據各有各的環境（見證據表每一列，有些沒記載版本）；**macOS 27.x 的 TCC 行為沒有任何實測**。Apple Events 缺 entitlement 時的實際失敗樣子目前是**類推**。
 
 ## 它解決什麼
 

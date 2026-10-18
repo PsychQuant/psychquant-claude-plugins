@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.2 — 2026-10-18
+
+第一次在實機上觀察 Apple Events 的授權行為（che-things-mcp 1.7.0，macOS 27.2）。只新增觀察到的事；沒有觀察到的部分維持原狀態。
+
+### Added
+
+- **E41**：Apple Events 的授權記在發出請求的 host app 身上。同一個 binary，Ghostty 底下是 authorized、Terminal.app 底下是 -1744。
+- **E42**：把 binary 從 ad-hoc（identifier `CheThingsMCP`）換成 Developer ID（`com.checheng.CheThingsMCP`）後，host 原有的授權仍然有效。
+- **E43**：簽章、Hardened Runtime、帶 Apple Events entitlement 的 CLI binary，在從未被問過的 host 上跑 `--setup` 會跳出對話框，允許後持續有效（單一樣本）。
+
+### Changed
+
+- **E26、E31 縮小範圍**：原本的主張涵蓋整個 Apple Events；host 層現在有一手觀察（E41、E42），所以這兩列只留下沒觀察到的 binary 層，狀態不變（類推、未驗證）。E36 補註 host 層不受 identifier 改變影響。
+- `tcc-diagnose`：「換簽章後失效」那列改成先查是不是換了 host；兩層模型段改引 E41。
+- `tcc-instrument`：Apple Events 段改寫為有單次實機觀察的設計，並明列沒測的三件事（macOS 26、缺 entitlement、對話框文字的來源）。
+- 「還沒有證據的地方」：移除「對話框是否出現、授權是否持久」，新增對話框文字來源、macOS 26、binary 層條目三項。
+
 ## 0.1.1 — 2026-10-18
 
 第一次拿 `tcc-instrument` 實際套用到一個專案（che-things-mcp 1.7.0，簽章、公證、發布）之後的更正。新增的主張都有一手輸出，沒有升級任何既有的類推。
