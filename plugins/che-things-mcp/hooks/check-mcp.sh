@@ -68,7 +68,8 @@ if [[ "$MCP_FOUND" == "true" ]]; then
     if [[ -n "$INSTALLED_VERSION" && -n "$LATEST_VERSION" ]]; then
         if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
             echo "⬆️  che-things-mcp v$INSTALLED_VERSION → v$LATEST_VERSION available"
-            echo "   Update: curl -fsSL $RELEASE_URL -o $MCP_PATH && chmod +x $MCP_PATH"
+            # rm first: overwriting a binary a running process holds open leaves a stale code-signature cache
+            echo "   Update: rm -f $MCP_PATH && curl -fsSL $RELEASE_URL -o $MCP_PATH && chmod +x $MCP_PATH"
         else
             echo "✓ che-things-mcp v$INSTALLED_VERSION (latest)"
         fi
