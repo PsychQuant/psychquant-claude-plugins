@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-10-19
+
+### Changed
+- Binary pin 1.7.1: AppleScript runs on the main thread, so `get_tags`, `get_areas` and `get_today` no longer stall for minutes; tags and areas are read in bulk. Tool calls now run one at a time on the server (a slow tool delays the others).
+
 ## [1.7.0] - 2026-10-18
 
 ### Changed

@@ -171,10 +171,11 @@ This plugin requires macOS permissions:
 
 ## Version
 
-Plugin version: 1.7.0 (matches MCP server version)
+Plugin version: 1.7.1 (matches MCP server version)
 
 ### Changelog
 
+- **1.7.1** (2026-10-19) — Tool calls no longer stall for minutes: AppleScript runs on the main thread, and `get_tags` / `get_areas` read in bulk. Tool calls now run one at a time, so a slow tool delays the others. Details in the [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
 - **1.7.0** (2026-10-18) — Binary is Developer ID signed and notarized; Automation permission diagnostics (`--setup`, `--print-tcc-path`, actionable error instead of the raw `-1743`); the update hint removes the old binary first. Details in the [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
 - **1.6.2** (2026-04-22) — Wrapper auto-download now version-aware (re-downloads when `~/bin/CheThingsMCP` lags upstream)
 - **1.6.1** — Earlier patch releases tracked in [upstream CHANGELOG](https://github.com/PsychQuant/che-things-mcp/blob/main/CHANGELOG.md)
