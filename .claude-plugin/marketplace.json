@@ -237,6 +237,16 @@
       },
       "source": "./plugins/mcp-tcc",
       "category": "development"
+    },
+    {
+      "name": "progress-bar",
+      "version": "0.1.0",
+      "description": "Claude 在背景跑的指令(pytest、安裝、下載)在提示列上方顯示進度條:讀輸出檔最後一個百分比,沒有百分比就顯示最後一行與經過時間;結束時打勾。Claude Code mod(function hooks)。",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/progress-bar",
+      "category": "productivity"
     }
   ],
   "renames": {
