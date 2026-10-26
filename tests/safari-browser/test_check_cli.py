@@ -279,6 +279,19 @@ class WhenTheCommitsCannotBeComparedFileTimesStillDecide(CheckCliTestCase):
         self.assertIn('⬆️', out)
         self.assertIn('older than its source', out)
 
+    def test_a_build_whose_code_landed_unchanged_by_squash_is_not_called_stale(self):
+        # install from a PR branch, then the PR is squash-merged with the same code:
+        # the binary has exactly HEAD's code, though its commit is not in HEAD's history
+        self.make_checkout(['code', 'docs'])                            # main: day 0, day 1
+        side = self.side_commit(git(self.checkout, 'rev-parse', 'HEAD'), day=2)
+        (self.checkout / 'Sources/a.swift').write_text('side\n')        # the squash: same code
+        git(self.checkout, '-c', 'commit.gpgsign=false', 'commit', '-q', '-am', 'squashed', date=T0 + 3 * DAY)
+        (self.checkout / 'docs/readme.md').write_text('later docs\n')    # docs move on; the code does not
+        git(self.checkout, '-c', 'commit.gpgsign=false', 'commit', '-q', '-am', 'docs', date=T0 + 4 * DAY)
+        self.install(f'v1.0.0-2-g{side[:7]}', age_days=2)               # built before the squash commit
+        out = self.run_hook()
+        self.assertNotIn('⬆️', out)
+
     def test_a_build_commit_gone_from_the_checkout_still_warns(self):
         hashes = self.make_checkout(CODE_DOCS_CODE_DOCS_CODE)
         side = self.side_commit(hashes[0], day=1)
@@ -417,6 +430,29 @@ class BoundedVersionProbe(CheckCliTestCase):
         time.sleep(0.5)
         self.assertFalse(alive(self.probe_pid()), 'the probe outlived an interrupted hook')
         self.assertEqual(list(self.tmpdir.iterdir()), [])
+
+    def test_the_probe_dies_on_its_own_when_the_hook_is_killed_outright(self):
+        # SIGKILL leaves no trap to run; the probe must still not outlive its own deadline
+        import signal
+        self.stale_install('hang-pid')
+        env = {'HOME': str(self.home), 'PATH': f'{self.shims}:{os.environ["PATH"]}',
+               'LANG': 'C', 'TMPDIR': str(self.tmpdir), **GIT_ENV}
+        hook = subprocess.Popen([str(HOOK)], env=env, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, start_new_session=True)
+        pidfile = self.root / 'probe.pid'
+        for _ in range(50):
+            if pidfile.exists() and pidfile.read_text().strip():
+                break
+            time.sleep(0.1)
+        self.assertTrue(pidfile.exists(), 'the probe never started')
+        os.killpg(hook.pid, signal.SIGKILL)
+        hook.wait(timeout=10)
+        pid = self.probe_pid()
+        for _ in range(60):
+            if not alive(pid):
+                break
+            time.sleep(0.1)
+        self.assertFalse(alive(pid), 'the probe outlived a SIGKILLed hook by more than 6 s')
 
     def test_no_temp_file_is_left_behind_and_stderr_stays_quiet(self):
         for behavior in ('unsupported', 'hang', 'grandchild'):

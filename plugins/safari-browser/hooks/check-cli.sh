@@ -46,11 +46,14 @@ print_install_hint() {
     echo "   applying after every rebuild (safari-browser#119)."
 }
 
-# First line of `--version`, within about 3.5 seconds in the worst case. This runs at
-# every session start, so a binary that hangs must cost a few seconds and not the session.
-# The probe gets a process group of its own (job control), so its children are stopped
-# with it; TERM first, then KILL after half a second, because a child that ignores TERM
-# would otherwise be waited for until it chose to exit. Prints nothing when the flag is
+# First line of `--version`, within about 4 seconds in the worst case (measured 3.9).
+# This runs at every session start, so a binary that hangs must cost a few seconds and not
+# the session. The probe gets a process group of its own (job control), so its children
+# are stopped with it; TERM first, then KILL after half a second, because a child that
+# ignores TERM would otherwise be waited for until it chose to exit. The group also
+# carries its own 4-second deadline (a timer that KILLs the group), because having a group
+# of its own means a SIGKILL sent to the hook's group no longer reaches it: if the hook is
+# killed outright, nothing else would stop a hung probe. Prints nothing when the flag is
 # rejected (a build from before #278), the binary fails, or it is too slow. Only the first
 # 4 KiB are read: the answer is one short line, and the caller rejects anything longer.
 # Call it with stderr discarded: bash reports a job it had to kill on stderr.
@@ -60,7 +63,8 @@ read_version() {
     trap 'exit 1' INT TERM HUP
     PROBE_OUT=$(mktemp "${TMPDIR:-/tmp}/check-cli.XXXXXX") || return 1
     set -m
-    "$INSTALL_PATH" --version >"$PROBE_OUT" 2>/dev/null </dev/null &
+    /bin/sh -c '(sleep 4; kill -KILL 0) & exec "$0" --version' "$INSTALL_PATH" \
+        >"$PROBE_OUT" 2>/dev/null </dev/null &
     PROBE_PID=$!
     set +m
     while kill -0 "$PROBE_PID" 2>/dev/null; do
@@ -95,6 +99,11 @@ report_by_commit() {
         return 1
     }
     if ! git -C "$SOURCE_DIR" merge-base --is-ancestor "$commit" HEAD 2>/dev/null; then
+        # The usual case: the binary was built from a PR branch that was then squash-merged
+        # (or rebased) with the same code. Same compiled code as HEAD means nothing is newer.
+        if git -C "$SOURCE_DIR" diff --quiet "$commit" HEAD -- "${COMPILED_PATHS[@]}" 2>/dev/null; then
+            return 0
+        fi
         if git -C "$SOURCE_DIR" merge-base --is-ancestor HEAD "$commit" 2>/dev/null; then
             echo "ℹ️  $BINARY_NAME was built from $BUILD_REF, which is newer than $SOURCE_DIR's HEAD (the checkout is behind): comparing file times instead."
         else
