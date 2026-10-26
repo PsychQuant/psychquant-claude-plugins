@@ -84,7 +84,7 @@ class PackagingTests(unittest.TestCase):
         plugin = json.loads((PLUGIN / 'plugin.json').read_text())
         market = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
         entry = next(p for p in market['plugins'] if p['name'] == 'safari-browser')
-        self.assertEqual(plugin['version'], '2.9.0')
+        self.assertEqual(plugin['version'], '2.9.2')
         self.assertEqual(entry['version'], plugin['version'])
         self.assertEqual(entry['description'], plugin['description'])
         self.assertTrue((ROOT / entry['source']).is_dir())
