@@ -217,6 +217,11 @@ class SavingFilesGuidanceTests(unittest.TestCase):
                 self.assertNotRegex(line.lower(), r'#.*\bpick\b', line)
         self.assertIn('<file the user identified>', self.section(self.SECTION))
 
+    def test_several_matches_are_the_users_choice(self):
+        text = self.section(self.SECTION)
+        self.assertIn('the user says which one', text)
+        self.assertNotIn('one of their keys', text)
+
     def test_cli_hints_do_not_override_the_no_picking_rule(self):
         self.assertMentions(self.section(self.SECTION), 'hint', 'does not change this')
 
@@ -242,7 +247,8 @@ class SavingFilesGuidanceTests(unittest.TestCase):
         self.assertMentions(self.section(self.SECTION), 'save-image', '--element', '--with-cookies', 'no request',
                             'inline SVG', 'full URL', 'safari-browser#336', 'overwrites', 'blob:',
                             'do not retry without', 'should not reach another site', 'extension',
-                            'behind a login needs `--with-cookies`', 'does not check what came back')
+                            'behind a login needs `--with-cookies`', 'does not check what came back',
+                            'file --mime-type')
 
     def test_force_is_named_as_irreversible(self):
         self.assertMentions(self.section(self.SECTION), '--force', 'irreversibl')
