@@ -100,18 +100,65 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((skill.parent / link).is_file(), link)
 
 
+def code_blocks(markdown):
+    """Fenced blocks of any info string, paired line by line (a fence opens and closes
+    with the same backtick run), so an unrelated block cannot shift the pairing."""
+    blocks, current, fence = [], None, None
+    for line in markdown.splitlines():
+        match = re.match(r'^(`{3,})', line)
+        if current is None and match:
+            current, fence = [], match.group(1)
+        elif current is not None and line.startswith(fence) and line.strip() == fence:
+            blocks.append('\n'.join(current))
+            current = None
+        elif current is not None:
+            current.append(line)
+    return blocks
+
+
+TYPED_TEXT = re.compile(
+    r'keystroke\s+(?!"[^"\n]"\s+using\b)(?!(?:return|tab|space)\b)', re.I)
+
+
+def types_text(code):
+    """True when the code sends text with `keystroke`: a string longer than one key, or
+    a variable. A single key with modifiers (Cmd+V) and the return/tab/space constants
+    are shortcuts, not typed text."""
+    return bool(TYPED_TEXT.search(code))
+
+
+class TypedTextDetectorTests(unittest.TestCase):
+    def test_typing_a_path_is_flagged_in_any_fence(self):
+        for fence in ('bash', 'sh', 'osascript', 'applescript', ''):
+            doc = f'```{fence}\nkeystroke "/Users/me/x.pdf"\n```\n'
+            self.assertTrue(any(types_text(b) for b in code_blocks(doc)), fence)
+
+    def test_typing_a_variable_is_flagged(self):
+        self.assertTrue(types_text('keystroke destPath'))
+
+    def test_paste_and_return_shortcuts_are_not_typed_text(self):
+        self.assertFalse(types_text('keystroke "v" using command down\nkeystroke "g" using {command down, shift down}\nkeystroke return'))
+
+    def test_an_unrelated_block_does_not_shift_the_pairing(self):
+        doc = '```json\n{"a": 1}\n```\nprose that says instead of keystroke\n```bash\necho ok\n```\n'
+        self.assertEqual(code_blocks(doc), ['{"a": 1}', 'echo ok'])
+
+
 class SavingFilesGuidanceTests(unittest.TestCase):
     """safari-browser#315: an agent that could not find a command for saving the
-    PDF a tab showed scripted Save As with `keystroke`; a non-ASCII input source
-    rewrote the path and the file landed in an unrelated folder, silently."""
+    PDF a tab showed scripted Save As and typed the destination with `keystroke`; a
+    non-ASCII input source rewrote the path and the file landed in an unrelated
+    folder, silently."""
 
     SECTION = 'Saving What the Page Shows'
+    DIALOG = 'Never Type a Path into a File Dialog'
 
     @classmethod
     def setUpClass(cls):
         source = (PLUGIN / 'skills/safari-browser/SKILL.md').read_text()
         cls.front, cls.body = source.split('---', 2)[1:]
-        cls.description = re.search(r'^description: >-\n((?:  .*\n)+)', cls.front, re.M).group(1)
+        folded = re.search(r'^description: >-\n((?:  .*\n)+)', cls.front, re.M).group(1)
+        cls.description = ' '.join(folded.split())
 
     def section(self, title):
         match = re.search(r'^(#{2,3}) ' + re.escape(title) + r'.*?$(.*?)(?=^#{2,3} |\Z)',
@@ -119,40 +166,62 @@ class SavingFilesGuidanceTests(unittest.TestCase):
         self.assertIsNotNone(match, f'missing section: {title}')
         return match.group(2)
 
-    def test_description_surfaces_the_skill_when_saving_a_shown_file(self):
-        for word in ('pdf-cache', 'save-image', 'save this PDF'):
-            self.assertIn(word, self.description)
-
-    def test_pdf_cache_and_its_three_selection_forms_are_documented(self):
-        text = self.section(self.SECTION)
-        for needle in ('pdf-cache list', 'pdf-cache get', '--url', '--key',
-                       '--source webkit-pdfs --file', 'exactly one', 'Full Disk Access'):
-            self.assertIn(needle, text)
-
-    def test_save_image_and_whether_each_command_sends_a_request(self):
-        text = self.section(self.SECTION)
-        for needle in ('save-image', '--element', '--with-cookies', 'no request', 'sends its own request'):
+    def assertMentions(self, text, *needles):
+        for needle in needles:
             self.assertIn(needle.lower(), text.lower())
 
-    def test_pdf_export_is_told_apart_from_saving_the_original(self):
+    def test_description_ties_the_save_triggers_to_a_safari_tab(self):
+        self.assertMentions(self.description, 'pdf-cache', 'save-image', 'save the PDF this Safari tab shows')
+        self.assertLessEqual(len(self.description), 1024)   # Agent Skills description limit
+
+    def test_pdf_cache_and_its_three_selection_forms_are_documented(self):
+        self.assertMentions(self.section(self.SECTION), 'pdf-cache list', 'pdf-cache get', '--url', '--key',
+                            '--source webkit-pdfs --file', 'pdf-cache list --source webkit-pdfs',
+                            'exactly one', 'Full Disk Access')
+
+    def test_minimum_versions_and_the_help_text_are_named(self):
         text = self.section(self.SECTION)
-        self.assertIn('pdf --allow-hid', text)
-        self.assertIn('original bytes', text)
+        self.assertMentions(text, 'v2.7.0', 'v2.6.0', 'safari-browser pdf-cache get --help')
+        self.assertNotIn('top-level help', self.body)   # the #335 report was a test error
+        self.assertNotIn('#335', self.body)
 
-    def test_file_dialog_paths_are_pasted_and_the_clipboard_restored(self):
-        text = self.section('Never Type a Path into a File Dialog')
-        for needle in ('keystroke', 'input source', 'clipboard', 'restore', 'check that the file exists'):
-            self.assertIn(needle, text)
+    def test_a_tab_flag_matches_only_a_tab_whose_url_is_the_pdf(self):
+        self.assertMentions(self.section(self.SECTION), "own URL is the PDF", 'byte for byte', 'PDF.js')
 
-    def test_no_example_types_a_path_with_keystroke(self):
-        for block in re.findall(r'```(?:bash|applescript)?\n(.*?)```', self.body, re.S):
-            self.assertNotIn('keystroke', block)
+    def test_no_match_has_a_next_step(self):
+        self.assertMentions(self.section(self.SECTION), 'When nothing matches', 'no-store', 'hand the save to the user')
 
-    def test_limitations_name_the_default_profile_cache(self):
-        text = self.section('Limitations')
-        self.assertIn('pdf-cache', text)
-        self.assertIn('default profile', text)
-        self.assertIn('safari-browser#243', text)
+    def test_a_workflow_that_reserves_saving_for_the_user_wins(self):
+        self.assertMentions(self.section(self.SECTION), 'workflow skill', 'the user saves the file')
+
+    def test_save_image_request_referer_and_overwrite_are_stated(self):
+        self.assertMentions(self.section(self.SECTION), 'save-image', '--element', '--with-cookies', 'no request',
+                            'inline SVG', "full URL", 'safari-browser#336', 'overwrites')
+
+    def test_pdf_export_is_told_apart_from_saving_the_original(self):
+        self.assertMentions(self.section(self.SECTION), 'pdf --allow-hid', 'original bytes')
+        self.assertMentions(self.section('Screenshot, PDF & Upload'), 'pdf-cache get')
+
+    def test_file_dialog_rule_forbids_typed_text_and_injection(self):
+        self.assertMentions(self.section(self.DIALOG), 'keystroke', 'input source', 'file name',
+                            'on run argv', 'never interpolate', 'Go to Folder', 'on error')
+
+    def test_file_dialog_rule_treats_the_clipboard_as_visible(self):
+        self.assertMentions(self.section(self.DIALOG), 'clipboard history', 'restore', 'best effort')
+
+    def test_success_check_compares_with_the_state_before_the_dialog(self):
+        self.assertMentions(self.section(self.DIALOG), 'modification time', 'new or changed', 'received the file')
+
+    def test_no_example_types_text_with_keystroke(self):
+        for block in code_blocks(self.body):
+            self.assertFalse(types_text(block), block)
+
+    def test_the_stale_axdefault_description_is_gone(self):
+        self.assertNotIn('AXDefault', self.body)
+
+    def test_limitations_name_both_outcomes_of_a_named_profile_tab(self):
+        self.assertMentions(self.section('Limitations'), 'pdf-cache', 'default profile', 'safari-browser#243',
+                            'copy of the same URL', 'reported as success')
 
 
 if __name__ == '__main__':
