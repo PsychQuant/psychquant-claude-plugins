@@ -201,9 +201,14 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     def test_a_tab_flag_matches_only_a_tab_whose_url_is_the_pdf(self):
         self.assertMentions(self.section(self.SECTION), "own URL is the PDF", 'byte for byte', 'PDF.js')
 
-    def test_no_match_has_a_next_step_and_the_listing_limit_is_named(self):
-        self.assertMentions(self.section(self.SECTION), 'When nothing matches', 'raise `--limit`', 'no-store',
-                            'byte ranges', 'hand the save to the user')
+    def test_no_match_hands_the_save_to_the_user_instead_of_picking(self):
+        # Round 3: a row picked from the listing, or a WebKitPDFs file, is not tied to the
+        # tab; a wrong PDF is copied and reported as success (it happened on 2026-11-02).
+        self.assertMentions(self.section(self.SECTION), 'When nothing matches', 'no-store', 'byte ranges',
+                            'hand the save to the user', 'do not pick', 'wrong PDF')
+
+    def test_key_and_file_forms_are_for_what_the_user_identified(self):
+        self.assertMentions(self.section(self.SECTION), 'the user identified', 'first-page title', '50 rows')
 
     def test_duplicate_webkitpdfs_names_are_a_dead_end(self):
         self.assertMentions(self.section(self.SECTION), 'same name', 'safari-browser#337')
@@ -226,7 +231,10 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     def test_save_image_request_referer_overwrite_and_failures_are_stated(self):
         self.assertMentions(self.section(self.SECTION), 'save-image', '--element', '--with-cookies', 'no request',
                             'inline SVG', 'full URL', 'safari-browser#336', 'overwrites', 'blob:',
-                            'do not retry without')
+                            'do not retry without', 'should not reach another site', 'extension')
+
+    def test_force_is_named_as_irreversible(self):
+        self.assertMentions(self.section(self.SECTION), '--force', 'irreversibl')
 
     def test_pdf_export_is_told_apart_from_saving_the_original(self):
         self.assertMentions(self.section(self.SECTION), 'pdf --allow-hid', 'Export as PDF')
@@ -239,7 +247,17 @@ class SavingFilesGuidanceTests(unittest.TestCase):
 
     def test_file_dialog_defaults_to_the_user_and_names_the_cli_guards(self):
         self.assertMentions(self.section(self.DIALOG), 'hand the save to the user', 'actively interfering',
-                            'frontmost', 'Replace')
+                            'frontmost', 'Replace', 'never interpolate', 'run their own')
+
+    def test_file_dialog_keeps_the_confirmed_clarity_items(self):
+        # Clarity Surface row 3, confirmed by the maintainer: restore, and say it is best effort.
+        self.assertMentions(self.section(self.DIALOG), 'restore', 'best effort', 'new or changed',
+                            'received the file')
+
+    def test_local_data_statements_include_pdf_cache(self):
+        self.assertMentions(self.section('Local Safari Data'), 'pdf-cache')
+        self.assertIn('pdf-cache', re.search(r'^- \*\*Local-data commands require Full Disk Access\*\*.*$',
+                                             self.body, re.M).group(0))
 
     def test_no_example_types_text_with_keystroke(self):
         for block in code_blocks(self.body):
@@ -247,7 +265,8 @@ class SavingFilesGuidanceTests(unittest.TestCase):
 
     def test_limitations_name_both_outcomes_of_a_named_profile_tab(self):
         self.assertMentions(self.section('Limitations'), 'pdf-cache', 'default profile', 'safari-browser#243',
-                            'copy of the same URL', 'reported as success', 'loaded into its cache')
+                            'copy of the same URL', 'reported as success', 'loaded into its cache',
+                            'private window')
 
 
 if __name__ == '__main__':
