@@ -100,5 +100,60 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((skill.parent / link).is_file(), link)
 
 
+class SavingFilesGuidanceTests(unittest.TestCase):
+    """safari-browser#315: an agent that could not find a command for saving the
+    PDF a tab showed scripted Save As with `keystroke`; a non-ASCII input source
+    rewrote the path and the file landed in an unrelated folder, silently."""
+
+    SECTION = 'Saving What the Page Shows'
+
+    @classmethod
+    def setUpClass(cls):
+        source = (PLUGIN / 'skills/safari-browser/SKILL.md').read_text()
+        cls.front, cls.body = source.split('---', 2)[1:]
+        cls.description = re.search(r'^description: >-\n((?:  .*\n)+)', cls.front, re.M).group(1)
+
+    def section(self, title):
+        match = re.search(r'^(#{2,3}) ' + re.escape(title) + r'.*?$(.*?)(?=^#{2,3} |\Z)',
+                          self.body, re.M | re.S)
+        self.assertIsNotNone(match, f'missing section: {title}')
+        return match.group(2)
+
+    def test_description_surfaces_the_skill_when_saving_a_shown_file(self):
+        for word in ('pdf-cache', 'save-image', 'save this PDF'):
+            self.assertIn(word, self.description)
+
+    def test_pdf_cache_and_its_three_selection_forms_are_documented(self):
+        text = self.section(self.SECTION)
+        for needle in ('pdf-cache list', 'pdf-cache get', '--url', '--key',
+                       '--source webkit-pdfs --file', 'exactly one', 'Full Disk Access'):
+            self.assertIn(needle, text)
+
+    def test_save_image_and_whether_each_command_sends_a_request(self):
+        text = self.section(self.SECTION)
+        for needle in ('save-image', '--element', '--with-cookies', 'no request', 'sends its own request'):
+            self.assertIn(needle.lower(), text.lower())
+
+    def test_pdf_export_is_told_apart_from_saving_the_original(self):
+        text = self.section(self.SECTION)
+        self.assertIn('pdf --allow-hid', text)
+        self.assertIn('original bytes', text)
+
+    def test_file_dialog_paths_are_pasted_and_the_clipboard_restored(self):
+        text = self.section('Never Type a Path into a File Dialog')
+        for needle in ('keystroke', 'input source', 'clipboard', 'restore', 'check that the file exists'):
+            self.assertIn(needle, text)
+
+    def test_no_example_types_a_path_with_keystroke(self):
+        for block in re.findall(r'```(?:bash|applescript)?\n(.*?)```', self.body, re.S):
+            self.assertNotIn('keystroke', block)
+
+    def test_limitations_name_the_default_profile_cache(self):
+        text = self.section('Limitations')
+        self.assertIn('pdf-cache', text)
+        self.assertIn('default profile', text)
+        self.assertIn('safari-browser#243', text)
+
+
 if __name__ == '__main__':
     unittest.main()

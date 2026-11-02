@@ -10,7 +10,9 @@ description: >-
   local on-disk data — browsing history, bookmarks / Reading List, iCloud tabs from other
   devices, and downloads. Triggers on: "what did I look at", "find that page I saw",
   "I forgot the URL", "search my history", "my bookmarks", "tabs on my other Mac/iPhone",
-  "what did I download".
+  "what did I download". ALSO use to save the PDF or image a tab shows (pdf-cache,
+  save-image) instead of scripting Save As. Triggers on: "save this PDF", "存這份 PDF",
+  "save this image".
 allowed-tools:
   - Bash(safari-browser:*)
   - Bash(safari-browser *)
@@ -221,6 +223,42 @@ safari-browser upload --native <sel> <file> # force native file dialog [requires
 
 **PDF export**: Uses clipboard paste for path input (instead of keystroke), precise waits (`repeat until exists`) instead of blind delays, and AXDefault button click (locale-independent) for the Save button. Still requires `--allow-hid`.
 
+### Saving What the Page Shows (pdf-cache, save-image)
+
+To keep a file a tab is showing, use one of these commands. Do not script Safari's File > Save As dialog yourself.
+
+| You want | Use | Network |
+|---|---|---|
+| The PDF a tab displays, as the original bytes the server sent (works behind a login) | `pdf-cache get` | No request: copies Safari's cached copy |
+| An `img` / `video` / `audio` / `picture` resource or an inline SVG | `save-image` | Sends its own request (`data:` URLs excepted) |
+| A printout of the page as Safari lays it out | `pdf --allow-hid` | Not a download: re-renders the page and drives the keyboard |
+
+```bash
+# The PDF the tab shows (select it by the tab's URL)
+safari-browser pdf-cache get --url "example.org/paper" ~/Downloads/paper.pdf
+safari-browser pdf-cache get --json --url "example.org/paper" ~/Downloads/paper.pdf  # path, size, pages, source, key, url
+
+# Or pick it from the cache listing (key, partition, URL without query, size, time)
+safari-browser pdf-cache list --limit 10
+safari-browser pdf-cache get --key 3f9a1c0d ~/Downloads/paper.pdf   # 8+ hex characters of a listed key
+
+# An element's resource
+safari-browser save-image ~/Downloads/figure.png --element "img.figure" --url example.org
+safari-browser save-image ~/Downloads/figure.png --element "img" --element-index 2 --with-cookies --url example.org
+```
+
+- `pdf-cache get` needs exactly one selection: a tab flag (`--url`, `--url-exact`, `--url-endswith`, `--url-regex`, `--window [--tab-in-window]`, `--document`, `--tab`), `--key <prefix>`, or `--source webkit-pdfs --file <name>`. It never picks for you: several matches stop and list the candidates, no match stops and says so. A tab is matched by its exact URL (fragment removed).
+- The PDF must already have been shown in Safari, since nothing is downloaded. The command needs Full Disk Access, reads only the default profile's cache (`--profile` is refused), checks the copy is a readable PDF, and refuses an existing destination unless `--force`.
+- `save-image` takes `--element` (light DOM only), `--element-index`, `--track currentSrc|src|poster`. Without `--with-cookies` it sends its own request with Safari's Referer and User-Agent but no cookies; a resource behind a login needs `--with-cookies`, which fetches through Safari (10 MB cap).
+- `safari-browser pdf-cache get --help` currently prints the top-level help instead of these options (safari-browser#335).
+
+### Never Type a Path into a File Dialog
+
+When no command covers a task and a native open or save dialog must receive a path, do not send it with System Events `keystroke`. Keystrokes pass through the current input source: with a Chinese or Japanese input source active they are converted, Go to Folder receives a different path, the dialog still closes, and the file lands in whatever folder the dialog used last, with no error to catch (safari-browser#315).
+
+1. Save the clipboard, set it to the path, paste with Cmd+V, then restore the clipboard. This is the sequence `upload` and `pdf` use. Restoring is best effort: an image or a multi-format clipboard may not come back whole.
+2. After the dialog closes, check that the file exists at the destination before reporting success.
+
 ### Tab Management
 ```bash
 safari-browser tabs                         # list all tabs
@@ -405,6 +443,7 @@ Use between every `safari-browser` command when operating sensitive sites. Never
 - **upload smart default** — uses native file dialog when Accessibility permission is granted; auto-falls back to JS DataTransfer otherwise. Force with `--js` or `--native`
 - **Local-data commands require Full Disk Access** — `history` / `bookmarks` / `cloud-tabs` / `downloads` read `~/Library/Safari/`. TCC binds the grant to the binary's *designated requirement*, and an ad-hoc signature's requirement **is** the content hash — so the grant stops applying after every rebuild, silently. Install with `DEVELOPER_ID=<cert-sha1> make install-signed` (not `make install`) for a grant that survives; `make verify-install-signature` reports which state the installed binary is in. The commands say which case you are in rather than failing opaquely (safari-browser#119)
 - **pdf requires Accessibility permission** — System Settings → Privacy & Security → Accessibility (uses clipboard paste + AXDefault button click)
+- **pdf-cache reads only the default profile's cache** — a PDF shown in a tab of a named Safari profile can be missing from `pdf-cache list` / `get` (safari-browser#243). It also finds only PDFs Safari has displayed, since it downloads nothing
 
 ## Playbooks
 
