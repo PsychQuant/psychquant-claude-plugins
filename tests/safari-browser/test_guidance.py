@@ -101,40 +101,52 @@ class PackagingTests(unittest.TestCase):
 
 
 def code_blocks(markdown):
-    """Fenced blocks of any info string, paired line by line (a fence opens and closes
-    with the same backtick run), so an unrelated block cannot shift the pairing."""
+    """Fenced blocks of any info string, paired line by line. A fence may be indented
+    (under a list item) and use backticks or tildes; it closes on a line holding only a
+    run of the same character at least as long. An unclosed block runs to the end."""
     blocks, current, fence = [], None, None
     for line in markdown.splitlines():
-        match = re.match(r'^(`{3,})', line)
-        if current is None and match:
-            current, fence = [], match.group(1)
-        elif current is not None and line.startswith(fence) and line.strip() == fence:
+        stripped = line.strip()
+        if current is None:
+            match = re.match(r'^(`{3,}|~{3,})', stripped)
+            if match:
+                current, fence = [], match.group(1)
+        elif stripped and set(stripped) == {fence[0]} and len(stripped) >= len(fence):
             blocks.append('\n'.join(current))
             current = None
-        elif current is not None:
+        else:
             current.append(line)
+    if current is not None:
+        blocks.append('\n'.join(current))
     return blocks
 
 
 TYPED_TEXT = re.compile(
-    r'keystroke\s+(?!"[^"\n]"\s+using\b)(?!(?:return|tab|space)\b)', re.I)
+    r'keystroke\s+(?!"[^"\n]"\s+using\b)(?!(?:return|tab|space)\b(?!\s*&))', re.I)
 
 
 def types_text(code):
-    """True when the code sends text with `keystroke`: a string longer than one key, or
-    a variable. A single key with modifiers (Cmd+V) and the return/tab/space constants
-    are shortcuts, not typed text."""
+    """True when the code sends text with `keystroke`: a string longer than one key, a
+    variable, or a key constant joined to more text. A single key with modifiers (Cmd+V)
+    and a bare return/tab/space are shortcuts, not typed text."""
     return bool(TYPED_TEXT.search(code))
 
 
 class TypedTextDetectorTests(unittest.TestCase):
     def test_typing_a_path_is_flagged_in_any_fence(self):
-        for fence in ('bash', 'sh', 'osascript', 'applescript', ''):
-            doc = f'```{fence}\nkeystroke "/Users/me/x.pdf"\n```\n'
-            self.assertTrue(any(types_text(b) for b in code_blocks(doc)), fence)
+        for opening in ('```bash', '```sh', '```osascript', '```applescript', '```', '~~~applescript'):
+            doc = f'{opening}\nkeystroke "/Users/me/x.pdf"\n{opening[:3]}\n'
+            self.assertTrue(any(types_text(b) for b in code_blocks(doc)), opening)
 
-    def test_typing_a_variable_is_flagged(self):
+    def test_an_indented_or_unclosed_fence_is_still_read(self):
+        indented = '1. step\n\n   ```applescript\n   keystroke "/Users/me/x.pdf"\n   ```\n'
+        unclosed = 'text\n```applescript\nkeystroke "/Users/me/x.pdf"\n'
+        for doc in (indented, unclosed):
+            self.assertTrue(any(types_text(b) for b in code_blocks(doc)), doc)
+
+    def test_typing_a_variable_or_a_joined_string_is_flagged(self):
         self.assertTrue(types_text('keystroke destPath'))
+        self.assertTrue(types_text('keystroke return & destPath'))
 
     def test_paste_and_return_shortcuts_are_not_typed_text(self):
         self.assertFalse(types_text('keystroke "v" using command down\nkeystroke "g" using {command down, shift down}\nkeystroke return'))
@@ -171,8 +183,12 @@ class SavingFilesGuidanceTests(unittest.TestCase):
             self.assertIn(needle.lower(), text.lower())
 
     def test_description_ties_the_save_triggers_to_a_safari_tab(self):
-        self.assertMentions(self.description, 'pdf-cache', 'save-image', 'save the PDF this Safari tab shows')
+        self.assertMentions(self.description, 'pdf-cache', 'save-image', 'save the PDF this Safari tab shows',
+                            '存 Safari 分頁上的 PDF')
         self.assertLessEqual(len(self.description), 1024)   # Agent Skills description limit
+
+    def test_the_usage_rule_of_the_issue_is_stated(self):
+        self.assertMentions(self.section(self.SECTION), 'before any dialog', 'behind a login', 'original bytes')
 
     def test_pdf_cache_and_its_three_selection_forms_are_documented(self):
         self.assertMentions(self.section(self.SECTION), 'pdf-cache list', 'pdf-cache get', '--url', '--key',
@@ -180,48 +196,58 @@ class SavingFilesGuidanceTests(unittest.TestCase):
                             'exactly one', 'Full Disk Access')
 
     def test_minimum_versions_and_the_help_text_are_named(self):
-        text = self.section(self.SECTION)
-        self.assertMentions(text, 'v2.7.0', 'v2.6.0', 'safari-browser pdf-cache get --help')
-        self.assertNotIn('top-level help', self.body)   # the #335 report was a test error
-        self.assertNotIn('#335', self.body)
+        self.assertMentions(self.section(self.SECTION), 'v2.7.0', 'v2.6.0', 'safari-browser pdf-cache get --help')
 
     def test_a_tab_flag_matches_only_a_tab_whose_url_is_the_pdf(self):
         self.assertMentions(self.section(self.SECTION), "own URL is the PDF", 'byte for byte', 'PDF.js')
 
-    def test_no_match_has_a_next_step(self):
-        self.assertMentions(self.section(self.SECTION), 'When nothing matches', 'no-store', 'hand the save to the user')
+    def test_no_match_has_a_next_step_and_the_listing_limit_is_named(self):
+        self.assertMentions(self.section(self.SECTION), 'When nothing matches', 'raise `--limit`', 'no-store',
+                            'byte ranges', 'hand the save to the user')
+
+    def test_duplicate_webkitpdfs_names_are_a_dead_end(self):
+        self.assertMentions(self.section(self.SECTION), 'same name', 'safari-browser#337')
+
+    def test_the_listing_is_a_viewing_record_and_untrusted_text(self):
+        self.assertMentions(self.section(self.SECTION), 'viewing record', 'as data')
+
+    def test_page_derived_values_are_single_quoted_in_examples(self):
+        text = self.section(self.SECTION)
+        self.assertMentions(text, 'single quotes', '$(')
+        for block in code_blocks(text):
+            self.assertIsNone(re.search(r'--(?:file|url)\s+"', block), block)
+
+    def test_destination_names_from_a_page_stay_in_the_chosen_folder(self):
+        self.assertMentions(self.section(self.SECTION), 'one path component', 'folder the user chose')
 
     def test_a_workflow_that_reserves_saving_for_the_user_wins(self):
         self.assertMentions(self.section(self.SECTION), 'workflow skill', 'the user saves the file')
 
-    def test_save_image_request_referer_and_overwrite_are_stated(self):
+    def test_save_image_request_referer_overwrite_and_failures_are_stated(self):
         self.assertMentions(self.section(self.SECTION), 'save-image', '--element', '--with-cookies', 'no request',
-                            'inline SVG', "full URL", 'safari-browser#336', 'overwrites')
+                            'inline SVG', 'full URL', 'safari-browser#336', 'overwrites', 'blob:',
+                            'do not retry without')
 
     def test_pdf_export_is_told_apart_from_saving_the_original(self):
-        self.assertMentions(self.section(self.SECTION), 'pdf --allow-hid', 'original bytes')
-        self.assertMentions(self.section('Screenshot, PDF & Upload'), 'pdf-cache get')
+        self.assertMentions(self.section(self.SECTION), 'pdf --allow-hid', 'Export as PDF')
+        self.assertMentions(self.section('Screenshot, PDF & Upload'), 'pdf-cache get', 'v2.6.0 and earlier')
+        self.assertNotIn('locale-independent', self.body)   # main said this; #107 made it false
 
-    def test_file_dialog_rule_forbids_typed_text_and_injection(self):
-        self.assertMentions(self.section(self.DIALOG), 'keystroke', 'input source', 'file name',
-                            'on run argv', 'never interpolate', 'Go to Folder', 'on error')
+    def test_file_dialog_rule_keeps_the_discipline_of_the_issue(self):
+        self.assertMentions(self.section(self.DIALOG), 'keystroke', 'input source', 'paste', 'clipboard',
+                            'check that the file')
 
-    def test_file_dialog_rule_treats_the_clipboard_as_visible(self):
-        self.assertMentions(self.section(self.DIALOG), 'clipboard history', 'restore', 'best effort')
-
-    def test_success_check_compares_with_the_state_before_the_dialog(self):
-        self.assertMentions(self.section(self.DIALOG), 'modification time', 'new or changed', 'received the file')
+    def test_file_dialog_defaults_to_the_user_and_names_the_cli_guards(self):
+        self.assertMentions(self.section(self.DIALOG), 'hand the save to the user', 'actively interfering',
+                            'frontmost', 'Replace')
 
     def test_no_example_types_text_with_keystroke(self):
         for block in code_blocks(self.body):
             self.assertFalse(types_text(block), block)
 
-    def test_the_stale_axdefault_description_is_gone(self):
-        self.assertNotIn('AXDefault', self.body)
-
     def test_limitations_name_both_outcomes_of_a_named_profile_tab(self):
         self.assertMentions(self.section('Limitations'), 'pdf-cache', 'default profile', 'safari-browser#243',
-                            'copy of the same URL', 'reported as success')
+                            'copy of the same URL', 'reported as success', 'loaded into its cache')
 
 
 if __name__ == '__main__':
