@@ -210,6 +210,16 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     def test_key_and_file_forms_are_for_what_the_user_identified(self):
         self.assertMentions(self.section(self.SECTION), 'the user identified', 'first-page title', '50 rows')
 
+    def test_no_example_tells_the_agent_to_pick(self):
+        # Round 4: the prose forbade picking while an example comment still said "pick it from the listing".
+        for block in code_blocks(self.section(self.SECTION)):
+            for line in block.splitlines():
+                self.assertNotRegex(line.lower(), r'#.*\bpick\b', line)
+        self.assertIn('<file the user identified>', self.section(self.SECTION))
+
+    def test_cli_hints_do_not_override_the_no_picking_rule(self):
+        self.assertMentions(self.section(self.SECTION), 'hint', 'does not change this')
+
     def test_duplicate_webkitpdfs_names_are_a_dead_end(self):
         self.assertMentions(self.section(self.SECTION), 'same name', 'safari-browser#337')
 
@@ -231,7 +241,8 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     def test_save_image_request_referer_overwrite_and_failures_are_stated(self):
         self.assertMentions(self.section(self.SECTION), 'save-image', '--element', '--with-cookies', 'no request',
                             'inline SVG', 'full URL', 'safari-browser#336', 'overwrites', 'blob:',
-                            'do not retry without', 'should not reach another site', 'extension')
+                            'do not retry without', 'should not reach another site', 'extension',
+                            'behind a login needs `--with-cookies`', 'does not check what came back')
 
     def test_force_is_named_as_irreversible(self):
         self.assertMentions(self.section(self.SECTION), '--force', 'irreversibl')
@@ -247,7 +258,9 @@ class SavingFilesGuidanceTests(unittest.TestCase):
 
     def test_file_dialog_defaults_to_the_user_and_names_the_cli_guards(self):
         self.assertMentions(self.section(self.DIALOG), 'hand the save to the user', 'actively interfering',
-                            'frontmost', 'Replace', 'never interpolate', 'run their own')
+                            'frontmost', 'Replace', 'run their own', 'escape the path')
+        # upload and pdf interpolate the path after escaping it; the skill must not say otherwise.
+        self.assertNotIn('never interpolate', self.section(self.DIALOG))
 
     def test_file_dialog_keeps_the_confirmed_clarity_items(self):
         # Clarity Surface row 3, confirmed by the maintainer: restore, and say it is best effort.
@@ -255,7 +268,9 @@ class SavingFilesGuidanceTests(unittest.TestCase):
                             'received the file')
 
     def test_local_data_statements_include_pdf_cache(self):
-        self.assertMentions(self.section('Local Safari Data'), 'pdf-cache')
+        text = self.section('Local Safari Data')
+        self.assertMentions(text, 'pdf-cache', "Safari's container", 'tab flag')
+        self.assertNotIn('These four (and', text)
         self.assertIn('pdf-cache', re.search(r'^- \*\*Local-data commands require Full Disk Access\*\*.*$',
                                              self.body, re.M).group(0))
 
