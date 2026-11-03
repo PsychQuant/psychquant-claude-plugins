@@ -84,7 +84,7 @@ class PackagingTests(unittest.TestCase):
         plugin = json.loads((PLUGIN / 'plugin.json').read_text())
         market = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
         entry = next(p for p in market['plugins'] if p['name'] == 'safari-browser')
-        self.assertEqual(plugin['version'], '2.9.2')
+        self.assertEqual(plugin['version'], '2.10.0')
         self.assertEqual(entry['version'], plugin['version'])
         self.assertEqual(entry['description'], plugin['description'])
         self.assertTrue((ROOT / entry['source']).is_dir())
@@ -162,7 +162,7 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     non-ASCII input source rewrote the path and the file landed in an unrelated
     folder, silently."""
 
-    SECTION = 'Saving What the Page Shows'
+    SECTION = 'Saving What the Page Shows (pdf-cache, save-pdf, save-image)'
     DIALOG = 'Never Type a Path into a File Dialog'
 
     @classmethod
@@ -216,6 +216,13 @@ class SavingFilesGuidanceTests(unittest.TestCase):
             for line in block.splitlines():
                 self.assertNotRegex(line.lower(), r'#.*\bpick\b', line)
         self.assertIn('<file the user identified>', self.section(self.SECTION))
+
+    def test_save_pdf_comes_before_handing_the_save_over(self):
+        text = self.section(self.SECTION)
+        self.assertIn('use `save-pdf` with the same tab flag', text)
+        self.assertIn('v2.8.0', text)
+        self.assertIn('compare `pages`', text)
+        self.assertIn('Content-Security-Policy', text)
 
     def test_several_matches_are_the_users_choice(self):
         text = self.section(self.SECTION)
