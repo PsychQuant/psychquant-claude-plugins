@@ -5,6 +5,12 @@ All notable changes to che-latex-mcp will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-11-04
+
+### Added
+
+- `typesetting-rules` skill：中文文件的通用排版規則十條（全形標點、括號以一對為單位、列舉用頓號、字型缺字、首行縮兩字、標題不留在頁底、孤行寡行、引言冒號行同頁、內容不超出版心與欄框、圖表標籤不重疊），各寫 LaTeX 與 Word 的做法與檢查方式，並寫明 `punct_check` 與 `detect_layout_issues` 實際查得到與查不到的範圍
+
 ## [0.5.0] - 2026-05-18
 
 ### Added — Pillar 5: Annotation-driven workflow

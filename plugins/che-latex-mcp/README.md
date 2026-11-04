@@ -103,7 +103,7 @@ AI call extract_annotations(pdf) → 拿到所有 reviewer comment + 位置 + su
 
 Pillar 5 是 **generic primitive**：MCP 只負責「抽出 raw annotation」+「反查 source 位置」，**不做分類 / 驗證**。專案特有的分類規則（哪些 comment 是「字型缺字」、哪些是「跨頁」）由 caller 自己處理（skill / script layer）。
 
-## Skills 一覽（5 個）
+## Skills 一覽（6 個）
 
 | Skill | Trigger | 對應 Pillar | 串接 tools |
 |-------|---------|----------|-----------|
@@ -112,6 +112,7 @@ Pillar 5 是 **generic primitive**：MCP 只負責「抽出 raw annotation」+�
 | `latex-precompile` | 「precompile check」「source audit」「掃半形/缺字」 | Pillar 3（source-level） | punct_check + fonts_check + box_warnings |
 | `latex-preview-chunk` | 「預覽這個片段」「不要編整本」 | Pillar 4 | compile_chunk + Read PNG |
 | `latex-page-locate` | 「這段在第幾頁」「頁碼對不對」「勘誤要填 location」 | Pillar 1 | analyze_pages → get_page_content（+ compile_latex 若 PDF 過期）|
+| `typesetting-rules` | 「排版規則」「孤行寡行」「標題卡在頁底」「半形標點」「首行縮排」 | 規則（不跑工具） | 十條中文排版規則，各寫 LaTeX 與 Word 的做法，以及用哪個 tool 檢查 |
 
 ## 安裝
 
