@@ -84,7 +84,7 @@ class PackagingTests(unittest.TestCase):
         plugin = json.loads((PLUGIN / 'plugin.json').read_text())
         market = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
         entry = next(p for p in market['plugins'] if p['name'] == 'safari-browser')
-        self.assertEqual(plugin['version'], '2.10.0')
+        self.assertEqual(plugin['version'], '2.11.0')
         self.assertEqual(entry['version'], plugin['version'])
         self.assertEqual(entry['description'], plugin['description'])
         self.assertTrue((ROOT / entry['source']).is_dir())
@@ -290,6 +290,14 @@ class SavingFilesGuidanceTests(unittest.TestCase):
     def test_no_example_types_text_with_keystroke(self):
         for block in code_blocks(self.body):
             self.assertFalse(types_text(block), block)
+
+    def test_window_id_is_documented_with_its_limits(self):
+        text = self.section('Multi-Window Targeting')
+        self.assertMentions(text, '--window-id', 'window_id', 'documents --json', '--tab-in-window',
+                            'No Safari document matches', 'v2.9.0', '#353')
+        self.assertMentions(text, 'without bringing Safari forward', 'activates Safari')
+        # `--window N` keeps its positional meaning; the skill must say why the id exists.
+        self.assertMentions(text, 'z-order')
 
     def test_limitations_name_both_outcomes_of_a_named_profile_tab(self):
         self.assertMentions(self.section('Limitations'), 'pdf-cache', 'default profile', 'safari-browser#243',

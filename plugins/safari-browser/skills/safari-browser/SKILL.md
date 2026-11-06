@@ -306,7 +306,7 @@ safari-browser storage local get token --url plaud   # Plaud's token
 safari-browser storage local get token --url oauth   # different OAuth provider's token
 ```
 
-### Multi-Window Targeting (#17 #18 #21 #23)
+### Multi-Window Targeting (#17 #18 #21 #23 #352)
 
 When Safari has more than one window open, every command that reads from
 or drives a document accepts global targeting flags:
@@ -314,7 +314,8 @@ or drives a document accepts global targeting flags:
 ```bash
 safari-browser documents                                # discover available windows
 safari-browser get url --url plaud                      # target by URL substring
-safari-browser get title --window 2                     # target by window index (1-based)
+safari-browser get title --window 2                     # target by window index (1-based, z-order)
+safari-browser get title --window-id 9005               # target by Safari's stable window id (v2.9.0+)
 safari-browser snapshot --url plaud                     # snapshot specific document
 safari-browser wait --for-url "/dashboard" --url plaud  # wait on specific document
 
@@ -323,6 +324,32 @@ safari-browser screenshot --window 2 out.png
 safari-browser pdf --window 2 --allow-hid out.pdf
 safari-browser upload --native "input[type=file]" file.mp3 --window 2
 ```
+
+**To keep targeting the same window, use `--window-id W` (v2.9.0+, #352).** `--window N` is a z-order
+position: when another window comes forward, even by this tool's own `activate`, the same number names a
+different window. Safari's window id does not change while the window is open. Read it from `documents --json`
+(`window_id`):
+
+```bash
+W=$(safari-browser documents --profile "<profile>" --json | jq -r '.[0].window_id')
+safari-browser get url --window-id "$W"                       # that window's current tab
+safari-browser get url --window-id "$W" --tab-in-window 3     # tab 3 of that window
+safari-browser open "https://example.org" --new-tab --window-id "$W"
+```
+
+- It excludes `--window`, `--url` and the other URL flags, `--tab` and `--document`; `--tab-in-window` combines
+  with it, and so does `--profile`.
+- A missing window or tab fails with `No Safari document matches` and never falls back to the front window. A
+  window outside `--profile` fails the same way, without listing other profiles' tabs. A `⚠` dialog-probe line
+  can print before that error, so match the `Error:` line, not the first line of stderr.
+- `open --new-tab --window-id W` and `tab new --window-id W` make the tab current
+  without bringing Safari forward. `open --window-id W <url>` navigates W's **current tab** and then
+  activates Safari: check first that the current tab is the one you mean to replace.
+- `close`, `screenshot`, `pdf` and `upload --native` still act by position (#353).
+- Safari has no stable tab id, so `--tab-in-window T` is still a position inside that window (#188).
+
+`open --url-exact`, `--url-endswith` and `--url-regex` navigate the matching tab, like `--url` (v2.9.0+, #233):
+no match, or several without `--first-match`, is an error rather than a new tab.
 
 **Reusing a lock flag across commands — use a bash array, not a string.**
 To lock several commands to the same document, store the flag in an **array** so
